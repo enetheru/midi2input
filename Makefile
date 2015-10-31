@@ -1,5 +1,5 @@
-LDFLAGS=-lasound -lX11 -lXtst
-CFLAGS= -Wall
+LDFLAGS=-lX11 -lXtst -ljack
+CFLAGS=-Wall
 
 mid2key: mid2key.c
 	cc $(CFLAGS) $^ -o $@ $(LDFLAGS)
