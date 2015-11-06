@@ -1,7 +1,7 @@
 LDFLAGS=-lX11 -lXtst -ljack
 CFLAGS=-Wall
 
-mid2key: mid2key.c
+midi2input: midi2input.c
 	g++ $(CFLAGS) $^ -o $@ $(LDFLAGS)
 clean: 
-	rm -f mid2key
+	rm -f midi2input
