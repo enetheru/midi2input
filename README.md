@@ -14,7 +14,7 @@ Installation
 
 ### Example usage
 
-`./mid2key configfile.cfg`
+`./midi2input configfile.cfg`
 
 ### Example config file
 
