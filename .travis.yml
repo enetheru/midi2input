@@ -1,0 +1,12 @@
+language: cpp
+
+compiler:
+  - clang
+  - gcc
+
+before_script:
+  - sudo apt-get install libxtst-dev libx11-dev libjack-dev --yes
+
+script:
+  - make
+  - echo "Done"
