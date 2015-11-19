@@ -1,6 +1,10 @@
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include <iostream>
+#include <iomanip>
+#include <fstream>
+#include <queue>
+#include <vector>
+#include <sstream>
+#include <string>
 
 #include <wordexp.h>
 #include <unistd.h>
@@ -16,61 +20,45 @@ jack_client_t *client;
 jack_port_t *input_port;
 KeyCode map[ 128 ];
 
-FILE *
-load_config( char *filename )
+std::string
+load_config(  std::string name )
 {
 	//TODO use a queue of filepaths and c++ streams
 	// load configuration from a priority list of locations
 	// * specified from the command line
-	// * current directory ./.midi2input.cfg
 	// * configuration folder $HOME/.config/
 	// * home directory $HOME/
-	FILE *tFile;
-	char filepath[ 1024 ];
+	std::string filepath;
+	std::queue<std::string> paths;
 
-	// cmd line
-	tFile = fopen( filename, "r" );
-	if(  tFile != NULL ){
-		printf( "cfg: %s\n", filename );
-		return tFile;
-	}
+	paths.push( name );
 
-	// current working directory
-	char cwd[ 1024 ];
-	getcwd( cwd, 1024 );
-	
-	sprintf( filepath, "%s/.midi2input.cfg", cwd );
-
-	tFile = fopen( filepath, "r" );
-	if(  tFile != NULL ){
-		printf( "cfg: %s\n", filepath );
-		return tFile;
-	}
 	// configuration folder ~/.config/
-	sprintf( filepath, "%s/.config/midi2key.cfg", getenv( "HOME" ) );
+	filepath = std::string( getenv( "HOME" ) ) + "/.config/midi2key.cfg";
+	paths.push( filepath );
 
-	tFile = fopen( filepath, "r" );
-	if(  tFile != NULL ){
-		printf( "cfg: %s\n", filepath );
-		return tFile;
-	}
-	
 	// configuration folder ~/.config/
-	sprintf( filepath, "%s/.midi2key.cfg", getenv( "HOME" ) );
+	filepath = std::string( getenv( "HOME" ) ) + "/.midi2key.cfg";
+	paths.push( filepath );
 
-	tFile = fopen( filepath, "r" );
-	if(  tFile != NULL ){
-		printf( "cfg: %s\n", filepath );
-		return tFile;
+	std::ifstream tFile;
+	while(! paths.empty() ){
+		tFile.open( paths.front().c_str(), std::ifstream::in );
+		if( tFile.is_open() )
+		   break;	
+
+		paths.pop();
 	}
 
-	return NULL;
+	tFile.close();
+	std::cout << paths.front() << std::endl;
+	return paths.front();
 }
 
 int
 process( jack_nframes_t nframes, void *arg )
 {
-    int temp;
+	KeyCode temp;
     void* port_buf = jack_port_get_buffer( input_port, nframes );
     jack_midi_event_t in_event;
     jack_nframes_t event_count = jack_midi_get_event_count( port_buf );
@@ -79,23 +67,21 @@ process( jack_nframes_t nframes, void *arg )
         for(uint32_t i = 0; i < event_count; i++ ){
             jack_midi_event_get( &in_event, port_buf, i );
 
-            if( in_event.buffer[ 0 ] == 0x90 ){
-                printf("note on\n");
-                if( (in_event.buffer[1] <= 127) && (in_event.buffer[2]) ){
-                    if( (temp = map[ in_event.buffer[ 1 ] ]) ){
-                        XTestFakeKeyEvent( xdp, temp, 1, CurrentTime );
-                        XTestFakeKeyEvent( xdp, temp, 0, CurrentTime );
-                        XFlush( xdp );
-                    }
-                    printf( "    size: %i | 0x%02X | 0x%02X | 0x%02X >> %i\n",
-                        (int)in_event.size,
-                        in_event.buffer[ 0 ],
-                        in_event.buffer[ 1 ],
-                        in_event.buffer[ 2 ],
-                        map[ in_event.buffer[ 1 ] ]
-                    );
-                }
-            }
+			if( (in_event.buffer[1] <= 127) && (in_event.buffer[2]) ){
+				if( (temp = map[ in_event.buffer[ 1 ] ]) ){
+					XTestFakeKeyEvent( xdp, temp, 1, CurrentTime );
+					XTestFakeKeyEvent( xdp, temp, 0, CurrentTime );
+					XFlush( xdp );
+				}
+				std::cout << std::hex
+					<< std::setiosflags( std::ios::showbase )
+					<< " " << (int)in_event.buffer[ 0 ]
+					<< " | " << (int)in_event.buffer[ 1 ]
+					<< " | " << (int)in_event.buffer[ 2 ]
+					<< " | " << (int)in_event.buffer[ 3 ]
+					<< " >> " << (char)map[ in_event.buffer[ 1 ] ]
+					<< std::endl;
+			}
 
         }
     }
@@ -114,9 +100,8 @@ main( int argc, char** argv )
 {
 
     /*usage*/
-    if( argc == 2 && strcmp(argv[1], "-h") == 0 ){
-        fprintf( stderr,
-            "Usage: %s [config]\n"
+    if( argc == 2 && std::string( argv[ 1 ] ).compare( "-h" ) == 0 ){
+		std::cerr << "Usage: " << *argv << " [config]\n"
             "Defaults to ~/.config/midi2input.cfg if config is unspecified.\n"
             "Configuration example:\n"
             "#set note #32 to spacebar\n"
@@ -126,21 +111,20 @@ main( int argc, char** argv )
             "#leave note #34 unset\n"
             "34=\n"
             "#also set note 35 to space\n"
-            "35=space\n",
-            *argv
-        );
+            "35=space\n";
+        
         return 1;
     }
 
     /*display*/
     if(! (xdp = XOpenDisplay( getenv( "DISPLAY" ) )) ){
-        fputs( "Unable to open X display.", stderr );
+		std::cerr << "Unable to open X display\n";
         return 2;
     }
 
     /*jack*/
     if( (client = jack_client_open( "midi2input", JackNullOption, NULL )) == 0 ){
-        fprintf( stderr, "jack server not running?\n" );
+		std::cerr << "jack server not running?\n";
         return 1;
     }
 
@@ -150,44 +134,56 @@ main( int argc, char** argv )
     input_port = jack_port_register( client, "midi_in", JACK_DEFAULT_MIDI_TYPE, JackPortIsInput, 0 );
 
     if( jack_activate( client ) ){
-        fprintf( stderr, "cannot activate client" );
+		std::cerr << "cannot activate client\n";
         return 1;
     }
 
     /*defines*/
-    FILE* config;
-    char buffer[128];
-    char* keysym;
+	std::ifstream config;
+	std::string cfg_fn;
+	std::string cell;
+	std::stringstream line;
+	std::vector<std::string> tokens;
     int temp;
+	int count = 0;
 
     /*config*/
-    memset( map, 0, sizeof( map ) );
-	
-    if(! (config = load_config( argv[ 1 ] )) ){
-        fprintf( stderr, "Unable to open configuration file\nUsing null mapping.\n" );
+	cfg_fn = load_config( argv[ 1 ] );
+    if( cfg_fn.empty() ){
+		std::cerr << "Unable to open configuration file\n"
+			"Using null mapping.\n";
     }
     else {
-        while( fgets( buffer, 128, config ) ){
-            if( *buffer != '#' ){
-                if( (keysym = strchr( buffer, '=' )) ){
-                    temp = atoi( buffer );
-                    if( (temp >= 0) && (temp <= 127) ){
-                        ++keysym;
-                        if( strchr( keysym, '\n' ) ) *strchr( keysym, '\n' ) = '\0';
-                        if( (map[ temp ] = XStringToKeysym( keysym )) ){
-                            if(! (map[ temp ] = XKeysymToKeycode( xdp, map[ temp ] )) )
-                                fprintf( stderr, "No keycode for keysym '%s'\n", keysym );
-                        }
-                        else if( *keysym ){
-                            fprintf( stderr, "Undefined keysym '%s'\n", keysym );
-                        }
-                    }
-                }
-            }
-        }
-        fclose( config );
+		config.open( cfg_fn.c_str(), std::ifstream::in );
+
+		while( std::getline( config, cell ) ){
+			++count;
+			if( cell[ 0 ] == '#' ) continue;
+        	line.clear();
+        	line.str( cell );
+
+        	tokens.clear();
+        	while( std::getline( line, cell, '=' ) ) tokens.push_back( cell );
+			if( tokens.size() != 2 ) {
+				std::cerr << "parse error on line " << count << std::endl;
+				continue;
+			}
+
+			temp = std::stoi( tokens[ 0 ] );
+
+			map[temp] = *tokens[1].c_str();
+			// types of things
+			// * simple buttons
+			// * buttons with state, On or Off
+			// * sliders & knobs with single prescision
+			// * sliders & knobs with double precision
+			// * continuous wheels
+ 
+    	}
+
+        config.close();
     }
-    
+   
     while(1)
     {
         sleep(1);
