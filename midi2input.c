@@ -167,6 +167,15 @@ main( int argc, char** argv )
 		return 1;
 	}
 
+	// auto connect to all midi ports available
+	const char ** portnames = jack_get_ports( client, "", "", JackPortIsOutput );
+	int i = 0;
+	if(! portnames ) return 1;
+	while( *(portnames + i) ){
+		jack_connect( client, *(portnames+i), "midi2input:midi_in" );
+		i++;
+	}
+
 	/*defines*/
 	std::ifstream config;
 	std::string cfg_fn;
