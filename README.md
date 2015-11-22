@@ -1,5 +1,7 @@
 midi2input
 =======
+[![Build Status](https://travis-ci.org/enetheru/midi2input.svg?branch=master)](https://travis-ci.org/enetheru/midi2input)
+
 Small GNU/Linux program that captures live midi input from jack midi and maps the notes to simulated key presses or mouse movement.
 The map is set by a simple config file.
 
