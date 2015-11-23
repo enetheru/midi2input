@@ -9,12 +9,20 @@
 #include <wordexp.h>
 #include <unistd.h>
 
-#include <jack/jack.h> 
-#include <jack/midiport.h> 
+extern "C" {
+	#include <lua5.2/lua.h>
+	#include <lua5.2/lauxlib.h>
+	#include <lua5.2/lualib.h>
+}
+
+
+#include <jack/jack.h>
+#include <jack/midiport.h>
 
 #include <X11/Xlib.h>
 #include <X11/extensions/XTest.h>
 
+lua_State *L;
 Display* xdp;
 jack_client_t *client;
 jack_port_t *input_port;
@@ -45,7 +53,7 @@ load_config(  std::string name )
 	while(! paths.empty() ){
 		tFile.open( paths.front().c_str(), std::ifstream::in );
 		if( tFile.is_open() )
-		   break;	
+		   break;
 
 		paths.pop();
 	}
@@ -91,7 +99,7 @@ process( jack_nframes_t nframes, void *arg )
 	void* port_buf = jack_port_get_buffer( input_port, nframes );
 	jack_midi_event_t in_event;
 	jack_nframes_t event_count = jack_midi_get_event_count( port_buf );
-	
+
 	if( event_count > 0 ){
 		for(uint32_t i = 0; i < event_count; i++ ){
 			jack_midi_event_get( &in_event, port_buf, i );
@@ -127,6 +135,14 @@ jack_shutdown( void *arg )
 int
 main( int argc, char** argv )
 {
+		/*lua*/
+	L = luaL_newstate();   /* opens Lua */
+    luaL_openlibs(L);
+
+    if (luaL_loadfile(L, argv[ 1 ]) || lua_pcall(L, 0, 0, 0)) {
+        printf("cannot run configuration file: %s\n", lua_tostring(L, -1));
+        exit(0);
+    }
 
 	/*usage*/
 	if( argc == 2 && std::string( argv[ 1 ] ).compare( "-h" ) == 0 ){
@@ -141,7 +157,7 @@ main( int argc, char** argv )
 			"34=\n"
 			"#also set note 35 to space\n"
 			"35=space\n";
-		
+
 		return 1;
 	}
 
@@ -216,20 +232,19 @@ main( int argc, char** argv )
 			// * sliders & knobs with single prescision
 			// * sliders & knobs with double precision
 			// * continuous wheels
- 
+
 		}
 
 		config.close();
 	}
-   
+
 	while(1)
 	{
 		sleep(1);
 	}
 	jack_client_close(client);
+	lua_close(L);
 	exit (0);
-
-	return 0;
 }
 
 
