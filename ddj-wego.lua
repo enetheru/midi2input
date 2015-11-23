@@ -1,5 +1,7 @@
--- application settings
-autoconnect = true -- default=true, {named_ports, ...}
+--[[ global settings ]]--
+-- autoconnect: can be true, false, or a named jack port. default = true
+autoconnect = true
+
 --# separate definition of button physical logic, from physical looks. with overrides
 
 --[[#ie

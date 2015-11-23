@@ -104,21 +104,28 @@ process( jack_nframes_t nframes, void *arg )
 		for(uint32_t i = 0; i < event_count; i++ ){
 			jack_midi_event_get( &in_event, port_buf, i );
 
-			if( (in_event.buffer[1] <= 127) && (in_event.buffer[2]) ){
-				if( (temp = map[ in_event.buffer[ 1 ] ]) ){
-					XTestFakeKeyEvent( xdp, temp, 1, CurrentTime );
-					XTestFakeKeyEvent( xdp, temp, 0, CurrentTime );
-					XFlush( xdp );
-				}
-				std::cout << std::hex
-					<< std::setiosflags( std::ios::showbase )
-					<< " " << (int)in_event.buffer[ 0 ]
-					<< " | " << (int)in_event.buffer[ 1 ]
-					<< " | " << (int)in_event.buffer[ 2 ]
-					<< " | " << (int)in_event.buffer[ 3 ]
-					<< " >> " << (char)map[ in_event.buffer[ 1 ] ]
-					<< std::endl;
+			//if( (in_event.buffer[1] <= 127) && (in_event.buffer[2]) ){
+			//	if( (temp = map[ in_event.buffer[ 1 ] ]) ){
+			//		XTestFakeKeyEvent( xdp, temp, 1, CurrentTime );
+			//		XTestFakeKeyEvent( xdp, temp, 0, CurrentTime );
+			//		XFlush( xdp );
+			//	}
+			std::cout << "channel: "
+				<< std::setw(2)	<< (in_event.buffer[0] & 0x0F)+1;
+
+			if( (in_event.buffer[0] >> 4) == 0x9 ){
+				std::cout << " | on ";
 			}
+			if( (in_event.buffer[0] >> 4) == 0x8 ){
+				std::cout << " | off";
+			}
+			std::cout << " | Note: "
+				<< std::setw(3) << (int)in_event.buffer[ 1 ]
+				<< " | Velocity: "
+				<< std::setw(3) << (int)in_event.buffer[ 2 ]
+				<< " >> " << (char)map[ in_event.buffer[ 1 ] ]
+				<< std::endl;
+			//}
 
 		}
 	}
@@ -135,15 +142,6 @@ jack_shutdown( void *arg )
 int
 main( int argc, char** argv )
 {
-		/*lua*/
-	L = luaL_newstate();   /* opens Lua */
-    luaL_openlibs(L);
-
-    if (luaL_loadfile(L, argv[ 1 ]) || lua_pcall(L, 0, 0, 0)) {
-        printf("cannot run configuration file: %s\n", lua_tostring(L, -1));
-        exit(0);
-    }
-
 	/*usage*/
 	if( argc == 2 && std::string( argv[ 1 ] ).compare( "-h" ) == 0 ){
 		std::cerr << "Usage: " << *argv << " [config]\n"
@@ -158,8 +156,43 @@ main( int argc, char** argv )
 			"#also set note 35 to space\n"
 			"35=space\n";
 
-		return 1;
+		exit( 1 );
 	}
+
+	/*lua*/
+	std::string autoconnect;
+	L = luaL_newstate();   /* opens Lua */
+    luaL_openlibs( L );
+
+    if( luaL_loadfile( L, argv[ 1 ] ) || lua_pcall( L, 0, 0, 0 ) ){
+		std::cout << "cannot run configuration file: " << lua_tostring( L, -1 )
+			<< std::endl;
+        exit(0);
+    }
+
+	lua_getglobal( L, "autoconnect" );
+	if(! lua_isnil( L, -1 ) ){	
+		if( lua_isboolean( L, -1 ) ){
+			if(! lua_toboolean( L, -1 ) ){
+				autoconnect = "None";
+			}
+		}
+		else if( lua_isnumber( L, -1 ) ){
+			std::cerr << "ERROR: parse error for 'autoconnect'\n";
+		}
+		else if( lua_isstring( L, -1 ) ){
+			autoconnect = lua_tostring( L, -1);
+		} else {
+			std::cerr << "ERROR: parse error for 'autoconnect'\n";
+		}
+	}
+	if( autoconnect.empty() ){
+		autoconnect = "All";
+	}
+	std::cout << "autoconnect: " << autoconnect << std::endl; 
+	lua_pop( L, 1 );
+
+	
 
 	/*display*/
 	if(! (xdp = XOpenDisplay( getenv( "DISPLAY" ) )) ){
@@ -184,12 +217,37 @@ main( int argc, char** argv )
 	}
 
 	// auto connect to all midi ports available
-	const char ** portnames = jack_get_ports( client, "", "", JackPortIsOutput );
 	int i = 0;
-	if(! portnames ) return 1;
-	while( *(portnames + i) ){
-		jack_connect( client, *(portnames+i), "midi2input:midi_in" );
-		i++;
+	const char ** portnames = jack_get_ports( client, ".midi.", NULL, JackPortIsOutput );
+	if( true ){
+		if(! portnames ) return 1;
+		while( *(portnames + i) ){
+			std::cout << "found: " << *(portnames+i) << std::endl;
+			i++;
+		}
+	}
+	if( autoconnect.compare( "None" ) ){
+		if(! autoconnect.compare( "All" ) ){
+			if(! portnames ) return 1;
+			i = 0;
+			while( *(portnames + i) ){
+				std::cout << "Connecting to: " << *(portnames+i);
+				if( jack_connect( client, *(portnames+i), "midi2input:midi_in" ) ){
+					std::cout << " - FAILED\n";
+				} else {
+					std::cout << " - SUCCESS\n";
+				}
+				i++;
+			}
+		} else {
+			std::cout << "Connecting to: " << autoconnect;
+			if( jack_connect( client, autoconnect.c_str(), "midi2input:midi_in" ) ){
+					std::cout << " - FAILED\n";
+			} else {
+					std::cout << " - SUCCESS\n";
+			}
+
+		}
 	}
 
 	/*defines*/
@@ -198,10 +256,10 @@ main( int argc, char** argv )
 	std::string cell;
 	std::stringstream line;
 	std::vector<std::string> tokens;
-	int temp;
-	int count = 0;
+	//int temp;
+//	int count = 0;
 
-	/*config*/
+	/*config
 	cfg_fn = load_config( argv[ 1 ] );
 	if( cfg_fn.empty() ){
 		std::cerr << "Unable to open configuration file\n"
@@ -236,7 +294,7 @@ main( int argc, char** argv )
 		}
 
 		config.close();
-	}
+	}*/
 
 	while(1)
 	{
