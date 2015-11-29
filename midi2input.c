@@ -26,12 +26,121 @@ lua_State *L;
 Display* xdp;
 jack_client_t *client;
 jack_port_t *input_port;
-KeyCode map[ 128 ];
 
-std::string
-load_config(  std::string name )
+// Fake keypress, sends a keypress to the xwindows system
+void
+fake_keypress( const char *keysym )
 {
-	//TODO use a queue of filepaths and c++ streams
+	KeyCode keycode = XStringToKeysym( keysym );
+	keycode = XKeysymToKeycode( xdp, keycode );
+	std::cout << "sent keypress with code: " << keycode << std::endl;
+	XTestFakeKeyEvent( xdp, (int)keycode, 1, CurrentTime );
+	XTestFakeKeyEvent( xdp, (int)keycode, 0, CurrentTime );
+	XFlush( xdp );
+	return;
+}
+/*
+void fake_keydown
+void fake_keyup
+void fake_mousemove
+
+*/
+void
+handle_jack_midi_event( jack_midi_event_t &in_event )
+{
+	unsigned char event[ 4 ];
+	event[ 0 ] = in_event.buffer[ 0 ] >> 4;
+	event[ 1 ] = (in_event.buffer[ 0 ] & 0x0F) + 1;
+	event[ 2 ] = in_event.buffer[ 1 ];
+	event[ 3 ] = in_event.buffer[ 2 ];
+
+	std::cout << "type: ";
+	switch( event[ 0 ] ){
+		case 0x9:
+			std::cout << "note on"; break;
+		case 0x8:
+			std::cout << "note off"; break;
+		case 0xA:
+			std::cout << "polyphonic aftertouch"; break;
+		case 0xB:
+			std::cout << "control/mode change"; break;
+		case 0xC:
+			std::cout << "program change"; break;
+		case 0xD:
+			std::cout << "channel aftertouch"; break;
+		case 0xE:
+			std::cout << "pitch bend change"; break;
+		case 0xF:
+			std::cout << "system"; break;
+	}
+	std::cout << " | channel: " << std::setw(2) << (int)event[ 1 ]
+		<< " | Note: " << std::setw(3) << (int)event[ 2 ]
+		<< " | Velocity: "
+		<< std::setw(3) << (int)event[ 3 ]
+		<< std::endl;
+
+	/* table is in the stack at index 't' */
+	lua_getglobal( L, "map" );
+	lua_pushnil( L );  /* first key */
+	while( lua_next(L, -2) != 0 ){
+		/* uses 'key' (at index -2) and 'value' (at index -1) */
+
+		// get midi table
+		lua_pushnumber( L, 1 );
+		lua_gettable( L, -2 );
+
+		// check values
+		int i = 0;
+		while( i < 4 ){
+			lua_pushnumber( L, (i + 1) );
+			lua_gettable( L, -2 );
+			int temp = lua_tonumber( L, -1 );
+			lua_pop( L, 1 );
+			if( temp == -1 ){ ++i; continue; }
+			std::cout << " test " << i << "(" << temp << " ?= " << (int)event[ i ] << ")";
+			if( temp != event[ i ] )break;
+			++i;
+		}
+		if( i != 4 ){
+			lua_pop( L, 2 ); // pops back to map table
+			std::cout << std::endl;
+			continue;
+		}
+
+		// exit midi table
+		lua_pop( L, 1);
+
+		// get action table
+		lua_pushnumber( L, 2 );
+		lua_gettable( L, -2 );
+		unsigned int mask = 0;
+		const char *keysym = NULL;
+		// first value(modifyer mask);
+			lua_pushnumber( L, 1 );
+			lua_gettable( L, -2 );
+			mask = lua_tonumber( L, -1 );
+			lua_pop( L, 1 );
+		// second value(keycode)
+			lua_pushnumber( L, 2 );
+			lua_gettable( L, -2 );
+			keysym = lua_tostring( L, -1 );
+			lua_pop( L, 1 );
+		std::cout << "(" << mask << ", " << keysym << ")\n";
+		fake_keypress( keysym );
+
+		lua_pop( L, 1 ); //pop action table
+
+		/* removes 'value'; keeps 'key' for next iteration */
+		lua_pop( L, 1 );
+    }
+
+
+	return;
+}
+
+bool
+load_config( std::string name )
+{
 	// load configuration from a priority list of locations
 	// * specified from the command line
 	// * configuration folder $HOME/.config/
@@ -59,8 +168,15 @@ load_config(  std::string name )
 	}
 
 	tFile.close();
-	std::cout << paths.front() << std::endl;
-	return paths.front();
+
+    if( luaL_loadfile( L, paths.front().c_str() ) || lua_pcall( L, 0, 0, 0 ) ){
+		std::cerr << "ERROR: cannot run configuration file: " << lua_tostring( L, -1 )
+			<< std::endl;
+        return false;
+    }
+	std::cout << "INFO: Using: " << paths.front() << std::endl;
+
+	return true;
 }
 
 int
@@ -95,7 +211,7 @@ process( jack_nframes_t nframes, void *arg )
 	}
 
 	//process midi events
-	KeyCode temp;
+	//KeyCode temp;
 	void* port_buf = jack_port_get_buffer( input_port, nframes );
 	jack_midi_event_t in_event;
 	jack_nframes_t event_count = jack_midi_get_event_count( port_buf );
@@ -103,33 +219,9 @@ process( jack_nframes_t nframes, void *arg )
 	if( event_count > 0 ){
 		for(uint32_t i = 0; i < event_count; i++ ){
 			jack_midi_event_get( &in_event, port_buf, i );
-
-			//if( (in_event.buffer[1] <= 127) && (in_event.buffer[2]) ){
-			//	if( (temp = map[ in_event.buffer[ 1 ] ]) ){
-			//		XTestFakeKeyEvent( xdp, temp, 1, CurrentTime );
-			//		XTestFakeKeyEvent( xdp, temp, 0, CurrentTime );
-			//		XFlush( xdp );
-			//	}
-			std::cout << "channel: "
-				<< std::setw(2)	<< (in_event.buffer[0] & 0x0F)+1;
-
-			if( (in_event.buffer[0] >> 4) == 0x9 ){
-				std::cout << " | on ";
-			}
-			if( (in_event.buffer[0] >> 4) == 0x8 ){
-				std::cout << " | off";
-			}
-			std::cout << " | Note: "
-				<< std::setw(3) << (int)in_event.buffer[ 1 ]
-				<< " | Velocity: "
-				<< std::setw(3) << (int)in_event.buffer[ 2 ]
-				<< " >> " << (char)map[ in_event.buffer[ 1 ] ]
-				<< std::endl;
-			//}
-
+			handle_jack_midi_event( in_event );
 		}
 	}
-
 	return 0;
 }
 
@@ -158,41 +250,17 @@ main( int argc, char** argv )
 
 		exit( 1 );
 	}
+	
 
 	/*lua*/
 	std::string autoconnect;
 	L = luaL_newstate();   /* opens Lua */
     luaL_openlibs( L );
 
-    if( luaL_loadfile( L, argv[ 1 ] ) || lua_pcall( L, 0, 0, 0 ) ){
-		std::cout << "cannot run configuration file: " << lua_tostring( L, -1 )
-			<< std::endl;
-        exit(0);
-    }
-
-	lua_getglobal( L, "autoconnect" );
-	if(! lua_isnil( L, -1 ) ){	
-		if( lua_isboolean( L, -1 ) ){
-			if(! lua_toboolean( L, -1 ) ){
-				autoconnect = "None";
-			}
-		}
-		else if( lua_isnumber( L, -1 ) ){
-			std::cerr << "ERROR: parse error for 'autoconnect'\n";
-		}
-		else if( lua_isstring( L, -1 ) ){
-			autoconnect = lua_tostring( L, -1);
-		} else {
-			std::cerr << "ERROR: parse error for 'autoconnect'\n";
-		}
+	if(! load_config( argv[ 1 ] ) ){
+		std::cerr << "ERROR: Unable to open configuration file\n";
+		exit(0);
 	}
-	if( autoconnect.empty() ){
-		autoconnect = "All";
-	}
-	std::cout << "autoconnect: " << autoconnect << std::endl; 
-	lua_pop( L, 1 );
-
-	
 
 	/*display*/
 	if(! (xdp = XOpenDisplay( getenv( "DISPLAY" ) )) ){
@@ -217,15 +285,40 @@ main( int argc, char** argv )
 	}
 
 	// auto connect to all midi ports available
-	int i = 0;
-	const char ** portnames = jack_get_ports( client, ".midi.", NULL, JackPortIsOutput );
-	if( true ){
-		if(! portnames ) return 1;
-		while( *(portnames + i) ){
-			std::cout << "found: " << *(portnames+i) << std::endl;
-			i++;
+	lua_getglobal( L, "autoconnect" );
+	if(! lua_isnil( L, -1 ) ){	
+		if( lua_isboolean( L, -1 ) ){
+			if(! lua_toboolean( L, -1 ) ){
+				autoconnect = "None";
+			}
+		}
+		else if( lua_isnumber( L, -1 ) ){
+			std::cerr << "ERROR: parse error for 'autoconnect'\n";
+		}
+		else if( lua_isstring( L, -1 ) ){
+			autoconnect = lua_tostring( L, -1);
+		} else {
+			std::cerr << "ERROR: parse error for 'autoconnect'\n";
 		}
 	}
+	if( autoconnect.empty() ){
+		autoconnect = "All";
+	}
+	std::cout << "autoconnect: " << autoconnect << std::endl; 
+	lua_pop( L, 1 );
+
+	int i = 0;
+	const char ** portnames = jack_get_ports( client, ".midi.", NULL, JackPortIsOutput );
+	if(! portnames ){
+		std::cerr << "ERROR: no ports available." << std::endl;
+		exit( 0 );
+	}
+
+	while( *(portnames + i) ){
+		std::cout << "found: " << *(portnames+i) << std::endl;
+		i++;
+	}
+
 	if( autoconnect.compare( "None" ) ){
 		if(! autoconnect.compare( "All" ) ){
 			if(! portnames ) return 1;
@@ -250,59 +343,11 @@ main( int argc, char** argv )
 		}
 	}
 
-	/*defines*/
-	std::ifstream config;
-	std::string cfg_fn;
-	std::string cell;
-	std::stringstream line;
-	std::vector<std::string> tokens;
-	//int temp;
-//	int count = 0;
+	while( 1 ) sleep( 1 );
 
-	/*config
-	cfg_fn = load_config( argv[ 1 ] );
-	if( cfg_fn.empty() ){
-		std::cerr << "Unable to open configuration file\n"
-			"Using null mapping.\n";
-	}
-	else {
-		config.open( cfg_fn.c_str(), std::ifstream::in );
-
-		while( std::getline( config, cell ) ){
-			++count;
-			if( cell[ 0 ] == '#' ) continue;
-			line.clear();
-			line.str( cell );
-
-			tokens.clear();
-			while( std::getline( line, cell, '=' ) ) tokens.push_back( cell );
-			if( tokens.size() != 2 ) {
-				std::cerr << "parse error on line " << count << std::endl;
-				continue;
-			}
-
-			temp = std::stoi( tokens[ 0 ] );
-
-			map[temp] = *tokens[1].c_str();
-			// types of things
-			// * simple buttons
-			// * buttons with state, On or Off
-			// * sliders & knobs with single prescision
-			// * sliders & knobs with double precision
-			// * continuous wheels
-
-		}
-
-		config.close();
-	}*/
-
-	while(1)
-	{
-		sleep(1);
-	}
-	jack_client_close(client);
-	lua_close(L);
-	exit (0);
+	jack_client_close( client );
+	lua_close( L );
+	exit( 0 );
 }
 
 

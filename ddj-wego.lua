@@ -1,6 +1,16 @@
 --[[ global settings ]]--
 -- autoconnect: can be true, false, or a named jack port. default = true
 autoconnect = true
+--[[ Mapping ]]--
+--[[ this section maps midi events to input events using the following
+    construct
+    { {type, channel, note, velocity}, {modifyer mask, input event} }
+eg. { {0x9, 0-15, 0-127, 0-127}, {0x00, 'b'} }
+    ]]--
+
+map = {
+    { {0x9, 1, 11, -1}, {0x00, 'z'} },
+}
 
 --# separate definition of button physical logic, from physical looks. with overrides
 
