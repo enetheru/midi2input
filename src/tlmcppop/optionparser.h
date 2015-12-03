@@ -118,11 +118,11 @@
  * enum  optionIndex { UNKNOWN, HELP, PLUS };
  * const option::Descriptor usage[] =
  * {
- *  {UNKNOWN, 0,"" , ""    ,option::Arg::None, "USAGE: example [options]\n\n"
+ *  {UNKNOWN, 0,"" , ""    ,option::Arg::Nope, "USAGE: example [options]\n\n"
  *                                             "Options:" },
- *  {HELP,    0,"" , "help",option::Arg::None, "  --help  \tPrint usage and exit." },
- *  {PLUS,    0,"p", "plus",option::Arg::None, "  --plus, -p  \tIncrement count." },
- *  {UNKNOWN, 0,"" ,  ""   ,option::Arg::None, "\nExamples:\n"
+ *  {HELP,    0,"" , "help",option::Arg::Nope, "  --help  \tPrint usage and exit." },
+ *  {PLUS,    0,"p", "plus",option::Arg::Nope, "  --plus, -p  \tIncrement count." },
+ *  {UNKNOWN, 0,"" ,  ""   ,option::Arg::Nope, "\nExamples:\n"
  *                                             "  example --unknown -- --this_is_no_option\n"
  *                                             "  example -unk --plus -ppp file1 file2\n" },
  *  {0,0,0,0,0,0}
@@ -258,7 +258,7 @@ enum ArgStatus
  *
  * Every Option has such a function assigned in its Descriptor.
  * @code
- * Descriptor usage[] = { {UNKNOWN, 0, "", "", Arg::None, ""}, ... };
+ * Descriptor usage[] = { {UNKNOWN, 0, "", "", Arg::Nope, ""}, ... };
  * @endcode
  *
  * A CheckArg function has the following signature:
@@ -277,7 +277,7 @@ enum ArgStatus
  * While you can provide your own functions,
  * often the following pre-defined checks (which never return @ref ARG_ILLEGAL) will suffice:
  *
- * @li @c Arg::None @copybrief Arg::None
+ * @li @c Arg::Nope @copybrief Arg::Nope
  * @li @c Arg::Optional @copybrief Arg::Optional
  *
  */
@@ -298,7 +298,7 @@ typedef ArgStatus (*CheckArg)(const Option& option, bool msg);
  *     OTHER,                                             // type
  *     "c",                                               // shortopt
  *     "create",                                          // longopt
- *     Arg::None,                                         // check_arg
+ *     Arg::Nope,                                         // check_arg
  *     "--create  Tells the program to create something." // help
  *   }
  *   , ...
@@ -512,8 +512,8 @@ public:
    * enum OptionType { UNUSED=0, DISABLED=0, ENABLED=1 };
    * enum OptionIndex { FOO };
    * const Descriptor usage[] = {
-   *   { FOO, ENABLED,  "", "enable-foo",  Arg::None, 0 },
-   *   { FOO, DISABLED, "", "disable-foo", Arg::None, 0 },
+   *   { FOO, ENABLED,  "", "enable-foo",  Arg::Nope, 0 },
+   *   { FOO, DISABLED, "", "disable-foo", Arg::Nope, 0 },
    *   { 0, 0, 0, 0, 0, 0 } };
    * ...
    * switch(options[FOO].last()->type()) // no validity check required!
@@ -884,7 +884,7 @@ private:
 struct Arg
 {
   //! @brief For options that don't take an argument: Returns ARG_NONE.
-  static ArgStatus None(const Option&, bool)
+  static ArgStatus Nope(const Option&, bool)
   {
     return ARG_NONE;
   }
