@@ -15,17 +15,44 @@ extern "C" {
 	#include <lua5.2/lualib.h>
 }
 
-
 #include <jack/jack.h>
 #include <jack/midiport.h>
 
 #include <X11/Xlib.h>
 #include <X11/extensions/XTest.h>
 
+#include "options.h"
+
 lua_State *L;
 Display* xdp;
 jack_client_t *client;
 jack_port_t *input_port;
+
+/* options */
+enum optionsIndex
+{
+    UNKNOWN,
+    HELP,
+    CONFIG
+};
+
+const option::Descriptor usage[] = {
+    { UNKNOWN, 0, "", "", Arg::Nope,
+        "USAGE: ./midi2input [options]\n"
+        "\nGENERAL OPTIONS:"
+    },
+
+    { HELP, 0, "h", "help", Arg::Nope,
+    	"  -h  \t--help "
+        "\tPrint usage and exit."
+    },
+
+    { CONFIG, 0, "c", "config", Arg::Required,
+    	"  -c  \t--config "
+    	"\tSpecify config file, default = ~/.config/midi2input.lua"
+    },
+    {0,0,0,0,0,0}
+};
 
 // Fake keypress, sends a keypress to the xwindows system
 void
@@ -148,26 +175,26 @@ load_config( std::string name )
 	std::string filepath;
 	std::queue<std::string> paths;
 
-	paths.push( name );
+	if(! name.empty() ) paths.push( name );
 
 	// configuration folder ~/.config/
-	filepath = std::string( getenv( "HOME" ) ) + "/.config/midi2key.cfg";
+	filepath = std::string( getenv( "HOME" ) ) + "/.config/midi2input.lua";
 	paths.push( filepath );
 
 	// configuration folder ~/.config/
-	filepath = std::string( getenv( "HOME" ) ) + "/.midi2key.cfg";
+	filepath = std::string( getenv( "HOME" ) ) + "/.midi2input.lua";
 	paths.push( filepath );
 
 	std::ifstream tFile;
 	while(! paths.empty() ){
 		tFile.open( paths.front().c_str(), std::ifstream::in );
-		if( tFile.is_open() )
-		   break;
-
+		if( tFile.is_open() ){
+			tFile.close();
+			break;
+		}
 		paths.pop();
 	}
-
-	tFile.close();
+	if( paths.empty() ) return false;
 
     if( luaL_loadfile( L, paths.front().c_str() ) || lua_pcall( L, 0, 0, 0 ) ){
 		std::cerr << "ERROR: cannot run configuration file: " << lua_tostring( L, -1 )
@@ -234,30 +261,40 @@ jack_shutdown( void *arg )
 int
 main( int argc, char** argv )
 {
-	/*usage*/
-	if( argc == 2 && std::string( argv[ 1 ] ).compare( "-h" ) == 0 ){
-		std::cerr << "Usage: " << *argv << " [config]\n"
-			"Defaults to ~/.config/midi2input.cfg if config is unspecified.\n"
-			"Configuration example:\n"
-			"#set note #32 to spacebar\n"
-			"32=space\n"
-			"#set note #33 to keycode 67\n"
-			"33=67\n"
-			"#leave note #34 unset\n"
-			"34=\n"
-			"#also set note 35 to space\n"
-			"35=space\n";
+	// Options Parsing
+    // ===============
+    bool fail = false;
+    argc -= (argc > 0); argv += (argc > 0);
+    option::Stats stats( usage, argc, argv );
+    option::Option* options = new option::Option[ stats.options_max ];
+    option::Option* buffer = new option::Option[ stats.buffer_max ];
+    option::Parser parse( usage, argc, argv, options, buffer );
 
-		exit( 1 );
-	}
-	
+    if( options[ HELP ] ){
+        int columns = getenv( "COLUMNS" ) ? atoi( getenv( "COLUMNS" ) ) : 80;
+        option::printUsage( std::cout, usage, columns );
+        exit( 0 );
+    }
+
+    // unknown options
+    for( option::Option* opt = options[ UNKNOWN ]; opt; opt = opt->next() ){
+        std::cout << "Unknown option: " << std::string( opt->name, opt->namelen );
+        fail = true;
+    }
+
+    if( fail ) exit( 1 );
+
+    // --config
+    std::string luaScript;
+    if( options[ CONFIG ] ) luaScript = options[ CONFIG ].arg;
+    else luaScript = "~/.config/midi2input.lua";
+    std::cout << luaScript << std::endl;
 
 	/*lua*/
-	std::string autoconnect;
 	L = luaL_newstate();   /* opens Lua */
     luaL_openlibs( L );
 
-	if(! load_config( argv[ 1 ] ) ){
+	if(! load_config( luaScript.c_str() ) ){
 		std::cerr << "ERROR: Unable to open configuration file\n";
 		exit(0);
 	}
@@ -285,8 +322,9 @@ main( int argc, char** argv )
 	}
 
 	// auto connect to all midi ports available
+	std::string autoconnect;
 	lua_getglobal( L, "autoconnect" );
-	if(! lua_isnil( L, -1 ) ){	
+	if(! lua_isnil( L, -1 ) ){
 		if( lua_isboolean( L, -1 ) ){
 			if(! lua_toboolean( L, -1 ) ){
 				autoconnect = "None";
@@ -304,7 +342,7 @@ main( int argc, char** argv )
 	if( autoconnect.empty() ){
 		autoconnect = "All";
 	}
-	std::cout << "autoconnect: " << autoconnect << std::endl; 
+	std::cout << "autoconnect: " << autoconnect << std::endl;
 	lua_pop( L, 1 );
 
 	int i = 0;
