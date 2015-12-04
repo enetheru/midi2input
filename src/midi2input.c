@@ -23,6 +23,8 @@ extern "C" {
 
 #include "options.h"
 
+#include "elog/elog.h"
+
 lua_State *L;
 Display* xdp;
 jack_client_t *client;
@@ -60,7 +62,7 @@ fake_keypress( const char *keysym )
 {
 	KeyCode keycode = XStringToKeysym( keysym );
 	keycode = XKeysymToKeycode( xdp, keycode );
-	std::cout << "sent keypress with code: " << keycode << std::endl;
+	LOG( INFO ) << "sent keypress with code: " << keycode;
 	XTestFakeKeyEvent( xdp, (int)keycode, 1, CurrentTime );
 	XTestFakeKeyEvent( xdp, (int)keycode, 0, CurrentTime );
 	XFlush( xdp );
@@ -81,6 +83,7 @@ handle_jack_midi_event( jack_midi_event_t &in_event )
 	event[ 2 ] = in_event.buffer[ 1 ];
 	event[ 3 ] = in_event.buffer[ 2 ];
 
+	//TODO use stringstream to construct log messages piecemeal
 	std::cout << "type: ";
 	switch( event[ 0 ] ){
 		case 0x9:
@@ -100,11 +103,10 @@ handle_jack_midi_event( jack_midi_event_t &in_event )
 		case 0xF:
 			std::cout << "system"; break;
 	}
-	std::cout << " | channel: " << std::setw(2) << (int)event[ 1 ]
+	LOG( INFO ) << " | channel: " << std::setw(2) << (int)event[ 1 ]
 		<< " | Note: " << std::setw(3) << (int)event[ 2 ]
 		<< " | Velocity: "
-		<< std::setw(3) << (int)event[ 3 ]
-		<< std::endl;
+		<< std::setw(3) << (int)event[ 3 ];
 
 	/* table is in the stack at index 't' */
 	lua_getglobal( L, "map" );
@@ -124,13 +126,12 @@ handle_jack_midi_event( jack_midi_event_t &in_event )
 			int temp = lua_tonumber( L, -1 );
 			lua_pop( L, 1 );
 			if( temp == -1 ){ ++i; continue; }
-			std::cout << " test " << i << "(" << temp << " ?= " << (int)event[ i ] << ")";
+			LOG( INFO ) << " test " << i << "(" << temp << " ?= " << (int)event[ i ] << ")";
 			if( temp != event[ i ] )break;
 			++i;
 		}
 		if( i != 4 ){
 			lua_pop( L, 2 ); // pops back to map table
-			std::cout << std::endl;
 			continue;
 		}
 
@@ -152,7 +153,7 @@ handle_jack_midi_event( jack_midi_event_t &in_event )
 			lua_gettable( L, -2 );
 			keysym = lua_tostring( L, -1 );
 			lua_pop( L, 1 );
-		std::cout << "(" << mask << ", " << keysym << ")\n";
+		LOG( INFO ) << "(" << mask << ", " << keysym << ")";
 		fake_keypress( keysym );
 
 		lua_pop( L, 1 ); //pop action table
@@ -161,7 +162,7 @@ handle_jack_midi_event( jack_midi_event_t &in_event )
 		lua_pop( L, 1 );
     }
 
-	lua_pop( L, 1 ); //pop 'map'
+
 	return;
 }
 
@@ -197,12 +198,10 @@ load_config( std::string name )
 	if( paths.empty() ) return false;
 
     if( luaL_loadfile( L, paths.front().c_str() ) || lua_pcall( L, 0, 0, 0 ) ){
-		std::cerr << "ERROR: cannot run configuration file: " << lua_tostring( L, -1 )
-			<< std::endl;
+		LOG( ERROR ) << "cannot run configuration file: " << lua_tostring( L, -1 );
         return false;
     }
-	std::cout << "INFO: Using: " << paths.front() << std::endl;
-
+	LOG( INFO ) << "Using: " << paths.front();
 	return true;
 }
 
@@ -213,10 +212,11 @@ process( jack_nframes_t nframes, void *arg )
 	Window w;
 	static Window w_current;
 	int revert_to;
+	//TODO use stringstream to construct log messages piecemeal
 	XGetInputFocus( xdp, &w, &revert_to );
 	if( w != None && w != w_current){
 		w_current = w;
-		std::cout << "window ID: " << w_current;
+		LOG( INFO ) << "window ID: " << w_current;
 
 		int format;
 		unsigned long remain, len;
@@ -261,6 +261,7 @@ jack_shutdown( void *arg )
 int
 main( int argc, char** argv )
 {
+
 	// Options Parsing
     // ===============
     bool fail = false;
@@ -269,6 +270,13 @@ main( int argc, char** argv )
     option::Option* options = new option::Option[ stats.options_max ];
     option::Option* buffer = new option::Option[ stats.buffer_max ];
     option::Parser parse( usage, argc, argv, options, buffer );
+    
+    // setup logging level.
+    LOG::SetDefaultLoggerLevel( LOG::WARN );
+    //if( options[ VERBOSE ] )
+    //    LOG::SetDefaultLoggerLevel( LOG::INFO );
+    //if( options[ QUIET ] )
+    //    LOG::SetDefaultLoggerLevel( LOG::CHECK );
 
     if( options[ HELP ] ){
         int columns = getenv( "COLUMNS" ) ? atoi( getenv( "COLUMNS" ) ) : 80;
@@ -278,7 +286,7 @@ main( int argc, char** argv )
 
     // unknown options
     for( option::Option* opt = options[ UNKNOWN ]; opt; opt = opt->next() ){
-        std::cout << "Unknown option: " << std::string( opt->name, opt->namelen );
+        LOG( WARN ) << "Unknown option: " << std::string( opt->name, opt->namelen );
         fail = true;
     }
 
@@ -295,20 +303,17 @@ main( int argc, char** argv )
     luaL_openlibs( L );
 
 	if(! load_config( luaScript.c_str() ) ){
-		std::cerr << "ERROR: Unable to open configuration file\n";
-		exit(0);
+		LOG( FATAL ) << "Unable to open configuration file";
 	}
 
 	/*display*/
 	if(! (xdp = XOpenDisplay( getenv( "DISPLAY" ) )) ){
-		std::cerr << "Unable to open X display\n";
-		return 2;
+		LOG( FATAL ) << "Unable to open X display";
 	}
 
 	/*jack*/
 	if( (client = jack_client_open( "midi2input", JackNullOption, NULL )) == 0 ){
-		std::cerr << "jack server not running?\n";
-		return 1;
+		LOG( FATAL ) << "jack server not running?";
 	}
 
 	jack_set_process_callback( client, process, 0 );
@@ -317,8 +322,7 @@ main( int argc, char** argv )
 	input_port = jack_port_register( client, "midi_in", JACK_DEFAULT_MIDI_TYPE, JackPortIsInput, 0 );
 
 	if( jack_activate( client ) ){
-		std::cerr << "cannot activate client\n";
-		return 1;
+		LOG( FATAL ) << "cannot activate client";
 	}
 
 	// auto connect to all midi ports available
@@ -331,32 +335,32 @@ main( int argc, char** argv )
 			}
 		}
 		else if( lua_isnumber( L, -1 ) ){
-			std::cerr << "ERROR: parse error for 'autoconnect'\n";
+			LOG( WARN ) << "parse error for 'autoconnect'";
 		}
 		else if( lua_isstring( L, -1 ) ){
 			autoconnect = lua_tostring( L, -1);
 		} else {
-			std::cerr << "ERROR: parse error for 'autoconnect'\n";
+			LOG( WARN ) << "parse error for 'autoconnect'\n";
 		}
 	}
 	if( autoconnect.empty() ){
 		autoconnect = "All";
 	}
-	std::cout << "autoconnect: " << autoconnect << std::endl;
+	LOG( INFO ) << "autoconnect: " << autoconnect;
 	lua_pop( L, 1 );
 
 	int i = 0;
 	const char ** portnames = jack_get_ports( client, ".midi.", NULL, JackPortIsOutput );
 	if(! portnames ){
-		std::cerr << "ERROR: no ports available." << std::endl;
-		exit( 0 );
+		LOG( FATAL ) << "ERROR: no ports available";
 	}
 
 	while( *(portnames + i) ){
-		std::cout << "found: " << *(portnames+i) << std::endl;
+		LOG( INFO ) << "found: " << *(portnames+i);
 		i++;
 	}
 
+	//TODO use a stringstream to create logging string piecemeal
 	if( autoconnect.compare( "None" ) ){
 		if(! autoconnect.compare( "All" ) ){
 			if(! portnames ) return 1;
