@@ -77,6 +77,7 @@ void fake_mousemove
 void
 handle_jack_midi_event( jack_midi_event_t &in_event )
 {
+	std::stringstream message;
 	unsigned char event[ 4 ];
 	event[ 0 ] = in_event.buffer[ 0 ] >> 4;
 	event[ 1 ] = (in_event.buffer[ 0 ] & 0x0F) + 1;
@@ -84,29 +85,30 @@ handle_jack_midi_event( jack_midi_event_t &in_event )
 	event[ 3 ] = in_event.buffer[ 2 ];
 
 	//TODO use stringstream to construct log messages piecemeal
-	std::cout << "type: ";
+	message << "type: ";
 	switch( event[ 0 ] ){
 		case 0x9:
-			std::cout << "note on"; break;
+			message << "note on"; break;
 		case 0x8:
-			std::cout << "note off"; break;
+			message << "note off"; break;
 		case 0xA:
-			std::cout << "polyphonic aftertouch"; break;
+			message << "polyphonic aftertouch"; break;
 		case 0xB:
-			std::cout << "control/mode change"; break;
+			message << "control/mode change"; break;
 		case 0xC:
-			std::cout << "program change"; break;
+			message << "program change"; break;
 		case 0xD:
-			std::cout << "channel aftertouch"; break;
+			message << "channel aftertouch"; break;
 		case 0xE:
-			std::cout << "pitch bend change"; break;
+			message << "pitch bend change"; break;
 		case 0xF:
-			std::cout << "system"; break;
+			message << "system"; break;
 	}
-	LOG( INFO ) << " | channel: " << std::setw(2) << (int)event[ 1 ]
+	message << " | channel: " << std::setw(2) << (int)event[ 1 ]
 		<< " | Note: " << std::setw(3) << (int)event[ 2 ]
 		<< " | Velocity: "
 		<< std::setw(3) << (int)event[ 3 ];
+	LOG( INFO ) << message.str();
 
 	/* table is in the stack at index 't' */
 	lua_getglobal( L, "map" );
@@ -209,6 +211,7 @@ int
 process( jack_nframes_t nframes, void *arg )
 {
 	//detect window
+	std::stringstream message;
 	Window w;
 	static Window w_current;
 	int revert_to;
@@ -216,7 +219,7 @@ process( jack_nframes_t nframes, void *arg )
 	XGetInputFocus( xdp, &w, &revert_to );
 	if( w != None && w != w_current){
 		w_current = w;
-		LOG( INFO ) << "window ID: " << w_current;
+		message << "window ID: " << w_current;
 
 		int format;
 		unsigned long remain, len;
@@ -226,14 +229,14 @@ process( jack_nframes_t nframes, void *arg )
 		Atom prop = XInternAtom( xdp, "WM_CLASS", False ), type;
 		if( XGetWindowProperty( xdp, w, prop, 0, 1024, False, AnyPropertyType,
 					&type, &format, &len, &remain, &list ) == Success ){
-			if( format == 8 ) std::cout << "\tWM_CLASS: " << list;
+			if( format == 8 ) message << "\tWM_CLASS: " << list;
 		}
 		prop = XInternAtom( xdp, "WM_NAME", False );
 		if( XGetWindowProperty( xdp, w, prop, 0, 1024, False, AnyPropertyType,
 					&type, &format, &len, &remain, &list ) == Success ){
-			if( format == 8 ) std::cout << "\tWM_NAME: " << list;
+			if( format == 8 ) message << "\tWM_NAME: " << list;
 		}
-		std::cout << std::endl;
+		LOG( INFO ) << message.str();
 
 	}
 
@@ -272,7 +275,7 @@ main( int argc, char** argv )
     option::Parser parse( usage, argc, argv, options, buffer );
     
     // setup logging level.
-    LOG::SetDefaultLoggerLevel( LOG::WARN );
+    LOG::SetDefaultLoggerLevel( LOG::INFO );
     //if( options[ VERBOSE ] )
     //    LOG::SetDefaultLoggerLevel( LOG::INFO );
     //if( options[ QUIET ] )
