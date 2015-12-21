@@ -56,6 +56,34 @@ const option::Descriptor usage[] = {
     {0,0,0,0,0,0}
 };
 
+static int
+lua_keypress( lua_State *L )
+{
+	int keycode = XKeysymToKeycode( xdp, luaL_checknumber( L, 1 ) );
+	XTestFakeKeyEvent( xdp, keycode, 1, CurrentTime );
+	XTestFakeKeyEvent( xdp, keycode, 0, CurrentTime );
+	LOG(INFO) << keycode;
+	return 0;
+}
+
+static int
+lua_keydown( lua_State *L )
+{
+	int keycode = XKeysymToKeycode( xdp, luaL_checknumber( L, 1 ) );
+	XTestFakeKeyEvent( xdp, keycode, 1, CurrentTime );
+	LOG(INFO) << keycode;
+	return 0;
+}
+
+static int
+lua_keyup( lua_State *L )
+{
+	int keycode = XKeysymToKeycode( xdp, luaL_checknumber( L, 1 ) );
+	XTestFakeKeyEvent( xdp, keycode, 0, CurrentTime );
+	LOG(INFO) << keycode;
+	return 0;
+}
+
 // Fake keypress, sends a keypress to the xwindows system
 void
 fake_keypress( const char *keysym )
@@ -68,12 +96,7 @@ fake_keypress( const char *keysym )
 	XFlush( xdp );
 	return;
 }
-/*
-void fake_keydown
-void fake_keyup
-void fake_mousemove
 
-*/
 void
 handle_jack_midi_event( jack_midi_event_t &in_event )
 {
@@ -302,17 +325,26 @@ main( int argc, char** argv )
     else luaScript = "~/.config/midi2input.lua";
     std::cout << luaScript << std::endl;
 
+	/*display*/
+	if(! (xdp = XOpenDisplay( getenv( "DISPLAY" ) )) ){
+		LOG( FATAL ) << "Unable to open X display";
+	}
+
 	/*lua*/
 	L = luaL_newstate();   /* opens Lua */
     luaL_openlibs( L );
 
+	lua_pushcfunction( L, lua_keypress );
+	lua_setglobal( L, "keypress" );
+
+	lua_pushcfunction( L, lua_keydown );
+	lua_setglobal( L, "keydown" );
+
+	lua_pushcfunction( L, lua_keyup );
+	lua_setglobal( L, "keyup" );
+
 	if(! load_config( luaScript.c_str() ) ){
 		LOG( FATAL ) << "Unable to open configuration file";
-	}
-
-	/*display*/
-	if(! (xdp = XOpenDisplay( getenv( "DISPLAY" ) )) ){
-		LOG( FATAL ) << "Unable to open X display";
 	}
 
 	/*jack*/
