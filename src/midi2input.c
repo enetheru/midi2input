@@ -165,6 +165,7 @@ handle_jack_midi_event( jack_midi_event_t &in_event )
     }
 
 
+	lua_pop( L, 1 );
 	return;
 }
 
