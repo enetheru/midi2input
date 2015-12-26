@@ -59,28 +59,31 @@ const option::Descriptor usage[] = {
 static int
 lua_keypress( lua_State *L )
 {
-	int keycode = XKeysymToKeycode( xdp, luaL_checknumber( L, 1 ) );
+	int keysym = luaL_checknumber( L, 1 );
+	int keycode = XKeysymToKeycode( xdp, keysym );
 	XTestFakeKeyEvent( xdp, keycode, 1, CurrentTime );
 	XTestFakeKeyEvent( xdp, keycode, 0, CurrentTime );
-	LOG(INFO) << keycode;
+	LOG(INFO) << "keypress: " << XKeysymToString( keysym );
 	return 0;
 }
 
 static int
 lua_keydown( lua_State *L )
 {
-	int keycode = XKeysymToKeycode( xdp, luaL_checknumber( L, 1 ) );
+	int keysym = luaL_checknumber( L, 1 );
+	int keycode = XKeysymToKeycode( xdp, keysym );
 	XTestFakeKeyEvent( xdp, keycode, 1, CurrentTime );
-	LOG(INFO) << keycode;
+	LOG(INFO) << "keydown: " << XKeysymToString( keysym );
 	return 0;
 }
 
 static int
 lua_keyup( lua_State *L )
 {
-	int keycode = XKeysymToKeycode( xdp, luaL_checknumber( L, 1 ) );
+	int keysym = luaL_checknumber( L, 1 );
+	int keycode = XKeysymToKeycode( xdp, keysym );
 	XTestFakeKeyEvent( xdp, keycode, 0, CurrentTime );
-	LOG(INFO) << keycode;
+	LOG(INFO) << "keyup: " << XKeysymToString( keysym );
 	return 0;
 }
 
@@ -133,62 +136,14 @@ handle_jack_midi_event( jack_midi_event_t &in_event )
 		<< std::setw(3) << (int)event[ 3 ];
 	LOG( INFO ) << message.str();
 
-	/* table is in the stack at index 't' */
-	lua_getglobal( L, "map" );
-	lua_pushnil( L );  /* first key */
-	while( lua_next(L, -2) != 0 ){
-		/* uses 'key' (at index -2) and 'value' (at index -1) */
-
-		// get midi table
-		lua_pushnumber( L, 1 );
-		lua_gettable( L, -2 );
-
-		// check values
-		int i = 0;
-		while( i < 4 ){
-			lua_pushnumber( L, (i + 1) );
-			lua_gettable( L, -2 );
-			int temp = lua_tonumber( L, -1 );
-			lua_pop( L, 1 );
-			if( temp == -1 ){ ++i; continue; }
-			LOG( INFO ) << " test " << i << "(" << temp << " ?= " << (int)event[ i ] << ")";
-			if( temp != event[ i ] )break;
-			++i;
-		}
-		if( i != 4 ){
-			lua_pop( L, 2 ); // pops back to map table
-			continue;
-		}
-
-		// exit midi table
-		lua_pop( L, 1);
-
-		// get action table
-		lua_pushnumber( L, 2 );
-		lua_gettable( L, -2 );
-		unsigned int mask = 0;
-		const char *keysym = NULL;
-		// first value(modifyer mask);
-			lua_pushnumber( L, 1 );
-			lua_gettable( L, -2 );
-			mask = lua_tonumber( L, -1 );
-			lua_pop( L, 1 );
-		// second value(keycode)
-			lua_pushnumber( L, 2 );
-			lua_gettable( L, -2 );
-			keysym = lua_tostring( L, -1 );
-			lua_pop( L, 1 );
-		LOG( INFO ) << "(" << mask << ", " << keysym << ")";
-		fake_keypress( keysym );
-
-		lua_pop( L, 1 ); //pop action table
-
-		/* removes 'value'; keeps 'key' for next iteration */
-		lua_pop( L, 1 );
-    }
-
-
-	lua_pop( L, 1 );
+	lua_getglobal( L, "event_in" );
+	lua_pushnumber( L, event[ 0 ] );
+	lua_pushnumber( L, event[ 1 ] );
+	lua_pushnumber( L, event[ 2 ] );
+	lua_pushnumber( L, event[ 3 ] );
+	if( lua_pcall( L, 4, 0, 0) != 0 ){
+		LOG( ERROR ) << "call to function 'event_in' failed" << lua_tostring( L, -1 );
+	}
 	return;
 }
 
