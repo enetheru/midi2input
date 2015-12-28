@@ -137,14 +137,31 @@ function alt_tab()
 	keyup( XK_Tab )
 end
 
+function alt_shift_tab()
+	keydown( XK_Alt_L )
+	keydown( XK_Shift_L )
+	keydown( XK_Tab )
+	keyup( XK_Tab )
+	keyup( XK_Shift_L )
+end
+
 function alt_up()
 	keyup( XK_Alt_L )
 end
 
-map = {
-	{ {0xB, 7, 64,   -1 }, { alt_tab } },
+default = {
+	{ {0xB, 7, 64,   1 }, { alt_tab } },
+	{ {0xB, 7, 64, 127 }, { alt_shift_tab } },
 	{ {0x9, 7, 65, 127 }, { alt_up } },
 }
+
+Banshee = {
+	{ {0x9, -1, 11, 127}, { keypress, XK_space } },
+}
+
+applications = { 	{ "Banshee", Banshee },
+			{ "mate-terminal", mate_terminal, }
+		}
 
 function map_iter( t )
 	local i = 0
@@ -174,9 +191,34 @@ end
 --[[ Input Event Handler ]]--
 function event_in( a, b, c, d )
 	midi_in = {a, b, c, d }
-	for item in map_iter( map ) do
-		if( not midi_compare( item[ 1 ], midi_in ) )
-			then item[ 2 ][ 1 ]( item[ 2 ][ 2 ] ) end
+
+	local map = default
+
+	for item in map_iter( applications ) do
+	   	if( _G[ 'wm_class' ] == item[ 1 ] ) then
+			print( "using: " .. item[1] )
+			map = item[ 2 ];
+			break
+		end
+	end
+
+	found = false;
+	if( map ) then
+		for item in map_iter( map ) do
+			if( not midi_compare( item[ 1 ], midi_in ) ) then
+				item[ 2 ][ 1 ]( item[ 2 ][ 2 ] )
+				found = true
+			end
+		end
+	end
+
+
+	if( not found ) then
+		for item in map_iter( default ) do
+			if( not midi_compare( item[ 1 ], midi_in ) ) then
+				item[ 2 ][ 1 ]( item[ 2 ][ 2 ] )
+			end
+		end
 	end
 	
 end

@@ -29,6 +29,7 @@ lua_State *L;
 Display* xdp;
 jack_client_t *client;
 jack_port_t *input_port;
+std::string wm_class;
 
 /* options */
 enum optionsIndex
@@ -189,8 +190,8 @@ load_config( std::string name )
 Window
 XGetTopLevelParent( Display *xdp, Window w )
 {
-	std::string wm_class;
 	std::string wm_name;
+	wm_class.clear();
 
 	Atom property;
 	Atom actual_type_return;
@@ -230,6 +231,8 @@ XGetTopLevelParent( Display *xdp, Window w )
 		}
 	}
 	else {
+		lua_pushstring( L , wm_class.c_str() );
+		lua_setglobal( L, "wm_class" );
 		LOG( INFO ) << "WM_CLASS: " << wm_class << " | WM_NAME: " << wm_name;
 	}
 
