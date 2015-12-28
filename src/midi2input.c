@@ -186,37 +186,68 @@ load_config( std::string name )
 	return true;
 }
 
+Window
+XGetTopLevelParent( Display *xdp, Window w )
+{
+	std::string wm_class;
+	std::string wm_name;
+
+	Atom property;
+	Atom actual_type_return;
+	int actual_format_return;
+	unsigned long nitems_return;
+	unsigned long bytes_after_return;
+	unsigned char *prop_return;
+
+	property = XInternAtom( xdp, "WM_CLASS", False );
+	if( XGetWindowProperty( xdp, w, property, 0, 1024, False, AnyPropertyType,
+				&actual_type_return, &actual_format_return,
+				&nitems_return, &bytes_after_return, &prop_return ) == Success ){
+		if( actual_format_return == 8 )
+			wm_class = reinterpret_cast<const char *>(prop_return);
+		XFree( prop_return );
+	}
+
+	property = XInternAtom( xdp, "WM_NAME", False );
+	if( XGetWindowProperty( xdp, w, property, 0, 1024, False, AnyPropertyType,
+				&actual_type_return, &actual_format_return,
+				&nitems_return, &bytes_after_return, &prop_return ) == Success ){
+		if( actual_format_return == 8 )
+			wm_name = reinterpret_cast<const char *>(prop_return);
+		XFree( prop_return );
+	}
+
+	Window root_return;
+	Window parent_return;
+	Window *children_return;
+	unsigned int nchildren_return;
+
+	if( wm_class.empty() ){
+		if( XQueryTree( xdp, w, &root_return, &parent_return,
+				&children_return, &nchildren_return ) ){
+			if( children_return ) XFree( children_return );
+			w = XGetTopLevelParent( xdp, parent_return );
+		}
+	}
+	else {
+		LOG( INFO ) << "WM_CLASS: " << wm_class << " | WM_NAME: " << wm_name;
+	}
+
+	return w;
+}
+
 int
 process( jack_nframes_t nframes, void *arg )
 {
 	//detect window
-	std::stringstream message;
-	Window w;
 	static Window w_current;
+	Window w;
 	int revert_to;
-	//TODO use stringstream to construct log messages piecemeal
+
 	XGetInputFocus( xdp, &w, &revert_to );
-	if( w != None && w != w_current){
+	if( w != None && w != w_current ){
 		w_current = w;
-		message << "window ID: " << w_current;
-
-		int format;
-		unsigned long remain, len;
-		unsigned char *list;
-
-		//TODO Xfree() ?
-		Atom prop = XInternAtom( xdp, "WM_CLASS", False ), type;
-		if( XGetWindowProperty( xdp, w, prop, 0, 1024, False, AnyPropertyType,
-					&type, &format, &len, &remain, &list ) == Success ){
-			if( format == 8 ) message << "\tWM_CLASS: " << list;
-		}
-		prop = XInternAtom( xdp, "WM_NAME", False );
-		if( XGetWindowProperty( xdp, w, prop, 0, 1024, False, AnyPropertyType,
-					&type, &format, &len, &remain, &list ) == Success ){
-			if( format == 8 ) message << "\tWM_NAME: " << list;
-		}
-		LOG( INFO ) << message.str();
-
+		XGetTopLevelParent( xdp, w );
 	}
 
 	//process midi events
