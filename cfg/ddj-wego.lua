@@ -10,6 +10,17 @@ XK_Scroll_Lock                 = 0xff14
 XK_Sys_Req                     = 0xff15
 XK_Escape                      = 0xff1b
 XK_Delete                      = 0xffff  --/* Delete, rubout */
+XK_Home                        = 0xff50
+XK_Left                        = 0xff51  --/* Move left, left arrow */
+XK_Up                          = 0xff52  --/* Move up, up arrow */
+XK_Right                       = 0xff53  --/* Move right, right arrow */
+XK_Down                        = 0xff54  --/* Move down, down arrow */
+XK_Prior                       = 0xff55  --/* Prior, previous */
+XK_Page_Up                     = 0xff55
+XK_Next                        = 0xff56  --/* Next */
+XK_Page_Down                   = 0xff56
+XK_End                         = 0xff57  --/* EOL */
+XK_Begin                       = 0xff58  --/* BOL */
 XK_Shift_L                     = 0xffe1  --/* Left shift */
 XK_Shift_R                     = 0xffe2  --/* Right shift */
 XK_Control_L                   = 0xffe3  --/* Left control */
@@ -150,18 +161,59 @@ function alt_up()
 end
 
 default = {
-	{ {0xB, 7, 64,   1 }, { alt_tab } },
-	{ {0xB, 7, 64, 127 }, { alt_shift_tab } },
-	{ {0x9, 7, 65, 127 }, { alt_up } },
+	{ { 0xB,  7, 64,   1 }, { alt_tab } },
+	{ { 0xB,  7, 64, 127 }, { alt_shift_tab } },
+	{ { 0x9,  7, 65, 127 }, { alt_up } },
+	{ { 0xB,  1, 19,   1 }, { keypress, XK_Down } },
+	{ { 0xB,  1, 19, 127 }, { keypress, XK_Up } },
+	{ { 0xB,  2, 19,   1 }, { keypress, XK_Right } },
+	{ { 0xB,  2, 19, 127 }, { keypress, XK_Left } },
+	{ { 0x9, -1, 20,  -1 }, { keypress, XK_Return } },
 }
+
+function banshee_shift_tab( )
+	keydown( XK_Shift_L )
+	keypress( XK_Tab )
+	keyup( XK_Shift_L )
+end
 
 Banshee = {
-	{ {0x9, -1, 11, 127}, { keypress, XK_space } },
+	{ {0x9, -1, 11, 127 }, { keypress, XK_space } },
+	{ {0xB,  2, 19,   1 }, { keypress, XK_Tab } },
+	{ {0xB,  2, 19, 127 }, { banshee_shift_tab } },
 }
 
-applications = { 	{ "Banshee", Banshee },
-			{ "mate-terminal", mate_terminal, }
-		}
+vlc_speed_value = 0
+function vlc_speed( midi_in )
+	if( vlc_speed_value > midi_in[ 4 ] ) then
+		keypress( XK_bracketright )
+	elseif( vlc_speed_value < midi_in[ 4 ] ) then
+		keypress( XK_bracketleft )
+	end
+	vlc_speed_value = midi_in[4];
+end
+
+function vlc_skip( midi_in )
+	keydown( XK_Shift_L)
+	if( midi_in[ 4 ] > 64 ) then
+		keypress( XK_Right )
+	elseif( midi_in[ 4 ] < 64 ) then
+		keypress( XK_Left )
+	end
+	keyup( XK_Shift_L)
+end
+
+vlc = {
+	{ { 0x9, -1, 11, 127}, { keypress, XK_space } },
+	{ { 0xB, -1,  0, -1}, { vlc_speed } },
+	{ { 0xB, -1, 34, -1}, { vlc_skip } },
+}
+
+applications = {
+	{ "Banshee", Banshee },
+	{ "mate-terminal", mate_terminal, },
+	{ "vlc", vlc },
+}
 
 function map_iter( t )
 	local i = 0
@@ -206,7 +258,11 @@ function event_in( a, b, c, d )
 	if( map ) then
 		for item in map_iter( map ) do
 			if( not midi_compare( item[ 1 ], midi_in ) ) then
-				item[ 2 ][ 1 ]( item[ 2 ][ 2 ] )
+				if( item[ 2 ][ 2 ] ) then
+					item[ 2 ][ 1 ]( item[ 2 ][ 2 ] )
+				else
+					item[ 2 ][ 1 ]( midi_in )
+				end
 				found = true
 			end
 		end
@@ -216,7 +272,11 @@ function event_in( a, b, c, d )
 	if( not found ) then
 		for item in map_iter( default ) do
 			if( not midi_compare( item[ 1 ], midi_in ) ) then
-				item[ 2 ][ 1 ]( item[ 2 ][ 2 ] )
+				if( item[ 2 ][ 2 ] ) then
+					item[ 2 ][ 1 ]( item[ 2 ][ 2 ] )
+				else
+					item[ 2 ][ 1 ]( midi_in )
+				end
 			end
 		end
 	end
