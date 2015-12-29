@@ -88,19 +88,6 @@ lua_keyup( lua_State *L )
 	return 0;
 }
 
-// Fake keypress, sends a keypress to the xwindows system
-void
-fake_keypress( const char *keysym )
-{
-	KeyCode keycode = XStringToKeysym( keysym );
-	keycode = XKeysymToKeycode( xdp, keycode );
-	LOG( INFO ) << "sent keypress with code: " << keycode;
-	XTestFakeKeyEvent( xdp, (int)keycode, 1, CurrentTime );
-	XTestFakeKeyEvent( xdp, (int)keycode, 0, CurrentTime );
-	XFlush( xdp );
-	return;
-}
-
 void
 handle_jack_midi_event( jack_midi_event_t &in_event )
 {
