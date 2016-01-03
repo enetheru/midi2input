@@ -161,14 +161,14 @@ function alt_up()
 end
 
 default = {
-	{ { 0xB,  7, 64,   1 }, { alt_tab } },
-	{ { 0xB,  7, 64, 127 }, { alt_shift_tab } },
-	{ { 0x9,  7, 65, 127 }, { alt_up } },
-	{ { 0xB,  1, 19,   1 }, { keypress, XK_Down } },
-	{ { 0xB,  1, 19, 127 }, { keypress, XK_Up } },
-	{ { 0xB,  2, 19,   1 }, { keypress, XK_Right } },
-	{ { 0xB,  2, 19, 127 }, { keypress, XK_Left } },
-	{ { 0x9, -1, 20,  -1 }, { keypress, XK_Return } },
+	{ { 0xB0,  7, 64,   1 }, { alt_tab } },
+	{ { 0xB0,  7, 64, 127 }, { alt_shift_tab } },
+	{ { 0x90,  7, 65, 127 }, { alt_up } },
+	{ { 0xB0,  1, 19,   1 }, { keypress, XK_Down } },
+	{ { 0xB0,  1, 19, 127 }, { keypress, XK_Up } },
+	{ { 0xB0,  2, 19,   1 }, { keypress, XK_Right } },
+	{ { 0xB0,  2, 19, 127 }, { keypress, XK_Left } },
+	{ { 0x90, -1, 20,  -1 }, { keypress, XK_Return } },
 }
 
 function banshee_shift_tab( )
@@ -178,9 +178,9 @@ function banshee_shift_tab( )
 end
 
 Banshee = {
-	{ {0x9, -1, 11, 127 }, { keypress, XK_space } },
-	{ {0xB,  2, 19,   1 }, { keypress, XK_Tab } },
-	{ {0xB,  2, 19, 127 }, { banshee_shift_tab } },
+	{ {0x90, -1, 11, 127 }, { keypress, XK_space } },
+	{ {0xB0,  2, 19,   1 }, { keypress, XK_Tab } },
+	{ {0xB0,  2, 19, 127 }, { banshee_shift_tab } },
 }
 
 vlc_speed_value = 0
@@ -204,9 +204,9 @@ function vlc_skip( midi_in )
 end
 
 vlc = {
-	{ { 0x9, -1, 11, 127}, { keypress, XK_space } },
-	{ { 0xB, -1,  0, -1}, { vlc_speed } },
-	{ { 0xB, -1, 34, -1}, { vlc_skip } },
+	{ { 0x90, -1, 11, 127}, { keypress, XK_space } },
+	{ { 0xB0, -1,  0, -1}, { vlc_speed } },
+	{ { 0xB0, -1, 34, -1}, { vlc_skip } },
 }
 
 applications = {

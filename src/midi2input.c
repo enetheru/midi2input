@@ -5,6 +5,7 @@
 #include <vector>
 #include <sstream>
 #include <string>
+#include <cstring>
 
 #include <wordexp.h>
 #include <unistd.h>
@@ -86,53 +87,6 @@ lua_keyup( lua_State *L )
 	XTestFakeKeyEvent( xdp, keycode, 0, CurrentTime );
 	LOG(INFO) << "keyup: " << XKeysymToString( keysym );
 	return 0;
-}
-
-void
-handle_jack_midi_event( jack_midi_event_t &in_event )
-{
-	std::stringstream message;
-	unsigned char event[ 4 ];
-	event[ 0 ] = in_event.buffer[ 0 ] >> 4;
-	event[ 1 ] = (in_event.buffer[ 0 ] & 0x0F) + 1;
-	event[ 2 ] = in_event.buffer[ 1 ];
-	event[ 3 ] = in_event.buffer[ 2 ];
-
-	//TODO use stringstream to construct log messages piecemeal
-	message << "type: ";
-	switch( event[ 0 ] ){
-		case 0x9:
-			message << "note on"; break;
-		case 0x8:
-			message << "note off"; break;
-		case 0xA:
-			message << "polyphonic aftertouch"; break;
-		case 0xB:
-			message << "control/mode change"; break;
-		case 0xC:
-			message << "program change"; break;
-		case 0xD:
-			message << "channel aftertouch"; break;
-		case 0xE:
-			message << "pitch bend change"; break;
-		case 0xF:
-			message << "system"; break;
-	}
-	message << " | channel: " << std::setw(2) << (int)event[ 1 ]
-		<< " | Note: " << std::setw(3) << (int)event[ 2 ]
-		<< " | Velocity: "
-		<< std::setw(3) << (int)event[ 3 ];
-	LOG( INFO ) << message.str();
-
-	lua_getglobal( L, "event_in" );
-	lua_pushnumber( L, event[ 0 ] );
-	lua_pushnumber( L, event[ 1 ] );
-	lua_pushnumber( L, event[ 2 ] );
-	lua_pushnumber( L, event[ 3 ] );
-	if( lua_pcall( L, 4, 0, 0) != 0 ){
-		LOG( ERROR ) << "call to function 'event_in' failed" << lua_tostring( L, -1 );
-	}
-	return;
 }
 
 bool
@@ -241,15 +195,92 @@ process( jack_nframes_t nframes, void *arg )
 	}
 
 	//process midi events
-	//KeyCode temp;
 	void* port_buf = jack_port_get_buffer( input_port, nframes );
 	jack_midi_event_t in_event;
-	jack_nframes_t event_count = jack_midi_get_event_count( port_buf );
+	static jack_midi_event_t last_event;
+	static unsigned char last_buffer[4];
+	last_event.buffer = last_buffer;
 
+	unsigned char status, type = 0, channel = 0;
+	unsigned char control, note;
+	unsigned char velocity;
+	unsigned int value = 0;
+
+	jack_nframes_t event_count = jack_midi_get_event_count( port_buf );
 	if( event_count > 0 ){
+		LOG( INFO ) << event_count << " Events in queue.";
 		for(uint32_t i = 0; i < event_count; i++ ){
 			jack_midi_event_get( &in_event, port_buf, i );
-			handle_jack_midi_event( in_event );
+			status = in_event.buffer[ 0 ];
+
+			//note on/off
+			if( (status & 0xF0) == 0x80
+			 || (status & 0xF0) == 0x90 ){
+				if( in_event.size != 3 ){
+					LOG (WARN ) << "midi event size unexpected";
+					continue;
+				}
+				type = status & 0xF0;
+				channel = status & 0x0F;
+				note = in_event.buffer[ 1 ];
+				velocity = in_event.buffer[ 2 ];
+				LOG( INFO ) << "time=" <<  in_event.time
+					<< " size=" << in_event.size
+					<< " Note On/Off, Channel=" << channel
+					<< " note=" << note
+					<< " velocity=" << velocity;
+
+				//push values to lua
+				lua_getglobal( L, "event_in" );
+				lua_pushnumber( L, type );
+				lua_pushnumber( L, channel );
+				lua_pushnumber( L, note );
+				lua_pushnumber( L, velocity );
+				if( lua_pcall( L, 4, 0, 0 ) != 0 )
+					LOG( ERROR ) << "call to function 'event_in' failed"
+						<< lua_tostring( L, -1 );
+				
+			}
+			
+			// control/mode change
+			if( (status & 0xF0) == 0xB0 ){
+				type = status & 0xF0;
+				channel = status & 0x0F;
+				control = in_event.buffer[ 1 ];
+				value = in_event.buffer[ 2 ];
+
+				//MSB and LSB for first 32/64 controls sort of works.
+				// look at the previous event
+				if( control < 64
+				 && status == last_event.buffer[ 0 ] 
+				 && control == last_event.buffer[ 1 ] + 32 ){
+					value = last_event.buffer[ 2 ];
+					value = value << 8;
+					value += in_event.buffer[ 2 ];
+				}
+
+				LOG( INFO ) << "time=" << in_event.time
+					<< " size=" << in_event.size
+					<< " Control/Mode Change, channel=" << channel
+					<< " control=" << control
+					<< " value=" << value;
+
+				//push values to lua
+				lua_getglobal( L, "event_in" );
+				lua_pushnumber( L, type );
+				lua_pushnumber( L, channel );
+				lua_pushnumber( L, control );
+				lua_pushnumber( L, value );
+				if( lua_pcall( L, 4, 0, 0 ) != 0 )
+					LOG( ERROR ) << "call to function 'event_in' failed"
+						<< lua_tostring( L, -1 );
+			}
+
+			// hold onto last event so we can check it against next event for
+			// LSB/MSB events.
+			last_event.size = in_event.size;
+			last_event.time = in_event.time;
+			memcpy( last_buffer, in_event.buffer, in_event.size );
 		}
 	}
 	return 0;
