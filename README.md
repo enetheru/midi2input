@@ -8,3 +8,5 @@ Requires:
   * X11 with the XTest extension
   * jack audio connection it
   * lua
+
+https://youtu.be/wr1AqlDXnYI
