@@ -222,7 +222,7 @@ process( jack_nframes_t nframes, void *arg )
 					continue;
 				}
 				type = status & 0xF0;
-				channel = status & 0x0F;
+				channel = (status & 0x0F) + 1;
 				note = in_event.buffer[ 1 ];
 				velocity = in_event.buffer[ 2 ];
 				LOG( INFO ) << "time=" <<  in_event.time
@@ -246,7 +246,7 @@ process( jack_nframes_t nframes, void *arg )
 			// control/mode change
 			if( (status & 0xF0) == 0xB0 ){
 				type = status & 0xF0;
-				channel = status & 0x0F;
+				channel = (status & 0x0F) + 1;
 				control = in_event.buffer[ 1 ];
 				value = in_event.buffer[ 2 ];
 
