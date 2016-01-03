@@ -30,6 +30,7 @@ lua_State *L;
 Display* xdp;
 jack_client_t *client;
 jack_port_t *input_port;
+jack_port_t *output_port;
 std::string wm_class;
 
 /* options */
@@ -327,20 +328,23 @@ main( int argc, char** argv )
     if( fail ) exit( 1 );
 
     // --config
+	LOG( INFO ) << "Parsing cmd line options";
     std::string luaScript;
     if( options[ CONFIG ] ) luaScript = options[ CONFIG ].arg;
     else luaScript = "~/.config/midi2input.lua";
-    std::cout << luaScript << std::endl;
 
-	/*display*/
+	/* X11 */
+	LOG( INFO ) << "Getting X11 Display";
 	if(! (xdp = XOpenDisplay( getenv( "DISPLAY" ) )) ){
 		LOG( FATAL ) << "Unable to open X display";
 	}
 
-	/*lua*/
-	L = luaL_newstate();   /* opens Lua */
+	/* Lua */
+	LOG( INFO ) << "Initialising Lua";
+	L = luaL_newstate();
     luaL_openlibs( L );
 
+	LOG( INFO ) << "Lua: pushing c functions";
 	lua_pushcfunction( L, lua_keypress );
 	lua_setglobal( L, "keypress" );
 
@@ -350,25 +354,34 @@ main( int argc, char** argv )
 	lua_pushcfunction( L, lua_keyup );
 	lua_setglobal( L, "keyup" );
 
+	LOG( INFO ) << "Lua: Loading configuration file";
 	if(! load_config( luaScript.c_str() ) ){
 		LOG( FATAL ) << "Unable to open configuration file";
 	}
 
-	/*jack*/
+	/* Jack */
+	LOG( INFO ) << "Initialising Jack";
 	if( (client = jack_client_open( "midi2input", JackNullOption, NULL )) == 0 ){
 		LOG( FATAL ) << "jack server not running?";
 	}
 
+	LOG( INFO ) << "Jack: setting callbacks";
 	jack_set_process_callback( client, process, 0 );
 	jack_on_shutdown( client, jack_shutdown, 0 );
 
-	input_port = jack_port_register( client, "midi_in", JACK_DEFAULT_MIDI_TYPE, JackPortIsInput, 0 );
+	LOG( INFO ) << "Jack: registering ports";
+	input_port = jack_port_register( client, "midi_in",
+			JACK_DEFAULT_MIDI_TYPE, JackPortIsInput, 0 );
+	output_port = jack_port_register( client, "midi_out",
+			JACK_DEFAULT_MIDI_TYPE, JackPortIsOutput, 0 );
 
+	LOG( INFO ) << "Jack: Activating client";
 	if( jack_activate( client ) ){
 		LOG( FATAL ) << "cannot activate client";
 	}
 
-	// auto connect to all midi ports available
+	/* Lua: get port connection configuration */
+	LOG( INFO ) << "Lua: Getting autoconnection setting";
 	std::string autoconnect;
 	lua_getglobal( L, "autoconnect" );
 	if(! lua_isnil( L, -1 ) ){
@@ -389,9 +402,11 @@ main( int argc, char** argv )
 	if( autoconnect.empty() ){
 		autoconnect = "All";
 	}
-	LOG( INFO ) << "autoconnect: " << autoconnect;
+	LOG( INFO ) << "Lua: autoconnect = " << autoconnect;
 	lua_pop( L, 1 );
 
+	/* Jack: get list of output ports */
+	LOG( INFO ) << "Jack: Looking up output ports";
 	int i = 0;
 	const char ** portnames = jack_get_ports( client, ".midi.", NULL, JackPortIsOutput );
 	if(! portnames ){
@@ -399,35 +414,83 @@ main( int argc, char** argv )
 	}
 
 	while( *(portnames + i) ){
-		LOG( INFO ) << "found: " << *(portnames+i);
+		LOG( INFO ) << "Jack: Found: " << *(portnames+i);
 		i++;
 	}
 
-	//TODO use a stringstream to create logging string piecemeal
+	/* Jack: Connect to output ports */
+	LOG( INFO ) << "Jack: Connecting to output ports";
+	std::stringstream message;
+	std::string portname;
 	if( autoconnect.compare( "None" ) ){
 		if(! autoconnect.compare( "All" ) ){
-			if(! portnames ) return 1;
+			if(! portnames ) LOG( FATAL ) << "No ports to connect to";
 			i = 0;
 			while( *(portnames + i) ){
-				std::cout << "Connecting to: " << *(portnames+i);
-				if( jack_connect( client, *(portnames+i), "midi2input:midi_in" ) ){
-					std::cout << " - FAILED\n";
-				} else {
-					std::cout << " - SUCCESS\n";
+				portname = *(portnames + i);
+				if(! portname.compare("midi2input:midi_out") ){
+					++i;
+					continue;
 				}
-				i++;
+				message.str( std::string() );
+				message << "Connecting to: " << portname;
+				if( jack_connect( client, portname.c_str(), "midi2input:midi_in" ) ){
+					message << " - FAILED";
+				} else {
+					message << " - SUCCESS";
+				}
+				LOG( INFO ) << message.str();
+				++i;
 			}
 		} else {
-			std::cout << "Connecting to: " << autoconnect;
+			message << "Connecting to: " << autoconnect;
 			if( jack_connect( client, autoconnect.c_str(), "midi2input:midi_in" ) ){
-					std::cout << " - FAILED\n";
+					message << " - FAILED\n";
 			} else {
-					std::cout << " - SUCCESS\n";
+					message << " - SUCCESS\n";
 			}
-
+			LOG( INFO ) << message;
 		}
 	}
+	jack_free( portnames );
 
+	/* Jack: get list of input ports */
+	LOG( INFO ) << "Jack: Looking up input ports";
+	i = 0;
+	portnames = jack_get_ports( client, ".midi.", NULL, JackPortIsInput );
+	if(! portnames ){
+		LOG( FATAL ) << "ERROR: no ports available";
+	}
+	while( *(portnames + i) ){
+		LOG( INFO ) << "Jack: Found: " << *(portnames+i);
+		i++;
+	}
+
+	/* Jack: Connect to input ports */
+	LOG( INFO ) << "Jack: Connecting to input ports";
+	if(! portnames ) LOG( FATAL ) << "No ports to connect to";
+	i = 0;
+	while( *(portnames + i) ){
+		portname = *(portnames + i);
+		if(! portname.compare("midi2input:midi_in") ){
+			++i;
+			continue;
+		}
+		message.str( std::string() );
+		message << "Connecting to: " << *(portnames + i);
+		if( jack_connect( client, *(portnames + i), "midi2input:midi_out" ) ){
+			message << " - FAILED";
+		} else {
+			message << " - SUCCESS";
+		}
+		LOG( INFO ) << message.str();
+		i++;
+	}
+	jack_free( portnames );
+
+
+	/* main loop */
+	LOG( INFO ) << "Main: Entering sleep, waiting for jack events";
 	while( 1 ) sleep( 1 );
 
 	jack_client_close( client );
