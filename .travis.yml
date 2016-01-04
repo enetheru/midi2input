@@ -6,7 +6,10 @@ compiler:
   - gcc
 install:
   - sudo apt-get update -qq
-  - sudo apt-get install libxtst-dev libx11-dev libjack-dev liblua5.2-dev --yes
+  - sudo apt-get install cmake libxtst-dev libx11-dev libjack-dev liblua5.2-dev --yes
 script:
   - cd src
+  - mkdir build
+  - cd build
+  - cmake ../
   - make
