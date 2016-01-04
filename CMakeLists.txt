@@ -29,8 +29,9 @@ set( CPACK_DEBIAN_PACKAGE_VERSION "0.1" )
 set( CPACK_DEBIAN_PACKAGE_DEPENDS "libc6, libx11-6, libxtst6, libjack-jackd2-0, liblua5.2-0" )
 set( CPACK_DEBIAN_PACKAGE_MAINTAINER "Samuel Nicholas <nicholas.samuel@gmail.com>" )
 set( CPACK_DEBIAN_PACKAGE_DESCRIPTION
-"Generate input events from midi
- testing extended description" ) #FIXME
+"Turns a midi device into a keyboard/mouse controller
+ This program takes midi events from jackd and translates them to input events.
+ Configuration is written in Lua." )
 set( CPACK_DEBIAN_PACKAGE_SECTION "utils" )
 
 install( FILES ${CMAKE_CURRENT_SOURCE_DIR}/LICENCE.md
@@ -47,5 +48,11 @@ install( FILES ${CMAKE_BINARY_DIR}/CHANGELOG.md.gz
         COMPONENT applications
         RENAME changelog.gz )
 
+execute_process( COMMAND gzip -k9f midi2input.1
+		COMMAND mv midi2input.1.gz ${CMAKE_BINARY_DIR}/
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/doc )
 
+install( FILES ${CMAKE_BINARY_DIR}/midi2input.1.gz
+        DESTINATION share/man/man1/
+        COMPONENT applications )
 include( CPack )
