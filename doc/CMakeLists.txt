@@ -10,10 +10,10 @@ IF( BUILD_DOCS )
         COMPONENT applications
         RENAME copyright )
 
-        execute_process(
+	execute_process(
         COMMAND gzip -k9f CHANGELOG.md
-	    COMMAND mv CHANGELOG.md.gz ${CMAKE_BINARY_DIR}/
-	    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/ )
+        COMMAND mv CHANGELOG.md.gz ${CMAKE_BINARY_DIR}/
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/ )
 
     install( FILES ${CMAKE_BINARY_DIR}/CHANGELOG.md.gz
         DESTINATION share/doc/midi2input
@@ -22,7 +22,7 @@ IF( BUILD_DOCS )
 
     execute_process(
         COMMAND gzip -k9f midi2input.1
-		WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} )
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} )
 
     install( FILES ${CMAKE_CURRENT_BINARY_DIR}/midi2input.1.gz
         DESTINATION share/man/man1/

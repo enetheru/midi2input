@@ -35,9 +35,9 @@ include_directories(
 
 set( LIBS ${LIBS}
     ${JACK_LIBRARIES}
-	${XTST_LIBRARIES}
-	${X11_LIBRARIES}
-	${LUA_LIBRARIES} )
+    ${XTST_LIBRARIES}
+    ${X11_LIBRARIES}
+    ${LUA_LIBRARIES} )
 
 # sub directories
 # ===============
@@ -46,11 +46,13 @@ add_subdirectory( doc )
 
 # CPack
 # =====
+include( doc/docs.cmake )
 set( CPACK_STRIP_FILES true )
 set( CPACK_GENERATOR "DEB" )
 set( CPACK_DEBIAN_PACKAGE_VERSION "0.1" )
 set( CPACK_DEBIAN_PACKAGE_DEPENDS "libc6, libx11-6, libxtst6, libjack-jackd2-0, liblua5.2-0" )
 set( CPACK_DEBIAN_PACKAGE_MAINTAINER "${DOC_AUTHORS}" )
-set( CPACK_DEBIAN_PACKAGE_DESCRIPTION "${DOC_DESCRIPTION}" )
+string( REPLACE "\n" "\n " CPACK_DEBIAN_PACKAGE_DESCRIPTION ${DOC_DESCRIPTION_SHORT} "\n" ${DOC_DESCRIPTION} )
 set( CPACK_DEBIAN_PACKAGE_SECTION "utils" )
 include( CPack )
+
