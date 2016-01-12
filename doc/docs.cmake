@@ -12,3 +12,4 @@ long as it gets done right" )
 
 set( DOC_AUTHORS "Samuel Nicholas <nicholas.samuel@gmail.com>" )
 
+#Small GNU/Linux program that captures live midi input from jack midi and allows simulated key presses or mouse movement.
