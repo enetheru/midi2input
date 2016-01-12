@@ -10,12 +10,19 @@ if( NOT CMAKE_BUILD_TYPE )
 endif()
 message( "Build Type: " ${CMAKE_BUILD_TYPE} )
 
-if( NOT BUILD_DOCS )
+if( NOT DEFINED BUILD_DOCS )
     set( BUILD_DOCS true CACHE BOOL
         "Whether or not to build the documentation"
         FORCE )
 endif()
 message( "Build Documentation: " ${BUILD_DOCS} )
+
+if( NOT DEFINED CHECK_DOCS )
+	set( CHECK_DOCS false CACHE BOOL
+		"Check if generated documentation has differed from respository"
+        FORCE )
+endif()
+message( "Check Documentation: " ${CHECK_DOCS} )
 
 # dependencies
 # ============
