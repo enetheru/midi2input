@@ -2,6 +2,31 @@ cmake_minimum_required( VERSION 2.8 )
 
 project( midi2input )
 
+# Configuration
+# =============
+if( NOT CMAKE_BUILD_TYPE )
+    set( CMAKE_BUILD_TYPE Debug CACHE STRING
+        "The type of build, options are None, Debug, Release, RelWithDebInfo, MinSizeRel" FORCE )
+endif()
+message( "Build Type: " ${CMAKE_BUILD_TYPE} )
+
+if( NOT DEFINED BUILD_DOCS )
+    set( BUILD_DOCS true CACHE BOOL
+        "Whether or not to build the documentation"
+        FORCE )
+endif()
+message( "Build Documentation: " ${BUILD_DOCS} )
+
+if( NOT DEFINED CHECK_DOCS )
+	set( CHECK_DOCS false CACHE BOOL
+		"Check if generated documentation has differed from respository"
+        FORCE )
+endif()
+message( "Check Documentation: " ${CHECK_DOCS} )
+
+# dependencies
+# ============
+
 find_package( PkgConfig )
 pkg_check_modules( JACK jack )
 pkg_check_modules( XTST xtst )
@@ -17,42 +42,24 @@ include_directories(
 
 set( LIBS ${LIBS}
     ${JACK_LIBRARIES}
-	${XTST_LIBRARIES}
-	${X11_LIBRARIES}
-	${LUA_LIBRARIES} )
+    ${XTST_LIBRARIES}
+    ${X11_LIBRARIES}
+    ${LUA_LIBRARIES} )
 
+# sub directories
+# ===============
 add_subdirectory( src )
+add_subdirectory( doc )
 
+# CPack
+# =====
+include( doc/docs.cmake )
 set( CPACK_STRIP_FILES true )
 set( CPACK_GENERATOR "DEB" )
 set( CPACK_DEBIAN_PACKAGE_VERSION "0.1" )
 set( CPACK_DEBIAN_PACKAGE_DEPENDS "libc6, libx11-6, libxtst6, libjack-jackd2-0, liblua5.2-0" )
-set( CPACK_DEBIAN_PACKAGE_MAINTAINER "Samuel Nicholas <nicholas.samuel@gmail.com>" )
-set( CPACK_DEBIAN_PACKAGE_DESCRIPTION
-"Turns a midi device into a keyboard/mouse controller
- This program takes midi events from jackd and translates them to input events.
- Configuration is written in Lua." )
+set( CPACK_DEBIAN_PACKAGE_MAINTAINER "${DOC_AUTHORS}" )
+string( REPLACE "\n" "\n " CPACK_DEBIAN_PACKAGE_DESCRIPTION ${DOC_DESCRIPTION_SHORT} "\n" ${DOC_DESCRIPTION} )
 set( CPACK_DEBIAN_PACKAGE_SECTION "utils" )
-
-install( FILES ${CMAKE_CURRENT_SOURCE_DIR}/LICENCE.md
-        DESTINATION share/doc/midi2input
-        COMPONENT applications
-        RENAME copyright )
-
-execute_process( COMMAND gzip -k9f CHANGELOG.md
-		COMMAND mv CHANGELOG.md.gz ${CMAKE_BINARY_DIR}/
-		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} )
-
-install( FILES ${CMAKE_BINARY_DIR}/CHANGELOG.md.gz
-        DESTINATION share/doc/midi2input
-        COMPONENT applications
-        RENAME changelog.gz )
-
-execute_process( COMMAND gzip -k9f midi2input.1
-		COMMAND mv midi2input.1.gz ${CMAKE_BINARY_DIR}/
-		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/doc )
-
-install( FILES ${CMAKE_BINARY_DIR}/midi2input.1.gz
-        DESTINATION share/man/man1/
-        COMPONENT applications )
 include( CPack )
+
