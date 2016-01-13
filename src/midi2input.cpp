@@ -478,7 +478,7 @@ main( int argc, char** argv )
 		}
 		message.str( std::string() );
 		message << "Connecting to: " << *(portnames + i);
-		if( jack_connect( client, *(portnames + i), "midi2input:midi_out" ) ){
+		if( jack_connect( client, "midi2input:midi_out", *(portnames + i) ) ){
 			message << " - FAILED";
 		} else {
 			message << " - SUCCESS";
