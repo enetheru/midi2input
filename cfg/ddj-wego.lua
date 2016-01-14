@@ -285,15 +285,18 @@ function alt_f10()
 end
 
 default = {
-	{ { 0xB0,  7, 64,   1 }, { alt_tab } },
-	{ { 0xB0,  7, 64, 127 }, { alt_shift_tab } },
-	{ { 0x90,  7, 65, 127 }, { alt_up } },
-	{ { 0xB0,  1, 19,   1 }, { keypress, XK_Down } },
-	{ { 0xB0,  1, 19, 127 }, { keypress, XK_Up } },
-	{ { 0xB0,  2, 19,   1 }, { keypress, XK_Right } },
-	{ { 0xB0,  2, 19, 127 }, { keypress, XK_Left } },
-	{ { 0x90, -1, 20,  -1 }, { keypress, XK_Return } },
-	{ { 0x90,  5, 67,  127}, { alt_f10 } }, 
+	name = "Default Configuration",
+	map = {
+		{ { 0xB0,  7, 64,   1 }, { alt_tab } },
+		{ { 0xB0,  7, 64, 127 }, { alt_shift_tab } },
+		{ { 0x90,  7, 65, 127 }, { alt_up } },
+		{ { 0xB0,  1, 19,   1 }, { keypress, XK_Down } },
+		{ { 0xB0,  1, 19, 127 }, { keypress, XK_Up } },
+		{ { 0xB0,  2, 19,   1 }, { keypress, XK_Right } },
+		{ { 0xB0,  2, 19, 127 }, { keypress, XK_Left } },
+		{ { 0x90, -1, 20,  -1 }, { keypress, XK_Return } },
+		{ { 0x90,  5, 67,  127}, { alt_f10 } }, 
+	}
 }
 
 function banshee_shift_tab( )
@@ -303,9 +306,12 @@ function banshee_shift_tab( )
 end
 
 Banshee = {
-	{ {0x90, -1, 11, 127 }, { keypress, XK_space } },
-	{ {0xB0,  2, 19,   1 }, { keypress, XK_Tab } },
-	{ {0xB0,  2, 19, 127 }, { banshee_shift_tab } },
+	name = "Banshee Media Player",
+	map = {
+		{ {0x90, -1, 11, 127 }, { keypress, XK_space } },
+		{ {0xB0,  2, 19,   1 }, { keypress, XK_Tab } },
+		{ {0xB0,  2, 19, 127 }, { banshee_shift_tab } },
+	}
 }
 
 vlc_speed_value = 0
@@ -329,16 +335,24 @@ function vlc_skip( midi_in )
 end
 
 vlc = {
-	{ { 0x90, -1, 11, 127}, { keypress, XK_space } },
-	{ { 0xB0, -1,  0, -1 }, { vlc_speed } },
-	{ { 0xB0, -1, 34, -1 }, { vlc_skip } },
-	{ { 0x90,  5, 68, 127}, { keypress, XK_f } },
+	name = "VLC Media Player",
+	map = {
+		{ { 0x90, -1, 11, 127}, { keypress, XK_space } },
+		{ { 0xB0, -1,  0, -1 }, { vlc_speed } },
+		{ { 0xB0, -1, 34, -1 }, { vlc_skip } },
+		{ { 0x90,  5, 68, 127}, { keypress, XK_f } },
+	}
+}
+
+mixxx = {
+	name = "Mixxx DJ",
+	map = nil,
 }
 
 applications = {
-	{ "Banshee", Banshee },
-	{ "mate-terminal", mate_terminal, },
-	{ "vlc", vlc },
+	["Banshee"] = Banshee,
+	["vlc"] = vlc,
+	["mixxx"] = mixxx,
 }
 
 function map_iter( t )
@@ -370,34 +384,20 @@ end
 function event_in( a, b, c, d )
 	midi_in = {a, b, c, d }
 
-	local map = default
-
-	for item in map_iter( applications ) do
-	   	if( _G[ 'wm_class' ] == item[ 1 ] ) then
-			print( "using: " .. item[1] )
-			map = item[ 2 ];
-			break
-		end
+	-- select application based on wm_name pulled from X11	
+	local app = applications[ wm_class ]
+	if( not app ) then
+		app = default
 	end
+	map = app.map
 
-	found = false;
-	if( map ) then
+	-- look for control in the application map first, before the default map
+	while( map ) do
+		-- search items
 		for item in map_iter( map ) do
+			-- test for event
 			if( not midi_compare( item[ 1 ], midi_in ) ) then
-				if( item[ 2 ][ 2 ] ) then
-					item[ 2 ][ 1 ]( item[ 2 ][ 2 ] )
-				else
-					item[ 2 ][ 1 ]( midi_in )
-				end
-				found = true
-			end
-		end
-	end
-
-
-	if( not found ) then
-		for item in map_iter( default ) do
-			if( not midi_compare( item[ 1 ], midi_in ) ) then
+				-- check for argument in second pair
 				if( item[ 2 ][ 2 ] ) then
 					item[ 2 ][ 1 ]( item[ 2 ][ 2 ] )
 				else
@@ -405,9 +405,13 @@ function event_in( a, b, c, d )
 				end
 			end
 		end
+		--if not found in application.map search default
+		if( map == default.map ) then map = nil
+		else map = default.map
+		end
 	end
-	
 end
+
 
 --# separate definition of button physical logic, from physical looks. with overrides
 
