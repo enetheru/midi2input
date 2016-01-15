@@ -90,6 +90,26 @@ lua_keyup( lua_State *L )
 	return 0;
 }
 
+static int
+lua_send_midi( lua_State *L )
+{
+	void *port_buf = jack_port_get_buffer( output_port, 0 );
+	jack_midi_clear_buffer( port_buf );
+
+	jack_midi_data_t *event = jack_midi_event_reserve( port_buf, 0, 3 );
+	event[ 0 ] = luaL_checknumber( L, 1 );
+	event[ 1 ] = luaL_checknumber( L, 2 );
+	event[ 2 ] = luaL_checknumber( L, 3 );
+
+	LOG( INFO ) << std::hex << "midi-out:"
+		<< " " << event[ 0 ]
+		<< " " << event[ 1 ]
+		<< " " << event[ 2 ];
+
+	jack_midi_event_write( port_buf, 0, event, 3 );
+	return 0;
+}
+
 bool
 load_config( std::string name )
 {
@@ -353,6 +373,9 @@ main( int argc, char** argv )
 
 	lua_pushcfunction( L, lua_keyup );
 	lua_setglobal( L, "keyup" );
+
+	lua_pushcfunction( L, lua_send_midi );
+	lua_setglobal( L, "send_midi" );
 
 	LOG( INFO ) << "Lua: Loading configuration file";
 	if(! load_config( luaScript.c_str() ) ){
