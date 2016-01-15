@@ -73,7 +73,7 @@ class Logger {
   static void OutputFileLine(const char* source_file_name,
                              int line_number,
                              OutputStream& stream) {
-    stream << source_file_name << "(" << line_number << "): ";
+    //stream << source_file_name << "(" << line_number << "): ";
   }
 
   virtual ~Logger() {}
