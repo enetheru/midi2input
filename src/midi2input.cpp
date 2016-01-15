@@ -91,6 +91,54 @@ lua_keyup( lua_State *L )
 }
 
 static int
+lua_buttonpress( lua_State *L )
+{
+	int button = luaL_checknumber( L, 1 );
+	XTestFakeButtonEvent( xdp, button, 1, CurrentTime );
+	XTestFakeButtonEvent( xdp, button, 0, CurrentTime );
+	LOG(INFO) << "buttonpress: " << button;
+	return 0;
+}
+
+static int
+lua_buttondown( lua_State *L )
+{
+	int button = luaL_checknumber( L, 1 );
+	XTestFakeButtonEvent( xdp, button, 1, CurrentTime );
+	LOG(INFO) << "buttondown: " << button;
+	return 0;
+}
+
+static int
+lua_buttonup( lua_State *L )
+{
+	int button = luaL_checknumber( L, 1 );
+	XTestFakeButtonEvent( xdp, button, 0, CurrentTime );
+	LOG(INFO) << "buttonup: " << button;
+	return 0;
+}
+
+static int
+lua_mousemove( lua_State *L )
+{
+	int x = luaL_checknumber( L, 1 );
+	int y = luaL_checknumber( L, 2 );
+	XTestFakeRelativeMotionEvent( xdp, x, y, CurrentTime );
+	LOG(INFO) << "mousemove: " << x << "," << y;
+	return 0;
+}
+
+static int
+lua_mousepos( lua_State *L )
+{
+	int x = luaL_checknumber( L, 1 );
+	int y = luaL_checknumber( L, 2 );
+	XTestFakeMotionEvent( xdp, -1, x, y, CurrentTime );
+	LOG(INFO) << "mousewarp: " << x << "," << y;
+	return 0;
+}
+
+static int
 lua_send_midi( lua_State *L )
 {
 	void *port_buf = jack_port_get_buffer( output_port, 0 );
@@ -373,6 +421,21 @@ main( int argc, char** argv )
 
 	lua_pushcfunction( L, lua_keyup );
 	lua_setglobal( L, "keyup" );
+
+	lua_pushcfunction( L, lua_buttonpress );
+	lua_setglobal( L, "buttonpress" );
+
+	lua_pushcfunction( L, lua_buttondown );
+	lua_setglobal( L, "buttondown" );
+
+	lua_pushcfunction( L, lua_buttonup );
+	lua_setglobal( L, "buttonup" );
+
+	lua_pushcfunction( L, lua_mousemove );
+	lua_setglobal( L, "mousemove" );
+
+	lua_pushcfunction( L, lua_mousepos );
+	lua_setglobal( L, "mousepos" );
 
 	lua_pushcfunction( L, lua_send_midi );
 	lua_setglobal( L, "send_midi" );

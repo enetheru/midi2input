@@ -284,6 +284,14 @@ function alt_f10()
 	keyup( XK_Alt_L )
 end
 
+function mouse_move_x( midi_in )
+	mousemove( midi_in[ 4 ] - 64 , 0 )
+end
+
+function mouse_move_y( midi_in )
+	mousemove( 0, (midi_in[ 4 ] - 64) * -1 )
+end
+
 default = {
 	name = "Default Configuration",
 	map = {
@@ -295,7 +303,13 @@ default = {
 		{ { 0xB0,  2, 19,   1 }, { keypress, XK_Right } },
 		{ { 0xB0,  2, 19, 127 }, { keypress, XK_Left } },
 		{ { 0x90, -1, 20,  -1 }, { keypress, XK_Return } },
-		{ { 0x90,  5, 67,  127}, { alt_f10 } }, 
+		{ { 0x90,  5, 67, 127 }, { alt_f10 } }, 
+		{ { 0xB0,  1, 34,  -1 }, { mouse_move_x } },
+		{ { 0xB0,  2, 34,  -1 }, { mouse_move_y } },
+		{ { 0x90,  5, 70, 127 }, { buttondown, 1 } },
+		{ { 0x80,  5, 70,  64 }, { buttonup, 1 } },
+		{ { 0x90,  6, 66, 127 }, { buttondown, 2 } },
+		{ { 0x80,  6, 66,  64 }, { buttonup, 2 } },
 	}
 }
 
@@ -403,6 +417,7 @@ function event_in( a, b, c, d )
 				else
 					item[ 2 ][ 1 ]( midi_in )
 				end
+				return
 			end
 		end
 		--if not found in application.map search default
