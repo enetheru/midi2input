@@ -1,9 +1,8 @@
-midi2input
+${DOC_TITLE}
 =======
 [![Build Status](https://travis-ci.org/enetheru/midi2input.svg?branch=master)](https://travis-ci.org/enetheru/midi2input)
 
-This program takes midi events from jackd and translates them to input events.
-Configuration files and scripts are written in Lua
+${DOC_DESCRIPTION}
 
 **Requires:**
   * X11 with the XTest extension
@@ -23,11 +22,3 @@ Because I had a midi controller, and I thought it was a shame that I could not c
 | Intro Vid |
 | --------- |
 | [![Intro Vid](https://img.youtube.com/vi/wr1AqlDXnYI/0.jpg)](http://www.youtube.com/watch?v=wr1AqlDXnYI) | 
-
-```
-USAGE: ./midi2input [options]
-
-GENERAL OPTIONS:
-  -h  --help   Print usage and exit.
-  -c  --config Specify config file, default = ~/.config/midi2input.lua
-```
