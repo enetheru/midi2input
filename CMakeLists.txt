@@ -24,6 +24,10 @@ if( NOT DEFINED CHECK_DOCS )
 endif()
 message( "Check Documentation: " ${CHECK_DOCS} )
 
+# Compiler
+# --------
+set( CMAKE_CXX_FLAGS -std=c++11 )
+
 # dependencies
 # ============
 

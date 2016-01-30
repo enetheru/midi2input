@@ -20,6 +20,7 @@ extern "C" {
 #include <jack/midiport.h>
 
 #include <X11/Xlib.h>
+#include <X11/Xatom.h>
 #include <X11/extensions/XTest.h>
 
 #include "options.h"
@@ -31,7 +32,6 @@ Display* xdp;
 jack_client_t *client;
 jack_port_t *input_port;
 jack_port_t *output_port;
-std::string wm_class;
 
 /* options */
 enum optionsIndex
@@ -200,50 +200,53 @@ load_config( std::string name )
 Window
 XGetTopLevelParent( Display *xdp, Window w )
 {
-	std::string wm_name;
-	wm_class.clear();
-
 	Atom property;
+
+	if( (property = XInternAtom( xdp, "WM_CLASS", False )) == None ){
+		LOG( ERROR ) << "Failed XInternAtom for WM_CLASS";
+	}
+
 	Atom actual_type_return;
-	int actual_format_return;
-	unsigned long nitems_return;
-	unsigned long bytes_after_return;
-	unsigned char *prop_return;
+	int actual_format_return = 0;
+	unsigned long nitems_return = 0L;
+	unsigned long bytes_after_return = 0L;
+	unsigned char *prop_return = nullptr;
 
-	property = XInternAtom( xdp, "WM_CLASS", False );
-	if( XGetWindowProperty( xdp, w, property, 0, 1024, False, AnyPropertyType,
-				&actual_type_return, &actual_format_return,
-				&nitems_return, &bytes_after_return, &prop_return ) == Success ){
-		if( actual_format_return == 8 )
-			wm_class = reinterpret_cast<const char *>(prop_return);
+	if( XGetWindowProperty( xdp, w, property, 0L, 1024L, False, XA_STRING,
+				&actual_type_return,
+				&actual_format_return,
+				&nitems_return,
+				&bytes_after_return,
+				&prop_return ) != Success ){
+		LOG( ERROR ) << "Failed XGetWindowProperty for WM_CLASS";
+	}
+	if( (actual_type_return == XA_STRING) && (actual_format_return == 8) ){
+		LOG( INFO ) << "WM_CLASS: " << prop_return;
+
+		lua_pushstring( L , reinterpret_cast<const char *>(prop_return) );
+		lua_setglobal( L, "wm_class" );
+
 		XFree( prop_return );
+		return w;
 	}
 
-	property = XInternAtom( xdp, "WM_NAME", False );
-	if( XGetWindowProperty( xdp, w, property, 0, 1024, False, AnyPropertyType,
-				&actual_type_return, &actual_format_return,
-				&nitems_return, &bytes_after_return, &prop_return ) == Success ){
-		if( actual_format_return == 8 )
-			wm_name = reinterpret_cast<const char *>(prop_return);
-		XFree( prop_return );
-	}
-
+	// no WM_CLASS property found, so lets get the parent window
 	Window root_return;
 	Window parent_return;
-	Window *children_return;
-	unsigned int nchildren_return;
+	Window *children_return = nullptr;
+	unsigned int nchildren_return = 0;
 
-	if( wm_class.empty() ){
-		if( XQueryTree( xdp, w, &root_return, &parent_return,
-				&children_return, &nchildren_return ) ){
-			if( children_return ) XFree( children_return );
+	if( XQueryTree( xdp, w,
+				&root_return,
+				&parent_return,
+				&children_return,
+				&nchildren_return ) ){
+		if( children_return != nullptr ) XFree( children_return );
+		if( parent_return != DefaultRootWindow( xdp ) )
 			w = XGetTopLevelParent( xdp, parent_return );
-		}
 	}
 	else {
-		lua_pushstring( L , wm_class.c_str() );
-		lua_setglobal( L, "wm_class" );
-		LOG( INFO ) << "WM_CLASS: " << wm_class << " | WM_NAME: " << wm_name;
+		LOG( ERROR ) << "Failed XQueryTree";
 	}
 
 	return w;
@@ -308,9 +311,9 @@ process( jack_nframes_t nframes, void *arg )
 				if( lua_pcall( L, 4, 0, 0 ) != 0 )
 					LOG( ERROR ) << "call to function 'event_in' failed"
 						<< lua_tostring( L, -1 );
-				
+
 			}
-			
+
 			// control/mode change
 			if( (status & 0xF0) == 0xB0 ){
 				type = status & 0xF0;
@@ -321,7 +324,7 @@ process( jack_nframes_t nframes, void *arg )
 				//MSB and LSB for first 32/64 controls sort of works.
 				// look at the previous event
 				if( control < 64
-				 && status == last_event.buffer[ 0 ] 
+				 && status == last_event.buffer[ 0 ]
 				 && control == last_event.buffer[ 1 ] + 32 ){
 					value = last_event.buffer[ 2 ];
 					value = value << 8;
@@ -373,7 +376,7 @@ main( int argc, char** argv )
     option::Option* options = new option::Option[ stats.options_max ];
     option::Option* buffer = new option::Option[ stats.buffer_max ];
     option::Parser parse( usage, argc, argv, options, buffer );
-    
+
     // setup logging level.
     LOG::SetDefaultLoggerLevel( LOG::INFO );
     //if( options[ VERBOSE ] )
@@ -447,7 +450,7 @@ main( int argc, char** argv )
 
 	/* Jack */
 	LOG( INFO ) << "Initialising Jack";
-	if( (client = jack_client_open( "midi2input", JackNullOption, NULL )) == 0 ){
+	if( (client = jack_client_open( "midi2input", JackNullOption, nullptr )) == 0 ){
 		LOG( FATAL ) << "jack server not running?";
 	}
 
@@ -494,7 +497,7 @@ main( int argc, char** argv )
 	/* Jack: get list of output ports */
 	LOG( INFO ) << "Jack: Looking up output ports";
 	int i = 0;
-	const char ** portnames = jack_get_ports( client, ".midi.", NULL, JackPortIsOutput );
+	const char ** portnames = jack_get_ports( client, ".midi.", nullptr, JackPortIsOutput );
 	if(! portnames ){
 		LOG( FATAL ) << "ERROR: no ports available";
 	}
@@ -543,7 +546,7 @@ main( int argc, char** argv )
 	/* Jack: get list of input ports */
 	LOG( INFO ) << "Jack: Looking up input ports";
 	i = 0;
-	portnames = jack_get_ports( client, ".midi.", NULL, JackPortIsInput );
+	portnames = jack_get_ports( client, ".midi.", nullptr, JackPortIsInput );
 	if(! portnames ){
 		LOG( FATAL ) << "ERROR: no ports available";
 	}
