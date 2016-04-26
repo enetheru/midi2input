@@ -292,6 +292,12 @@ function mouse_move_y( midi_in )
 	mousemove( 0, (midi_in[ 4 ] - 64) * -1 )
 end
 
+function alt_f4()
+	keydown( XK_Alt_L )
+	keypress( XK_F4 )
+	keyup( XK_Alt_L )
+end
+
 default = {
 	name = "Default Configuration",
 	map = {
@@ -310,6 +316,7 @@ default = {
 		{ { 0x80,  5, 70,  64 }, { buttonup, 1 } },
 		{ { 0x90,  6, 66, 127 }, { buttondown, 2 } },
 		{ { 0x80,  6, 66,  64 }, { buttonup, 2 } },
+		{ { 0x90,  7, 89, 127 }, { alt_f4 } },
 	}
 }
 
