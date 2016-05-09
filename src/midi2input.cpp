@@ -538,7 +538,7 @@ main( int argc, char** argv )
 			} else {
 					message << " - SUCCESS\n";
 			}
-			LOG( INFO ) << message;
+			LOG( INFO ) << message.str();
 		}
 	}
 	jack_free( portnames );
