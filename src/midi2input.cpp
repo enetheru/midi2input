@@ -38,6 +38,7 @@ enum optionsIndex
 {
     UNKNOWN,
     HELP,
+    VERBOSE,
     CONFIG
 };
 
@@ -50,6 +51,11 @@ const option::Descriptor usage[] = {
     { HELP, 0, "h", "help", Arg::Nope,
     	"  -h  \t--help "
         "\tPrint usage and exit."
+    },
+
+    { VERBOSE, 0, "v", "verbose", Arg::Nope,
+        "  -v  \t--verbose "
+        "\tOutput more data."
     },
 
     { CONFIG, 0, "c", "config", Arg::Required,
@@ -142,6 +148,10 @@ static int
 lua_send_midi( lua_State *L )
 {
 	void *port_buf = jack_port_get_buffer( output_port, 0 );
+    if(! port_buf ){
+        LOG( ERROR ) << "Cannot send events with no connected ports";
+        return 1;
+    }
 	jack_midi_clear_buffer( port_buf );
 
 	jack_midi_data_t *event = jack_midi_event_reserve( port_buf, 0, 3 );
@@ -210,7 +220,7 @@ XGetTopLevelParent( Display *xdp, Window w )
 	int actual_format_return = 0;
 	unsigned long nitems_return = 0L;
 	unsigned long bytes_after_return = 0L;
-	unsigned char *prop_return = nullptr;
+	unsigned char *prop_return = NULL;
 
 	if( XGetWindowProperty( xdp, w, property, 0L, 1024L, False, XA_STRING,
 				&actual_type_return,
@@ -233,7 +243,7 @@ XGetTopLevelParent( Display *xdp, Window w )
 	// no WM_CLASS property found, so lets get the parent window
 	Window root_return;
 	Window parent_return;
-	Window *children_return = nullptr;
+	Window *children_return = NULL;
 	unsigned int nchildren_return = 0;
 
 	if( XQueryTree( xdp, w,
@@ -241,7 +251,7 @@ XGetTopLevelParent( Display *xdp, Window w )
 				&parent_return,
 				&children_return,
 				&nchildren_return ) ){
-		if( children_return != nullptr ) XFree( children_return );
+		if( children_return != NULL ) XFree( children_return );
 		if( parent_return != DefaultRootWindow( xdp ) )
 			w = XGetTopLevelParent( xdp, parent_return );
 	}
@@ -378,9 +388,9 @@ main( int argc, char** argv )
     option::Parser parse( usage, argc, argv, options, buffer );
 
     // setup logging level.
-    LOG::SetDefaultLoggerLevel( LOG::INFO );
-    //if( options[ VERBOSE ] )
-    //    LOG::SetDefaultLoggerLevel( LOG::INFO );
+    LOG::SetDefaultLoggerLevel( LOG::ERROR );
+    if( options[ VERBOSE ] )
+        LOG::SetDefaultLoggerLevel( LOG::INFO );
     //if( options[ QUIET ] )
     //    LOG::SetDefaultLoggerLevel( LOG::CHECK );
 
@@ -450,7 +460,7 @@ main( int argc, char** argv )
 
 	/* Jack */
 	LOG( INFO ) << "Initialising Jack";
-	if( (client = jack_client_open( "midi2input", JackNullOption, nullptr )) == 0 ){
+	if( (client = jack_client_open( "midi2input", JackNullOption, NULL )) == 0 ){
 		LOG( FATAL ) << "jack server not running?";
 	}
 
@@ -497,7 +507,7 @@ main( int argc, char** argv )
 	/* Jack: get list of output ports */
 	LOG( INFO ) << "Jack: Looking up output ports";
 	int i = 0;
-	const char ** portnames = jack_get_ports( client, ".midi.", nullptr, JackPortIsOutput );
+	const char ** portnames = jack_get_ports( client, ".midi.", NULL, JackPortIsOutput );
 	if(! portnames ){
 		LOG( FATAL ) << "ERROR: no ports available";
 	}
@@ -546,7 +556,7 @@ main( int argc, char** argv )
 	/* Jack: get list of input ports */
 	LOG( INFO ) << "Jack: Looking up input ports";
 	i = 0;
-	portnames = jack_get_ports( client, ".midi.", nullptr, JackPortIsInput );
+	portnames = jack_get_ports( client, ".midi.", NULL, JackPortIsInput );
 	if(! portnames ){
 		LOG( FATAL ) << "ERROR: no ports available";
 	}

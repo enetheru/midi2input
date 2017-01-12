@@ -26,7 +26,7 @@ message( "Check Documentation: " ${CHECK_DOCS} )
 
 # Compiler
 # --------
-set( CMAKE_CXX_FLAGS -std=c++11 )
+set( CMAKE_CXX_FLAGS -std=c++98 )
 
 # dependencies
 # ============
@@ -35,7 +35,7 @@ find_package( PkgConfig )
 pkg_check_modules( JACK jack )
 pkg_check_modules( XTST xtst )
 pkg_check_modules( X11 x11 )
-pkg_check_modules( LUA lua5.2 )
+pkg_check_modules( LUA lua52 )
 
 include_directories(
     ${JACK_INCLUDE_DIRS}
