@@ -252,234 +252,370 @@ XK_braceleft                   = 0x007b  --/* U+007B LEFT CURLY BRACKET */
 XK_bar                         = 0x007c  --/* U+007C VERTICAL LINE */
 XK_braceright                  = 0x007d  --/* U+007D RIGHT CURLY BRACKET */
 XK_asciitilde                  = 0x007e  --/* U+007E TILDE */
+
+
+--[[ ddj-wego button to midi tables]]--
+
+ddj = {
+    misc = {
+        browse = {
+            down   = { 0x96, 0x41, 127 },
+            up     = { 0x86, 0x41,  64 },
+            turn   = { 0xB6, 0x40,  -1 }, -- values 0-30 or 98-127
+            sdown  = { 0x96, 0x42, 127 },
+            sup    = { 0x86, 0x42,  64 },
+            sturn  = { 0xB6, 0x64,  -1 }, -- values 0-30 or 98-127
+        },
+        hpmix = {
+            msb = { 0xB6, 0x01, -1 },
+            lsb = { 0xB6, 0x21, -1 },
+        },
+        crossfader = {
+            msb  = { 0xB6, 0x1F, -1 },
+            lsb  = { 0xB6, 0x3F, -1 },
+            smsb = { 0xB6, 0x00, -1 },
+            slsb = { 0xB6, 0x20, -1 },
+        },
+        deckC = {
+            down  = { 0x92, 0x72, 127 },
+            up    = { 0x82, 0x72,  64 },
+            lon   = { 0x92, 0x72, 127 },
+            loff  = { 0x92, 0x72,   0 },
+            lstate = false,
+        },
+        deckD = {
+            down  = { 0x93, 0x72, 127 },
+            up    = { 0x83, 0x72,  64 },
+            lon   = { 0x93, 0x72, 127 },
+            loff  = { 0x93, 0x72,   0 },
+            lstate = false,
+        },
+ },
+
+}
+
+--[[ add the four decks substituting the channel ]]--
+decks = { deckA = 1; deckB = 2; deckC = 3, deckD = 4 }
+for deck, ch in pairs(decks) do
+    note_on =  0x90 + ch -1
+    note_off =  0x80 + ch -1
+    control = 0xB0 + ch -1
+
+    ddj[deck] = {}
+    ddj[deck] = {
+        autoloop = {
+            down  = { note_on,  0x14, 127 },
+            up    = { note_off, 0x14,  64 },
+            turn  = { control,  0x13,  -1 }, -- values 0-30 or 98-127
+            sdown = { note_on,  0x50, 127 },
+            sup   = { note_off, 0x50,  64 },
+            sturn = { control,  0x4F,  -1 }, -- values 0-30 or 98-127
+        },
+        load = {
+            down  = { 0x90, 7, 0x45+ch, 127 },
+            up    = { 0x80, 7, 0x45+ch,  64 },
+            sdown = { 0x90, 7, 0x57+ch, 127 },
+            sup   = { 0x80, 7, 0x57+ch,  64 },
+        },
+        headphone = {
+            down  = { 0x96, 0x53+ch, 127 },
+            up    = { 0x86, 0x53+ch,  64 },
+            sdown = { 0x96, 0x5B+ch, 127 },
+            sup   = { 0x86, 0x5B+ch,  64 },
+            lon   = { 0x96, 0x53+ch, 127 },
+            loff  = { 0x96, 0x53+ch,   0 },
+            lstate = false,
+        },
+
+        sync = {
+            down   = { note_on,  0x58, 127 },
+            up     = { note_off, 0x58,  64 },
+            sdown  = { note_on,  0x5C, 127 },
+            sup    = { note_off, 0x5C,  64 },
+            lon    = { note_on,  0x58, 127 },
+            loff   = { note_on,  0x58,   0 },
+            lstate = false,
+        },
+        tempo = {
+            msb  = { control, 0x00, -1 },
+            lsb  = { control, 0x20, -1 },
+            smsb = { control, 0x05, -1 },
+            slsb = { control, 0x25, -1 },
+        },
+
+        jogdial = {
+            down  = { note_on,  0x36, 127 },
+            up    = { note_off, 0x36,  64 },
+            sdown = { note_on,  0x67, 127 },
+            sup   = { note_on,  0x67,  64 },
+            turn  = { control,  0x22,  -1 }, --clockwise=65-127,cc=1-63
+            sturn = { control,  0x27,  -1 }, --clockwise=65-127,cc=1-63
+            rim   = { control,  0x22,  -1 }, --clockwise=65-127,cc=1-63
+            srim  = { control,  0x26,  -1 }, --clockwise=65-127,cc=1-63
+        },
+
+        cue = {
+            down   = { note_on,  0x0C, 127 },
+            up     = { note_off, 0x0C,  64 },
+            sdown  = { note_on,  0x48, 127 },
+            sup    = { note_off, 0x48,  64 },
+            lon    = { note_on,  0x0C, 127 },
+            loff   = { note_on,  0x0C,   0 },
+            lstate = false,
+        },
+        play = {
+            down   = { note_on,  0x0B, 127 },
+            up     = { note_off, 0x0B,  64 },
+            sdown  = { note_on,  0x47, 127 },
+            sup    = { note_off, 0x47,  64 },
+            lon    = { note_on,  0x0B, 127 },
+            loff   = { note_on,  0x0B,   0 },
+            lstate = false,
+        },
+        one = {
+            down   = { note_on,  0x2E, 127 },
+            up     = { note_off, 0x2E,  64 },
+            sdown  = { note_on,  0x5F, 127 },
+            sup    = { note_off, 0x5F,  64 },
+            lon    = { note_on,  0x2E, 127 },
+            loff   = { note_on,  0x2E,   0 },
+            lstate = false,
+        },
+        two = {
+            down   = { note_on,  0x2F, 127 },
+            up     = { note_off, 0x2F,  64 },
+            sdown  = { note_on,  0x60, 127 },
+            sup    = { note_off, 0x60,  64 },
+            lon    = { note_on,  0x2F, 127 },
+            loff   = { note_on,  0x2F,   0 },
+            lstate = false,
+        },
+        three = {
+            down   = { note_on,  0x30, 127 },
+            up     = { note_off, 0x30,  64 },
+            sdown  = { note_on,  0x61, 127 },
+            sup    = { note_off, 0x61,  64 },
+            lon    = { note_on,  0x30, 127 },
+            loff   = { note_on,  0x30,   0 },
+            lstate = false,
+        },
+        four = {
+            down   = { note_on,  0x31, 127 },
+            up     = { note_off, 0x31,  64 },
+            sdown  = { note_on,  0x62, 127 },
+            sup    = { note_off, 0x62,  64 },
+            lon    = { note_on,  0x31, 127 },
+            loff   = { note_on,  0x31,   0 },
+            lstate = false,
+        },
+        sampler = {
+            down   = { note_on, 0x59, 127 },
+            up     = { note_off, 0x59,  64 },
+        },
+
+        eqhi = {
+            msb = { 0xB6, 0x07, -1 },
+            lsb = { 0xB6, 0x27, -1 },
+        },
+        eqmid = {
+            msb = { 0xB6, 0x0B, -1 },
+            lsb = { 0xB6, 0x2B, -1 },
+        },
+        eqlow = {
+            msb = { 0xB6, 0x0F, -1 },
+            lsb = { 0xB6, 0x2F, -1 },
+        },
+        fader = {
+            msb  = { 0xB6, 0x13, -1 },
+            lsb  = { 0xB6, 0x33, -1 },
+            smsb = { 0xB6, 0x14, -1 },
+            slsb = { 0xB6, 0x34, -1 },
+        },
+    }
+end
+
+-- generic test function to turn on and off lighted buttons
+function lbutton_toggle( button )
+    if button.lstate == false then
+        button.lstate = true
+        midi_send( button.lon )
+    else
+        button.lstate = false
+        midi_send( button.loff )
+    end
+end
+
 --[[ global settings ]]--
 -- autoconnect: can be true, false, or a named jack port. default = true
 autoconnect = true
 
---[[ Mapping ]]--
---[[ this section maps midi events to input events using the following
-    construct
-    { {type, channel, note, velocity}, {modifyer mask, input event} }
-eg. { {0x9, 0-15, 0-127, 0-127}, {0x00, 'b'} }
+--[[ initialisation function ]]--
+-- run immeditely after the application launches and connects to the device
+function initialise()
+    print( "[LUA] Nothing to initialise" )
+    return;
+end
+
+--[[ Action Tables ]]--
+--[[ This section maps midi events to actions using the following format
+    { { status, data1, data2 }, { function [, function argument] } }
+eg. { {0x90, 0x72, 127}, { keypress, XK_a } }
+
+pre-defined functions are:
+* keypress( XK_keycode )
+* keydown( XK_keycode )
+* keyup( XK_keycode )
+* buttonpress( n )
+* buttondown( n )
+* buttonup( n )
+* mousemove( x, y )
+* mousepos( x, y )
+* send_midi( { status, data1, data2 } )
     ]]--
-function alt_tab()
-	keydown( XK_Alt_L )
-	keypress( XK_Tab )
+
+function i3_super( vdesk )
+    keydown( XK_Super_L )
+    if vdesk == 1 then keypress( XK_1 ) end
+    if vdesk == 2 then keypress( XK_2 ) end
+    if vdesk == 3 then keypress( XK_3 ) end
+    if vdesk == 4 then keypress( XK_4 ) end
+    keyup( XK_Super_L )
 end
 
-function alt_shift_tab()
-	keydown( XK_Alt_L )
-	keydown( XK_Shift_L )
-	keypress( XK_Tab )
-	keyup( XK_Shift_L )
-end
+dbus_banshee_play = 'dbus-send --session --type="method_call" --dest=org.mpris.MediaPlayer2.banshee /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.PlayPause'
+dbus_banshee_previous = 'dbus-send --session --type="method_call" --dest=org.mpris.MediaPlayer2.banshee /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Previous'
+dbus_banshee_next = 'dbus-send --session --type="method_call" --dest=org.mpris.MediaPlayer2.banshee /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Next'
 
-function alt_up()
-	keyup( XK_Alt_L )
-end
-
-function alt_f10()
-	keydown( XK_Alt_L )
-	keypress( XK_F10 )
-	keyup( XK_Alt_L )
-end
-
-function mouse_move_x( midi_in )
-	mousemove( midi_in[ 4 ] - 64 , 0 )
-end
-
-function mouse_move_y( midi_in )
-	mousemove( 0, (midi_in[ 4 ] - 64) * -1 )
-end
-
-function alt_f4()
-	keydown( XK_Alt_L )
-	keypress( XK_F4 )
-	keyup( XK_Alt_L )
+function dbus_banshee_next_prev( event )
+    if event[ 3 ] == 1 then exec( dbus_banshee_next ) end
+    if event[ 3 ] == 127 then exec( dbus_banshee_previous ) end
 end
 
 default = {
-	name = "Default Configuration",
-	map = {
-		{ { 0xB0,  7, 64,   1 }, { alt_tab } },
-		{ { 0xB0,  7, 64, 127 }, { alt_shift_tab } },
-		{ { 0x90,  7, 65, 127 }, { alt_up } },
-		{ { 0xB0,  1, 19,   1 }, { keypress, XK_Down } },
-		{ { 0xB0,  1, 19, 127 }, { keypress, XK_Up } },
-		{ { 0xB0,  2, 19,   1 }, { keypress, XK_Right } },
-		{ { 0xB0,  2, 19, 127 }, { keypress, XK_Left } },
-		{ { 0x90, -1, 20,  -1 }, { keypress, XK_Return } },
-		{ { 0x90,  5, 67, 127 }, { alt_f10 } }, 
-		{ { 0xB0,  1, 34,  -1 }, { mouse_move_x } },
-		{ { 0xB0,  2, 34,  -1 }, { mouse_move_y } },
-		{ { 0x90,  5, 70, 127 }, { buttondown, 1 } },
-		{ { 0x80,  5, 70,  64 }, { buttonup, 1 } },
-		{ { 0x90,  6, 66, 127 }, { buttondown, 2 } },
-		{ { 0x80,  6, 66,  64 }, { buttonup, 2 } },
-		{ { 0x90,  7, 89, 127 }, { alt_f4 } },
-	}
+    name = "Default Configuration",
+    map = {
+        -- i3 window manager routines
+        { ddj.deckA.one.down,   { i3_super, 1 } },
+        { ddj.deckA.two.down,   { i3_super, 2 } },
+        { ddj.deckA.three.down, { i3_super, 3 } },
+        { ddj.deckA.four.down,  { i3_super, 4 } },
+        { ddj.deckA.play.down,   { exec, dbus_banshee_play  } },
+        { ddj.deckA.autoloop.turn,   { dbus_banshee_next_prev  } },
+    }
 }
 
-function banshee_shift_tab( )
-	keydown( XK_Shift_L )
-	keypress( XK_Tab )
-	keyup( XK_Shift_L )
+interval = 50
+current = 0
+function lw_jogdial_turn( event )
+    if current < interval then current = current + 1; return end
+    if current >= interval then current = 0 end
+    if event[3] > 64 then
+        keypress( XK_period )
+    end
+    if event[3] < 64 then
+        keypress( XK_comma )
+    end
+end
+
+function lw_jogdial_sturn( event )
+    if current < interval then current = current + 1; return end
+    if current >= interval then current = 0 end
+    if event[3] > 64 then
+        keypress( XK_question )
+    end
+    if event[3] < 64 then
+        keypress( XK_m )
+    end
+end
+
+lightworks = {
+    name = "Lightworks",
+    map = {
+        { ddj.deckB.play.down,     { keypress, XK_space } },
+        { ddj.deckB.jogdial.turn,  { lw_jogdial_turn } },
+        { ddj.deckB.jogdial.sturn, { lw_jogdial_sturn } },
+        { ddj.deckB.cue.down,      { keypress, XK_i } },
+        { ddj.deckB.tempo.msb,     { lw_tempo } },
+    }
+}
+
+function banshee_autoloop_turn( event )
+    if event[3] < 30 then keypress( XK_n ) end
+    if event[3] > 100 then keypress( XK_b ) end
 end
 
 Banshee = {
-	name = "Banshee Media Player",
-	map = {
-		{ {0x90, -1, 11, 127 }, { keypress, XK_space } },
-		{ {0xB0,  2, 19,   1 }, { keypress, XK_Tab } },
-		{ {0xB0,  2, 19, 127 }, { banshee_shift_tab } },
-	}
-}
-
-vlc_speed_value = 0
-function vlc_speed( midi_in )
-	if( vlc_speed_value > midi_in[ 4 ] ) then
-		keypress( XK_bracketright )
-	elseif( vlc_speed_value < midi_in[ 4 ] ) then
-		keypress( XK_bracketleft )
-	end
-	vlc_speed_value = midi_in[4];
-end
-
-function vlc_skip( midi_in )
-	keydown( XK_Shift_L)
-	if( midi_in[ 4 ] > 64 ) then
-		keypress( XK_Right )
-	elseif( midi_in[ 4 ] < 64 ) then
-		keypress( XK_Left )
-	end
-	keyup( XK_Shift_L)
-end
-
-vlc = {
-	name = "VLC Media Player",
-	map = {
-		{ { 0x90, -1, 11, 127}, { keypress, XK_space } },
-		{ { 0xB0, -1,  0, -1 }, { vlc_speed } },
-		{ { 0xB0, -1, 34, -1 }, { vlc_skip } },
-		{ { 0x90,  5, 68, 127}, { keypress, XK_f } },
-	}
+    name = "Banshee Media Player",
+    map = {
+        { ddj.deckA.play.down, { keypress, XK_space } },
+        { ddj.deckA.autoloop.turn, { banshee_autoloop_turn } },
+    }
 }
 
 mixxx = {
-	name = "Mixxx DJ",
-	map = nil,
+    name = "Mixxx DJ",
+    map = nil,
 }
 
 applications = {
-	["Banshee"] = Banshee,
-	["vlc"] = vlc,
-	["mixxx"] = mixxx,
+    ["Banshee"] = Banshee,
+    ["vlc"] = vlc,
+    ["mixxx"] = mixxx,
+    ["ntcardvt"] = lightworks,
 }
 
-function map_iter( t )
-	local i = 0
-	local n = #t
-	return function ()
-		i = i + 1
-		if i <= n then return t[i] end
-	end
+function table_rows( t )
+    local i = 0
+    local n = #t
+    return function ()
+        i = i + 1
+        if i <= n then return t[i] end
+    end
 end
 
-function midi_compare( a, b )
-	if a[1] ~= -1 then
-		if a[1] ~= b[1] then return true end
-	end
-	if a[2] ~= -1 then
-		if a[2] ~= b[2] then return true end
-	end
-	if a[3] ~= -1 then
-		if a[3] ~= b[3] then return true end
-	end
-	if a[4] ~= -1 then
-		if a[4] ~= b[4] then return true end
-	end
-	return false
+function message_compare( a, b )
+    if a[1] ~= -1 then
+        if a[1] ~= b[1] then return true end
+    end
+    if a[2] ~= -1 then
+        if a[2] ~= b[2] then return true end
+    end
+    if a[3] ~= -1 then
+        if a[3] ~= b[3] then return true end
+    end
+    return false
 end
 
 --[[ Input Event Handler ]]--
-function event_in( a, b, c, d )
-	midi_in = {a, b, c, d }
+function midi_recv( status, data1, data2 )
+    message = { status, data1, data2 }
 
-	-- select application based on wm_name pulled from X11	
-	local app = applications[ wm_class ]
-	if( not app ) then
-		app = default
-	end
-	map = app.map
+    -- select application based on wm_name pulled from X11
+    local app = applications[ wm_class ]
+    if( not app ) then
+        app = default
+    end
+    table = app.map
 
-	-- look for control in the application map first, before the default map
-	while( map ) do
-		-- search items
-		for item in map_iter( map ) do
-			-- test for event
-			if( not midi_compare( item[ 1 ], midi_in ) ) then
-				-- check for argument in second pair
-				if( item[ 2 ][ 2 ] ) then
-					item[ 2 ][ 1 ]( item[ 2 ][ 2 ] )
-				else
-					item[ 2 ][ 1 ]( midi_in )
-				end
-				return
-			end
-		end
-		--if not found in application.map search default
-		if( map == default.map ) then map = nil
-		else map = default.map
-		end
-	end
+    -- look for control in the application map first, before the default map
+    while( table ) do
+        -- search items
+        for row in table_rows( table ) do
+            -- test for event
+            if( not message_compare( row[ 1 ], message ) ) then
+                -- check for argument in second pair
+                if( row[ 2 ][ 2 ] ) then
+                    row[ 2 ][ 1 ]( row[ 2 ][ 2 ] )
+                else
+                    row[ 2 ][ 1 ]( message )
+                end
+                return
+            end
+        end
+        --if not found in application.map search default
+        if( table == default.map ) then table = nil
+        else table = default.map
+        end
+    end
+
 end
-
-
---# separate definition of button physical logic, from physical looks. with overrides
-
---[[#ie
-control_definition_button = {
-    type = "button",
-    name = "button",
-    midi_on = {0x00, 0x00},
-    midi_off = {0x00, 0x00},
-    midi_light_on = {0x00, 0x00},
-    midi_light_off = {0x00, 0x00},
-    light_default = off;
-}
-
-button_appearance = {
-    --measurements in mm, and radians
-    location_default = {x,y},
-    location_min = {x,y},
-    location_max = {x,y},
-    shape = "circle", --# or square or custom
-    shape_custom = {{x,y},{x,y}},
-    radius = 0.0,
-    rotation_default = 0.0,
-    rotation_min = 0.0,
-    rotation_max = 0.0,
-}
-
-control_01 = {
-    name = "desk_1_play",
-    control_definition = control_definition_button,
-    control_appearance = button_appearance,
-    control_logic = button_logic,
-    --exampple override
-    control_definition.midi_on = {0x00, 0x00},
-}
-
-map = {
-    {{0x90,0x00,0x00}, 'v'},
-}
-]]--
-
---[[
-the ultra simple case:
-midi code{0x00, 0x00, 0x00} -> unicode keypress/mouse button
-midi events are 3 bytes, first byte is the status, channel/note etc second is the note number 0-127 and the last is the intensity? 0-127
-
-complex case:
-input as defined by a group/set/type of event from midi and then a function called or set of functions called.
-]]--
