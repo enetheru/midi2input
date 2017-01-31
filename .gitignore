@@ -2,3 +2,7 @@ build
 *.swp
 *.pyc
 .ycm*
+
+\.idea/
+
+cmake-build-debug/

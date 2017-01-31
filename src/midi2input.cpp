@@ -178,6 +178,7 @@ lua_exec( lua_State *L )
 {
     std::string command;
     command = luaL_checkstring( L, -1 );
+    LOG( INFO ) << "exec: " << command;
 
     FILE *in;
     char buff[512];
@@ -495,7 +496,7 @@ main( int argc, char** argv )
 
     LOG( INFO ) << "Lua: Loading configuration file";
     if(! load_config( luaScript.c_str() ) ){
-        LOG( FATAL ) << "Unable to open configuration file";
+        LOG( FATAL ) << "Unable to open configuration file, expecting ~/.config/midi2input.lua, or -c switch.";
     }
 
     /* Jack */

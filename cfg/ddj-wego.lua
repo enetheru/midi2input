@@ -456,6 +456,11 @@ function initialise()
     return;
 end
 
+--[[ TODO add LOG( INFO/DEBUG/ERROR/ETC ) decription continues...
+--   logging functionality such that LOG(INFO) etc are available to lua. exposing the 'elog' logging level to lua
+--   probably will solve this nicely.
+ ]]
+
 --[[ Action Tables ]]--
 --[[ This section maps midi events to actions using the following format
     { { status, data1, data2 }, { function [, function argument] } }
