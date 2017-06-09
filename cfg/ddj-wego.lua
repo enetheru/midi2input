@@ -253,9 +253,41 @@ XK_bar                         = 0x007c  --/* U+007C VERTICAL LINE */
 XK_braceright                  = 0x007d  --/* U+007D RIGHT CURLY BRACKET */
 XK_asciitilde                  = 0x007e  --/* U+007E TILDE */
 
+--[[ global settings ]]--
+-- autoconnect: can be true, false, or a named jack port. default = true
+autoconnect = true
+
+-- a funtion to recursively walk the ddj structure and send signals
+-- to the controller to refresh the lighting state.
+function refresh_state( object )
+    for index,value in pairs( object ) do
+        if( type( object[ index ] ) == "table" ) then
+            refresh_state( object[ index ] )
+        end
+        if( index == "lstate" ) then
+            if( value == true ) then
+                midi_send( object.lon )
+            else
+                midi_send( object.loff )
+            end
+
+            -- if we send all the events at once the controller does not
+            -- respond to them all. 0.001 failed.
+            sleep(0.01)
+        end
+    end
+end
+
+local clock = os.clock
+function sleep(n)  -- seconds
+  local t0 = clock()
+  while clock() - t0 <= n do end
+end
+-- warning: clock can eventually wrap around for sufficiently large n
+-- (whose value is platform dependent).  Even for n == 1, clock() - t0
+-- might become negative on the second that clock wraps.
 
 --[[ ddj-wego button to midi tables]]--
-
 ddj = {
     misc = {
         browse = {
@@ -290,8 +322,7 @@ ddj = {
             loff  = { 0x93, 0x72,   0 },
             lstate = false,
         },
- },
-
+    },
 }
 
 --[[ add the four decks substituting the channel ]]--
@@ -303,30 +334,12 @@ for deck, ch in pairs(decks) do
 
     ddj[deck] = {}
     ddj[deck] = {
-        autoloop = {
-            down  = { note_on,  0x14, 127 },
-            up    = { note_off, 0x14,  64 },
-            turn  = { control,  0x13,  -1 }, -- values 0-30 or 98-127
-            sdown = { note_on,  0x50, 127 },
-            sup   = { note_off, 0x50,  64 },
-            sturn = { control,  0x4F,  -1 }, -- values 0-30 or 98-127
+        tempo = {
+            msb  = { control, 0x00, -1 },
+            lsb  = { control, 0x20, -1 },
+            smsb = { control, 0x05, -1 },
+            slsb = { control, 0x25, -1 },
         },
-        load = {
-            down  = { 0x90, 7, 0x45+ch, 127 },
-            up    = { 0x80, 7, 0x45+ch,  64 },
-            sdown = { 0x90, 7, 0x57+ch, 127 },
-            sup   = { 0x80, 7, 0x57+ch,  64 },
-        },
-        headphone = {
-            down  = { 0x96, 0x53+ch, 127 },
-            up    = { 0x86, 0x53+ch,  64 },
-            sdown = { 0x96, 0x5B+ch, 127 },
-            sup   = { 0x86, 0x5B+ch,  64 },
-            lon   = { 0x96, 0x53+ch, 127 },
-            loff  = { 0x96, 0x53+ch,   0 },
-            lstate = false,
-        },
-
         sync = {
             down   = { note_on,  0x58, 127 },
             up     = { note_off, 0x58,  64 },
@@ -336,12 +349,61 @@ for deck, ch in pairs(decks) do
             loff   = { note_on,  0x58,   0 },
             lstate = false,
         },
-        tempo = {
-            msb  = { control, 0x00, -1 },
-            lsb  = { control, 0x20, -1 },
-            smsb = { control, 0x05, -1 },
-            slsb = { control, 0x25, -1 },
+
+        autoloop = {
+            turn  = { control,  0x13,  -1 }, -- values 0-30 or 98-127
+            sturn = { control,  0x4F,  -1 }, -- values 0-30 or 98-127
+
+            next  = { control,  0x13,   1 }, 
+            snext = { control,  0x4F,   1 },
+
+            prev  = { control,  0x13, 127 },
+            sprev = { control,  0x4F, 127 },
+
+            down  = { note_on,  0x14, 127 },
+            sdown = { note_on,  0x50, 127 },
+
+            up    = { note_off, 0x14,  64 },
+            sup   = { note_off, 0x50,  64 },
         },
+        load = {
+            down  = { 0x96, 0x45+ch, 127 },
+            up    = { 0x86, 0x45+ch,  64 },
+            sdown = { 0x96, 0x57+ch, 127 },
+            sup   = { 0x86, 0x57+ch,  64 },
+        },
+
+        --equaliser
+        eqhi = {
+            msb = { 0xB6, 0x07, -1 },
+            lsb = { 0xB6, 0x27, -1 },
+        },
+        eqmid = {
+            msb = { 0xB6, 0x0B, -1 },
+            lsb = { 0xB6, 0x2B, -1 },
+        },
+        eqlow = {
+            msb = { 0xB6, 0x0F, -1 },
+            lsb = { 0xB6, 0x2F, -1 },
+        },
+
+        headphone = {
+            down  = { 0x96, 0x53+ch, 127 },
+            up    = { 0x86, 0x53+ch,  64 },
+            sdown = { 0x96, 0x5B+ch, 127 },
+            sup   = { 0x86, 0x5B+ch,  64 },
+            lon   = { 0x96, 0x53+ch, 127 },
+            loff  = { 0x96, 0x53+ch,   0 },
+            lstate = false,
+        },
+        fader = {
+            msb  = { 0xB6, 0x13, -1 },
+            lsb  = { 0xB6, 0x33, -1 },
+            smsb = { 0xB6, 0x14, -1 },
+            slsb = { 0xB6, 0x34, -1 },
+        },
+
+
 
         jogdial = {
             down  = { note_on,  0x36, 127 },
@@ -372,7 +434,13 @@ for deck, ch in pairs(decks) do
             loff   = { note_on,  0x0B,   0 },
             lstate = false,
         },
-        one = {
+
+        --Samplers
+        sampler = {
+            down   = { note_on, 0x59, 127 },
+            up     = { note_off, 0x59,  64 },
+        },
+        sampler1 = {
             down   = { note_on,  0x2E, 127 },
             up     = { note_off, 0x2E,  64 },
             sdown  = { note_on,  0x5F, 127 },
@@ -381,7 +449,7 @@ for deck, ch in pairs(decks) do
             loff   = { note_on,  0x2E,   0 },
             lstate = false,
         },
-        two = {
+        sampler2 = {
             down   = { note_on,  0x2F, 127 },
             up     = { note_off, 0x2F,  64 },
             sdown  = { note_on,  0x60, 127 },
@@ -390,7 +458,7 @@ for deck, ch in pairs(decks) do
             loff   = { note_on,  0x2F,   0 },
             lstate = false,
         },
-        three = {
+        sampler3 = {
             down   = { note_on,  0x30, 127 },
             up     = { note_off, 0x30,  64 },
             sdown  = { note_on,  0x61, 127 },
@@ -399,7 +467,7 @@ for deck, ch in pairs(decks) do
             loff   = { note_on,  0x30,   0 },
             lstate = false,
         },
-        four = {
+        sampler4 = {
             down   = { note_on,  0x31, 127 },
             up     = { note_off, 0x31,  64 },
             sdown  = { note_on,  0x62, 127 },
@@ -408,32 +476,216 @@ for deck, ch in pairs(decks) do
             loff   = { note_on,  0x31,   0 },
             lstate = false,
         },
-        sampler = {
-            down   = { note_on, 0x59, 127 },
-            up     = { note_off, 0x59,  64 },
+        sampler5 = {
+            down   = { note_on,  0x3C, 127 },
+            up     = { note_off, 0x3C,  64 },
+            sdown  = { note_on,  0x3D, 127 },
+            sup    = { note_off, 0x3D,  64 },
+            lon    = { note_on,  0x3C, 127 },
+            loff   = { note_on,  0x3C,   0 },
+            lstate = false,
+        },
+        sampler6 = {
+            down   = { note_on,  0x3E, 127 },
+            up     = { note_off, 0x3E,  64 },
+            sdown  = { note_on,  0x3F, 127 },
+            sup    = { note_off, 0x3F,  64 },
+            lon    = { note_on,  0x3E, 127 },
+            loff   = { note_on,  0x3E,   0 },
+            lstate = false,
+        },
+        sampler7 = {
+            down   = { note_on,  0x40, 127 },
+            up     = { note_off, 0x40,  64 },
+            sdown  = { note_on,  0x41, 127 },
+            sup    = { note_off, 0x41,  64 },
+            lon    = { note_on,  0x40, 127 },
+            loff   = { note_on,  0x40,   0 },
+            lstate = false,
+        },
+        sampler8 = {
+            down   = { note_on,  0x42, 127 },
+            up     = { note_off, 0x42,  64 },
+            sdown  = { note_on,  0x43, 127 },
+            sup    = { note_off, 0x43,  64 },
+            lon    = { note_on,  0x42, 127 },
+            loff   = { note_on,  0x42,   0 },
+            lstate = false,
         },
 
-        eqhi = {
-            msb = { 0xB6, 0x07, -1 },
-            lsb = { 0xB6, 0x27, -1 },
-        },
-        eqmid = {
-            msb = { 0xB6, 0x0B, -1 },
-            lsb = { 0xB6, 0x2B, -1 },
-        },
-        eqlow = {
-            msb = { 0xB6, 0x0F, -1 },
-            lsb = { 0xB6, 0x2F, -1 },
-        },
-        fader = {
-            msb  = { 0xB6, 0x13, -1 },
-            lsb  = { 0xB6, 0x33, -1 },
-            smsb = { 0xB6, 0x14, -1 },
-            slsb = { 0xB6, 0x34, -1 },
-        },
+
+
     }
 end
+-- Deck A
+ddj.deckA.ctrlA = {
+            down = { 0x94, 0x42, 127 },
+            up   = { 0x84, 0x42, 0   },
+            loff = { 0x94, 0x42, 0   },
+            lon  = { 0x94, 0x42, 127 },
+            lstate = false,
+}
+ddj.deckA.FX1 = {
+            down  = { 0x94, 0x43, 127 },
+            up    = { 0x84, 0x43, 64  },
+            sdown = { 0x94, 0x4D, 127 },
+            sup   = { 0x94, 0x4D, 64  },
+            loff  = { 0x94, 0x43, 0   },
+            lon   = { 0x94, 0x43, 127 },
+            lstate = false,
+}
+ddj.deckA.FX2 = {
+            down  = { 0x94, 0x44, 127 },
+            up    = { 0x84, 0x44, 64  },
+            sdown = { 0x94, 0x4E, 127 },
+            sup   = { 0x94, 0x4E, 64  },
+            loff  = { 0x94, 0x44, 0   },
+            lon   = { 0x94, 0x44, 127 },
+            lstate = false,
+}
+ddj.deckA.FX3 = {
+            down  = { 0x94, 0x45, 127 },
+            up    = { 0x84, 0x45, 64  },
+            sdown = { 0x94, 0x4F, 127 },
+            sup   = { 0x94, 0x4F, 64  },
+            loff  = { 0x94, 0x45, 0   },
+            lon   = { 0x94, 0x45, 127 },
+            lstate = false,
+}
+ddj.deckA.ctrlB = {
+            down  = { 0x94, 0x46, 127 },
+            up    = { 0x84, 0x46, 64   },
+            loff  = { 0x94, 0x46, 0   },
+            lon   = { 0x94, 0x46, 127 },
+            lstate = false,
+}
+-- Deck B
+ddj.deckB.ctrlA = {
+            down = { 0x95, 0x42, 127 },
+            up   = { 0x85, 0x42, 0   },
+            loff = { 0x95, 0x42, 0   },
+            lon  = { 0x95, 0x42, 127 },
+            lstate = false,
+}
+ddj.deckB.FX1 = {
+            down  = { 0x95, 0x43, 127 },
+            up    = { 0x85, 0x43, 64  },
+            sdown = { 0x95, 0x4D, 127 },
+            sup   = { 0x95, 0x4D, 64  },
+            loff  = { 0x95, 0x43, 0   },
+            lon   = { 0x95, 0x43, 127 },
+            lstate = false,
+}
+ddj.deckB.FX2 = {
+            down  = { 0x95, 0x44, 127 },
+            up    = { 0x85, 0x44, 64  },
+            sdown = { 0x95, 0x4E, 127 },
+            sup   = { 0x95, 0x4E, 64  },
+            loff  = { 0x95, 0x44, 0   },
+            lon   = { 0x95, 0x44, 127 },
+            lstate = false,
+}
+ddj.deckB.FX3 = {
+            down  = { 0x95, 0x45, 127 },
+            up    = { 0x85, 0x45, 64  },
+            sdown = { 0x95, 0x4F, 127 },
+            sup   = { 0x95, 0x4F, 64  },
+            loff  = { 0x95, 0x45, 0   },
+            lon   = { 0x95, 0x45, 127 },
+            lstate = false,
+}
+ddj.deckB.ctrlB = {
+            down  = { 0x95, 0x46, 127 },
+            up    = { 0x85, 0x46, 64   },
+            loff  = { 0x95, 0x46, 0   },
+            lon   = { 0x95, 0x46, 127 },
+            lstate = false,
+}
 
+-- Deck C
+ddj.deckC.ctrlA = {
+            down = { 0x94, 0x47, 127 },
+            up   = { 0x84, 0x47, 0   },
+            loff = { 0x94, 0x47, 0   },
+            lon  = { 0x94, 0x47, 127 },
+            lstate = false,
+}
+ddj.deckC.FX1 = {
+            down  = { 0x94, 0x48, 127 },
+            up    = { 0x84, 0x48, 64  },
+            sdown = { 0x94, 0x52, 127 },
+            sup   = { 0x94, 0x52, 64  },
+            loff  = { 0x94, 0x48, 0   },
+            lon   = { 0x94, 0x48, 127 },
+            lstate = false,
+}
+ddj.deckC.FX2 = {
+            down  = { 0x94, 0x49, 127 },
+            up    = { 0x84, 0x49, 64  },
+            sdown = { 0x94, 0x53, 127 },
+            sup   = { 0x94, 0x53, 64  },
+            loff  = { 0x94, 0x49, 0   },
+            lon   = { 0x94, 0x49, 127 },
+            lstate = false,
+}
+ddj.deckC.FX3 = {
+            down  = { 0x94, 0x4A, 127 },
+            up    = { 0x84, 0x4A, 64  },
+            sdown = { 0x94, 0x54, 127 },
+            sup   = { 0x94, 0x54, 64  },
+            loff  = { 0x94, 0x4A, 0   },
+            lon   = { 0x94, 0x4A, 127 },
+            lstate = false,
+}
+ddj.deckC.ctrlB = {
+            down  = { 0x94, 0x4B, 127 },
+            up    = { 0x84, 0x4B, 64   },
+            loff  = { 0x94, 0x4B, 0   },
+            lon   = { 0x94, 0x4B, 127 },
+            lstate = false,
+}
+--deck D
+ddj.deckD.ctrlA = {
+            down = { 0x95, 0x47, 127 },
+            up   = { 0x85, 0x47, 0   },
+            loff = { 0x95, 0x47, 0   },
+            lon  = { 0x95, 0x47, 127 },
+            lstate = false,
+}
+ddj.deckD.FX1 = {
+            down  = { 0x95, 0x48, 127 },
+            up    = { 0x85, 0x48, 64  },
+            sdown = { 0x95, 0x52, 127 },
+            sup   = { 0x95, 0x52, 64  },
+            loff  = { 0x95, 0x48, 0   },
+            lon   = { 0x95, 0x48, 127 },
+            lstate = false,
+}
+ddj.deckD.FX2 = {
+            down  = { 0x95, 0x49, 127 },
+            up    = { 0x85, 0x49, 64  },
+            sdown = { 0x95, 0x53, 127 },
+            sup   = { 0x95, 0x53, 64  },
+            loff  = { 0x95, 0x49, 0   },
+            lon   = { 0x95, 0x49, 127 },
+            lstate = false,
+}
+ddj.deckD.FX3 = {
+            down  = { 0x95, 0x4A, 127 },
+            up    = { 0x85, 0x4A, 64  },
+            sdown = { 0x95, 0x54, 127 },
+            sup   = { 0x95, 0x54, 64  },
+            loff  = { 0x95, 0x4A, 0   },
+            lon   = { 0x95, 0x4A, 127 },
+            lstate = false,
+}
+ddj.deckD.ctrlB = {
+            down  = { 0x95, 0x4B, 127 },
+            up    = { 0x85, 0x4B, 64   },
+            loff  = { 0x95, 0x4B, 0   },
+            lon   = { 0x95, 0x4B, 127 },
+            lstate = false,
+}
 -- generic test function to turn on and off lighted buttons
 function lbutton_toggle( button )
     if button.lstate == false then
@@ -445,14 +697,12 @@ function lbutton_toggle( button )
     end
 end
 
---[[ global settings ]]--
--- autoconnect: can be true, false, or a named jack port. default = true
-autoconnect = true
 
 --[[ initialisation function ]]--
 -- run immeditely after the application launches and connects to the device
 function initialise()
-    print( "[LUA] Nothing to initialise" )
+    print( "[LUA] nothing to initialise" )
+    --refresh_state( ddj )
     return;
 end
 
@@ -463,8 +713,15 @@ end
 
 --[[ Action Tables ]]--
 --[[ This section maps midi events to actions using the following format
-    { { status, data1, data2 }, { function [, function argument] } }
-eg. { {0x90, 0x72, 127}, { keypress, XK_a } }
+    { { status, data1, data2 }, { function, optional_args } }
+eg. { {   0x90,  0x72,   127 }, { keypress, XK_a          } }
+eg. {              named_event, { myFunction              } }
+eg. { {   0x90,  0x72,    -1 }, { myFunction              } }
+
+if no function arguments are specified then the midi event will be passed to
+the function.
+the comparison function for midi events works such that a -1 will compare as
+equal.
 
 pre-defined functions are:
 * keypress( XK_keycode )
@@ -476,74 +733,104 @@ pre-defined functions are:
 * mousemove( x, y )
 * mousepos( x, y )
 * send_midi( { status, data1, data2 } )
+* exec( "command" )
     ]]--
 
-function i3_super( vdesk )
-    keydown( XK_Super_L )
-    if vdesk == 1 then keypress( XK_1 ) end
-    if vdesk == 2 then keypress( XK_2 ) end
-    if vdesk == 3 then keypress( XK_3 ) end
-    if vdesk == 4 then keypress( XK_4 ) end
-    keyup( XK_Super_L )
+--[[ dbus commands ]]--
+MediaPlayer2 = 'rhythmbox'
+dbus_MediaPlayer2 = 'dbus-send --session --type="method_call"'
+    .. ' --dest=org.mpris.MediaPlayer2.' .. MediaPlayer2
+    .. ' /org/mpris/MediaPlayer2'
+    .. ' org.mpris.MediaPlayer2.Player.' -- append command to end
+
+function dbus_MediaPlayer2_seek( midi )
+    exec( dbus_MediaPlayer2 .. 'Seek int64:' .. (midi[3] - 64) * 1000000)
 end
 
-dbus_banshee_play = 'dbus-send --session --type="method_call" --dest=org.mpris.MediaPlayer2.banshee /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.PlayPause'
-dbus_banshee_previous = 'dbus-send --session --type="method_call" --dest=org.mpris.MediaPlayer2.banshee /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Previous'
-dbus_banshee_next = 'dbus-send --session --type="method_call" --dest=org.mpris.MediaPlayer2.banshee /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Next'
-
-function dbus_banshee_next_prev( event )
-    if event[ 3 ] == 1 then exec( dbus_banshee_next ) end
-    if event[ 3 ] == 127 then exec( dbus_banshee_previous ) end
-end
-
+--[[ Default action map ]]--
 default = {
     name = "Default Configuration",
     map = {
-        -- i3 window manager routines
-        { ddj.deckA.one.down,   { i3_super, 1 } },
-        { ddj.deckA.two.down,   { i3_super, 2 } },
-        { ddj.deckA.three.down, { i3_super, 3 } },
-        { ddj.deckA.four.down,  { i3_super, 4 } },
-        { ddj.deckA.play.down,   { exec, dbus_banshee_play  } },
-        { ddj.deckA.autoloop.turn,   { dbus_banshee_next_prev  } },
+        --dbus playPause,next,prev using MediaPlayer2.Player interface
+        { ddj.deckA.play.down,     { exec, dbus_MediaPlayer2 .. 'PlayPause' } },
+        { ddj.deckA.autoloop.next, { exec, dbus_MediaPlayer2 .. 'Next' } },
+        { ddj.deckA.autoloop.prev, { exec, dbus_MediaPlayer2 .. 'Previous' } },
+        { ddj.deckA.jogdial.turn,   { dbus_MediaPlayer2_seek } },
+
+        { ddj.misc.deckC.down, { lbutton_toggle, ddj.misc.deckC    } },
+        { ddj.misc.deckD.down, { lbutton_toggle, ddj.misc.deckD    } },
+        { ddj.misc.browse.sup, { midi_send,      {0xFF, 0, 0}      } },
+        { ddj.deckA.sync.down, { lbutton_toggle, ddj.deckA.sync    } },
+
+        { ddj.deckA.ctrlA.down, { lbutton_toggle, ddj.deckA.ctrlA } },
+        { ddj.deckA.FX1.down,   { lbutton_toggle, ddj.deckA.FX1 } },
+        { ddj.deckA.FX2.down,   { lbutton_toggle, ddj.deckA.FX2 } },
+        { ddj.deckA.FX3.down,   { lbutton_toggle, ddj.deckA.FX3 } },
+        { ddj.deckA.ctrlB.down, { lbutton_toggle, ddj.deckA.ctrlB } },
+
+        { ddj.deckB.ctrlA.down, { lbutton_toggle, ddj.deckB.ctrlA } },
+        { ddj.deckB.FX1.down,   { lbutton_toggle, ddj.deckB.FX1 } },
+        { ddj.deckB.FX2.down,   { lbutton_toggle, ddj.deckB.FX2 } },
+        { ddj.deckB.FX3.down,   { lbutton_toggle, ddj.deckB.FX3 } },
+        { ddj.deckB.ctrlB.down, { lbutton_toggle, ddj.deckB.ctrlB } },
+
+        { ddj.deckC.ctrlA.down, { lbutton_toggle, ddj.deckC.ctrlA } },
+        { ddj.deckC.FX1.down,   { lbutton_toggle, ddj.deckC.FX1 } },
+        { ddj.deckC.FX2.down,   { lbutton_toggle, ddj.deckC.FX2 } },
+        { ddj.deckC.FX3.down,   { lbutton_toggle, ddj.deckC.FX3 } },
+        { ddj.deckC.ctrlB.down, { lbutton_toggle, ddj.deckC.ctrlB } },
+
+        { ddj.deckD.ctrlA.down, { lbutton_toggle, ddj.deckD.ctrlA } },
+        { ddj.deckD.FX1.down,   { lbutton_toggle, ddj.deckD.FX1 } },
+        { ddj.deckD.FX2.down,   { lbutton_toggle, ddj.deckD.FX2 } },
+        { ddj.deckD.FX3.down,   { lbutton_toggle, ddj.deckD.FX3 } },
+        { ddj.deckD.ctrlB.down, { lbutton_toggle, ddj.deckD.ctrlB } },
     }
 }
 
-interval = 50
-current = 0
+-- Lightworks
+-------------
+
+-- Function to allow using the right jogdial pad in lightworks.
+-- needs for lightworks to change keyboard shortcuts for XK_Right & Left
+-- to jog right and left.
 function lw_jogdial_turn( event )
-    if current < interval then current = current + 1; return end
-    if current >= interval then current = 0 end
     if event[3] > 64 then
-        keypress( XK_period )
+        keypress( XK_Right )
     end
     if event[3] < 64 then
-        keypress( XK_comma )
+        keypress( XK_Left )
     end
 end
 
-function lw_jogdial_sturn( event )
-    if current < interval then current = current + 1; return end
-    if current >= interval then current = 0 end
+function lw_movegrid_turn( event )
     if event[3] > 64 then
-        keypress( XK_question )
+        keypress( XK_a )
     end
     if event[3] < 64 then
-        keypress( XK_m )
+        keypress( XK_s )
     end
 end
 
+-- Action Map
 lightworks = {
     name = "Lightworks",
     map = {
-        { ddj.deckB.play.down,     { keypress, XK_space } },
-        { ddj.deckB.jogdial.turn,  { lw_jogdial_turn } },
-        { ddj.deckB.jogdial.sturn, { lw_jogdial_sturn } },
-        { ddj.deckB.cue.down,      { keypress, XK_i } },
-        { ddj.deckB.tempo.msb,     { lw_tempo } },
+        { ddj.deckB.play.down,      { keypress, XK_space } },
+        { ddj.deckB.jogdial.turn,   { lw_jogdial_turn } },
+        { ddj.deckB.cue.down,       { keypress, XK_a } },
+        { ddj.deckB.sampler1.down,  { keypress, XK_apostrophe } },
+        { ddj.deckB.sampler2.down,  { keypress, XK_p } },
+        { ddj.deckB.sampler3.down,  { keypress, XK_i } },
+        { ddj.deckB.sampler4.down,  { keypress, XK_o } },
+        --{ ddj.deckB.ctrla.down,     { keypress, XK_x } },
+        { ddj.deckB.autoloop.turn,  { lw_movegrid_turn } },
     }
 }
 
+
+-- Banshee
+----------
 function banshee_autoloop_turn( event )
     if event[3] < 30 then keypress( XK_n ) end
     if event[3] > 100 then keypress( XK_b ) end
@@ -557,11 +844,25 @@ Banshee = {
     }
 }
 
+
+-- Mixxx
+--------
 mixxx = {
     name = "Mixxx DJ",
     map = nil,
 }
 
+-- VLC
+------
+vlc = {
+    name = "VideoLAN Client",
+    map = {
+        { ddj.deckB.play.down, { keypress, XK_space } },
+    }
+}
+
+-- Applications Table
+---------------------
 applications = {
     ["Banshee"] = Banshee,
     ["vlc"] = vlc,
