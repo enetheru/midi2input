@@ -231,6 +231,12 @@ load_config( std::string name )
     return true;
 }
 
+int XErrorCatcher( Display *disp, XErrorEvent *xe )
+{
+    printf( "Something had happened, bruh.\n" );
+    return 0;
+}
+
 Window
 XGetTopLevelParent( Display *xdp, Window w )
 {
@@ -457,6 +463,8 @@ main( int argc, char** argv )
     if(! (xdp = XOpenDisplay( getenv( "DISPLAY" ) )) ){
         LOG( FATAL ) << "Unable to open X display";
     }
+    // set XErrorHandler
+    XSetErrorHandler( XErrorCatcher );
 
     /* Lua */
     LOG( INFO ) << "Initialising Lua";
