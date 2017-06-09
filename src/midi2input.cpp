@@ -3,12 +3,9 @@
 #include <iomanip>
 #include <fstream>
 #include <queue>
-#include <vector>
 #include <sstream>
-#include <string>
 #include <cstring>
 
-#include <wordexp.h>
 #include <unistd.h>
 
 extern "C" {
@@ -69,8 +66,8 @@ const option::Descriptor usage[] = {
 static int
 lua_keypress( lua_State *L )
 {
-    int keysym = luaL_checknumber( L, 1 );
-    int keycode = XKeysymToKeycode( xdp, keysym );
+    KeySym keysym = luaL_checknumber( L, 1 );
+    KeyCode keycode = XKeysymToKeycode( xdp, keysym );
     XTestFakeKeyEvent( xdp, keycode, 1, CurrentTime );
     XTestFakeKeyEvent( xdp, keycode, 0, CurrentTime );
     LOG(INFO) << "keypress: " << XKeysymToString( keysym );
@@ -80,8 +77,8 @@ lua_keypress( lua_State *L )
 static int
 lua_keydown( lua_State *L )
 {
-    int keysym = luaL_checknumber( L, 1 );
-    int keycode = XKeysymToKeycode( xdp, keysym );
+    KeySym keysym = luaL_checknumber( L, 1 );
+    KeyCode keycode = XKeysymToKeycode( xdp, keysym );
     XTestFakeKeyEvent( xdp, keycode, 1, CurrentTime );
     LOG(INFO) << "keydown: " << XKeysymToString( keysym );
     return 0;
@@ -90,8 +87,8 @@ lua_keydown( lua_State *L )
 static int
 lua_keyup( lua_State *L )
 {
-    int keysym = luaL_checknumber( L, 1 );
-    int keycode = XKeysymToKeycode( xdp, keysym );
+    KeySym keysym = luaL_checknumber( L, 1 );
+    KeyCode keycode = XKeysymToKeycode( xdp, keysym );
     XTestFakeKeyEvent( xdp, keycode, 0, CurrentTime );
     LOG(INFO) << "keyup: " << XKeysymToString( keysym );
     return 0;
@@ -100,7 +97,7 @@ lua_keyup( lua_State *L )
 static int
 lua_buttonpress( lua_State *L )
 {
-    int button = luaL_checknumber( L, 1 );
+    unsigned int button = luaL_checknumber( L, 1 );
     XTestFakeButtonEvent( xdp, button, 1, CurrentTime );
     XTestFakeButtonEvent( xdp, button, 0, CurrentTime );
     LOG(INFO) << "buttonpress: " << button;
@@ -110,7 +107,7 @@ lua_buttonpress( lua_State *L )
 static int
 lua_buttondown( lua_State *L )
 {
-    int button = luaL_checknumber( L, 1 );
+    unsigned int button = luaL_checknumber( L, 1 );
     XTestFakeButtonEvent( xdp, button, 1, CurrentTime );
     LOG(INFO) << "buttondown: " << button;
     return 0;
@@ -119,7 +116,7 @@ lua_buttondown( lua_State *L )
 static int
 lua_buttonup( lua_State *L )
 {
-    int button = luaL_checknumber( L, 1 );
+    unsigned int button = luaL_checknumber( L, 1 );
     XTestFakeButtonEvent( xdp, button, 0, CurrentTime );
     LOG(INFO) << "buttonup: " << button;
     return 0;
@@ -313,13 +310,7 @@ process( jack_nframes_t nframes, void *arg )
     static unsigned char last_buffer[4];
     last_event.buffer = last_buffer;
 
-    unsigned char status, type = 0, channel = 0;
-    unsigned char control, note;
-    unsigned char velocity;
-    unsigned int value = 0;
-
     jack_nframes_t event_count = jack_midi_get_event_count( port_buf );
-
 
     if( event_count > 0 ){
         LOG( INFO ) << event_count << " Events in queue.";
