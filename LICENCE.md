@@ -1,1 +1,1 @@
-Copyright 2015 Samuel Nicholas <nicholas.samuel@gmail.com>
+Copyright 2015 Samuel Nicholas, nicholas dot samuel at gmail dot com>
