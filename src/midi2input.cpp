@@ -292,6 +292,10 @@ XGetTopLevelParent( Display *xdp, Window w )
 int
 process( jack_nframes_t nframes, void *arg )
 {
+    //FIXME this happens for every event, rather than intermittantly
+    //which causes Xorg to take up 70% of my cpu when i'm pulling
+    //midi events from a dsp envelope tracker and feeding it back.
+    //i would rather it not do this.
     //detect window
     static Window w_current;
     Window w;
@@ -302,6 +306,9 @@ process( jack_nframes_t nframes, void *arg )
         w_current = w;
         XGetTopLevelParent( xdp, w );
     }
+
+    // TODO use inotify to monitor the state of the configuration file and
+    // reload if it has changed
 
     //process midi events
     void* port_buf = jack_port_get_buffer( input_port, nframes );
@@ -574,6 +581,9 @@ main( int argc, char** argv )
     /* main loop */
     LOG( INFO ) << "Main: Entering sleep, waiting for jack events";
     while( 1 ) sleep( 1 );
+
+    // FIXME this code is never run due to the infinate loop above. make a way
+    // to exit the loop without CTRL+C
 
     jack_client_close( client );
     lua_close( L );
