@@ -21,9 +21,13 @@ extern "C" {
 #include <X11/Xatom.h>
 #include <X11/extensions/XTest.h>
 
-#include "options.h"
+#include "argh.h"
 
-#include "elog/elog.h"
+#define INFO "[INFO]"
+#define WARN "[WARN]"
+#define ERROR "[ERROR]"
+#define FATAL "[FATAL]"
+#define LOG( TYPE ) std::cout << "\n" << TYPE
 
 lua_State *L;
 Display* xdp;
@@ -31,37 +35,13 @@ jack_client_t *client;
 jack_port_t *input_port;
 jack_port_t *output_port;
 
-/* options */
-enum optionsIndex
-{
-    UNKNOWN,
-    HELP,
-    VERBOSE,
-    CONFIG
-};
+const char *helptext =
+"USAGE: ./midi2input [options]"
+"GENERAL OPTIONS:"
+"   -h  --help      Print usage and exit"
+"   -v  --verbose   Output more information"
+"   -c  --config    SpeSpecify config file, default = ~/.config/midi2input.lua";
 
-const option::Descriptor usage[] = {
-    { UNKNOWN, 0, "", "", Arg::Nope,
-        "USAGE: ./midi2input [options]\n"
-        "\nGENERAL OPTIONS:"
-    },
-
-    { HELP, 0, "h", "help", Arg::Nope,
-        "  -h  \t--help "
-        "\tPrint usage and exit."
-    },
-
-    { VERBOSE, 0, "v", "verbose", Arg::Nope,
-        "  -v  \t--verbose "
-        "\tOutput more data."
-    },
-
-    { CONFIG, 0, "c", "config", Arg::Required,
-        "  -c  \t--config "
-        "\tSpecify config file, default = ~/.config/midi2input.lua"
-    },
-    {0,0,0,0,0,0}
-};
 
 static int
 lua_keypress( lua_State *L )
@@ -237,10 +217,9 @@ int XErrorCatcher( Display *disp, XErrorEvent *xe )
 Window
 XGetTopLevelParent( Display *xdp, Window w )
 {
-    Atom property;
-
-    if( (property = XInternAtom( xdp, "WM_CLASS", False )) == None ){
         LOG( ERROR ) << "Failed XInternAtom for WM_CLASS";
+    Atom property = XInternAtom( xdp, "WM_CLASS", False );
+    if( property == None ){
     }
 
     Atom actual_type_return;
@@ -349,49 +328,35 @@ jack_shutdown( void *arg )
 }
 
 int
-main( int argc, char** argv )
+main( int argc, const char **argv )
 {
+    argh::parser cmdl( argc, argv );
 
     // Options Parsing
     // ===============
-    bool fail = false;
-    argc -= (argc > 0); argv += (argc > 0);
-    option::Stats stats( usage, argc, argv );
-    option::Option* options = new option::Option[ stats.options_max ];
-    option::Option* buffer = new option::Option[ stats.buffer_max ];
-    option::Parser parse( usage, argc, argv, options, buffer );
-
     // setup logging level.
-    LOG::SetDefaultLoggerLevel( LOG::ERROR );
-    if( options[ VERBOSE ] )
-        LOG::SetDefaultLoggerLevel( LOG::INFO );
+    if( cmdl[{ "-v", "--verbose" }] )
     //if( options[ QUIET ] )
     //    LOG::SetDefaultLoggerLevel( LOG::CHECK );
 
-    if( options[ HELP ] ){
-        int columns = getenv( "COLUMNS" ) ? atoi( getenv( "COLUMNS" ) ) : 80;
-        option::printUsage( std::cout, usage, columns );
+    if( cmdl[{"-h", "--help"}] ){
+        LOG(INFO) << helptext;
         exit( 0 );
     }
-
-    // unknown options
-    for( option::Option* opt = options[ UNKNOWN ]; opt; opt = opt->next() ){
-        LOG( WARN ) << "Unknown option: " << std::string( opt->name, opt->namelen );
-        fail = true;
-    }
-
-    if( fail ) exit( 1 );
 
     // --config
     LOG( INFO ) << "Parsing cmd line options";
     std::string luaScript;
-    if( options[ CONFIG ] ) luaScript = options[ CONFIG ].arg;
-    else luaScript = "~/.config/midi2input.lua";
+    if( cmdl[{"-c", "--config"}] )
+    {
+        luaScript = "";
+    } else luaScript = "~/.config/midi2input.lua";
 
     /* X11 */
     LOG( INFO ) << "Getting X11 Display";
     if(! (xdp = XOpenDisplay( getenv( "DISPLAY" ) )) ){
         LOG( FATAL ) << "Unable to open X display";
+        exit( -1 );
     }
     // set XErrorHandler
     XSetErrorHandler( XErrorCatcher );
@@ -435,12 +400,16 @@ main( int argc, char** argv )
     LOG( INFO ) << "Lua: Loading configuration file";
     if(! load_config( luaScript.c_str() ) ){
         LOG( FATAL ) << "Unable to open configuration file, expecting ~/.config/midi2input.lua, or -c switch.";
+        exit( -1 );
+
     }
 
     /* Jack */
     LOG( INFO ) << "Initialising Jack";
     if( (client = jack_client_open( "midi2input", JackNullOption, NULL )) == 0 ){
         LOG( FATAL ) << "jack server not running?";
+        exit( -1 );
+
     }
 
     LOG( INFO ) << "Jack: setting callbacks";
@@ -456,6 +425,8 @@ main( int argc, char** argv )
     LOG( INFO ) << "Jack: Activating client";
     if( jack_activate( client ) ){
         LOG( FATAL ) << "cannot activate client";
+        exit( -1 );
+
     }
 
     /* Lua: get port connection configuration */
@@ -489,6 +460,8 @@ main( int argc, char** argv )
     const char ** portnames = jack_get_ports( client, ".midi.", NULL, JackPortIsOutput );
     if(! portnames ){
         LOG( FATAL ) << "ERROR: no ports available";
+        exit( -1 );
+
     }
 
     while( *(portnames + i) ){
@@ -502,7 +475,10 @@ main( int argc, char** argv )
     std::string portname;
     if( autoconnect.compare( "None" ) ){
         if(! autoconnect.compare( "All" ) ){
-            if(! portnames ) LOG( FATAL ) << "No ports to connect to";
+            if(! portnames ){
+                LOG( FATAL ) << "No ports to connect to";
+                exit( -1 );
+            }
             i = 0;
             while( *(portnames + i) ){
                 portname = *(portnames + i);
@@ -527,7 +503,7 @@ main( int argc, char** argv )
             } else {
                     message << " - SUCCESS\n";
             }
-            LOG( INFO ) << message;
+            LOG(INFO) << message.str();
         }
     }
     jack_free( portnames );
@@ -538,6 +514,7 @@ main( int argc, char** argv )
     portnames = jack_get_ports( client, ".midi.", NULL, JackPortIsInput );
     if(! portnames ){
         LOG( FATAL ) << "ERROR: no ports available";
+        exit( -1 );
     }
     while( *(portnames + i) ){
         LOG( INFO ) << "Jack: Found: " << *(portnames+i);
@@ -546,7 +523,10 @@ main( int argc, char** argv )
 
     /* Jack: Connect to input ports */
     LOG( INFO ) << "Jack: Connecting to input ports";
-    if(! portnames ) LOG( FATAL ) << "No ports to connect to";
+    if(! portnames ){
+        LOG( FATAL ) << "No ports to connect to";
+        exit( -1 );
+    }
     i = 0;
     while( *(portnames + i) ){
         portname = *(portnames + i);

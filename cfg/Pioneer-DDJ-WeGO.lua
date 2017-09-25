@@ -260,7 +260,7 @@ controller.state.midi[0x96] = {
 default = {}
 
 function default.toggle( event )
-    control = controller.state.midi[event[1]][event[2]]
+    local control = controller.state.midi[event[1]][event[2]]
     if( control.value == 0x00 )
     then control.value = 0x01
     else control.value = 0x00

@@ -11,7 +11,7 @@ endif()
 message( "Build Type: " ${CMAKE_BUILD_TYPE} )
 
 if( NOT DEFINED BUILD_DOCS )
-    set( BUILD_DOCS true CACHE BOOL
+    set( BUILD_DOCS false CACHE BOOL
         "Whether or not to build the documentation"
         FORCE )
 endif()
@@ -26,7 +26,8 @@ message( "Check Documentation: " ${CHECK_DOCS} )
 
 # Compiler
 # --------
-set( CMAKE_CXX_FLAGS -std=c++98 )
+set (CMAKE_CXX_STANDARD 11)
+add_definitions("-Wall -Wextra -Wshadow -Wnon-virtual-dtor -pedantic")
 
 # dependencies
 # ============

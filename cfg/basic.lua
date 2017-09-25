@@ -59,7 +59,7 @@ end
 
 --[[ Input Event Handler ]]--
 function midi_recv( status, data1, data2 )
-    message = { status, data1, data2 }
+    local message = { status, data1, data2 }
 
     if( not message_compare( message, controller.deck['A'].play ) ) then
         keypress( XK_space )
