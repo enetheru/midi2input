@@ -14,8 +14,14 @@ extern "C" {
     #include <lua5.2/lualib.h>
 }
 
-#include <jack/jack.h>
-#include <jack/midiport.h>
+#ifdef WITH_JACK
+    #include <jack/jack.h>
+    #include <jack/midiport.h>
+#endif
+
+#ifdef WITH_ALSA
+    #include <alsa/asoundlib.h>
+#endif
 
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
@@ -31,9 +37,16 @@ extern "C" {
 
 lua_State *L;
 Display* xdp;
-jack_client_t *client;
-jack_port_t *input_port;
-jack_port_t *output_port;
+
+#ifdef WITH_ALSA
+    snd_seq_t *handle;
+#endif
+
+#ifdef WITH_JACK
+    jack_client_t *client;
+    jack_port_t *input_port;
+    jack_port_t *output_port;
+#endif
 
 const char *helptext =
 "USAGE: ./midi2input [options]"
@@ -125,6 +138,20 @@ lua_mousepos( lua_State *L )
 static int
 lua_midi_send( lua_State *L )
 {
+#ifdef WITH_ALSA
+    //example of how to send midi data to the port.
+        snd_seq_event_t ev;
+        snd_seq_ev_clear( &ev );
+        snd_seq_ev_set_source( &ev, 1 );
+        snd_seq_ev_set_subs( &ev );
+        snd_seq_ev_set_direct( &ev );
+
+        // set event type, data, so on..
+        snd_seq_event_output( handle, &ev);
+        snd_seq_drain_output( handle );  // if necessary
+#endif
+
+#ifdef WITH_JACK
     void *port_buf = jack_port_get_buffer( output_port, 0 );
     if(! port_buf ){
         LOG( ERROR ) << "Cannot send events with no connected ports";
@@ -147,6 +174,7 @@ lua_midi_send( lua_State *L )
        << std::dec << std::setfill( ' ' ) << std::setw( 3 ) << event[ 2 ];
 
     jack_midi_event_write( port_buf, 0, event, 3 );
+#endif
     return 0;
 }
 
@@ -268,6 +296,7 @@ XGetTopLevelParent( Display *xdp, Window w )
     return w;
 }
 
+#ifdef WITH_JACK
 int
 process( jack_nframes_t nframes, void *arg )
 {
@@ -326,6 +355,8 @@ jack_shutdown( void *arg )
 {
     exit( 1 );
 }
+
+#endif
 
 int
 main( int argc, const char **argv )
@@ -403,7 +434,24 @@ main( int argc, const char **argv )
         exit( -1 );
 
     }
+#ifdef WITH_ALSA
+    int err;
+    err = snd_seq_open( &handle, "default", SND_SEQ_OPEN_INPUT, 0 );
+    if( err < 0 ) LOG( FATAL ) << "Problem creating midi sequencer ports";
 
+    snd_seq_set_client_name( handle, "midi2input" );
+
+    snd_seq_create_simple_port( handle, "in",
+            SND_SEQ_PORT_CAP_WRITE | SND_SEQ_PORT_CAP_SUBS_WRITE,
+            SND_SEQ_PORT_TYPE_MIDI_GENERIC );
+
+    snd_seq_create_simple_port( handle, "out",
+            SND_SEQ_PORT_CAP_READ | SND_SEQ_PORT_CAP_SUBS_READ,
+            SND_SEQ_PORT_TYPE_MIDI_GENERIC );
+#endif
+
+
+#ifdef WITH_JACK
     /* Jack */
     LOG( INFO ) << "Initialising Jack";
     if( (client = jack_client_open( "midi2input", JackNullOption, NULL )) == 0 ){
@@ -428,6 +476,7 @@ main( int argc, const char **argv )
         exit( -1 );
 
     }
+#endif
 
     /* Lua: get port connection configuration */
     LOG( INFO ) << "Lua: Getting autoconnection setting";
@@ -454,6 +503,7 @@ main( int argc, const char **argv )
     LOG( INFO ) << "Lua: autoconnect = " << autoconnect;
     lua_pop( L, 1 );
 
+#ifdef WITH_JACK
     /* Jack: get list of output ports */
     LOG( INFO ) << "Jack: Looking up output ports";
     int i = 0;
@@ -545,14 +595,18 @@ main( int argc, const char **argv )
         i++;
     }
     jack_free( portnames );
+#endif
 
     // Run initialisation lua function if output ports are set
+#ifdef WITH_JACK
     void *port_buf = jack_port_get_buffer( output_port, 0 );
     if(! port_buf ){
         LOG( ERROR ) << "Cannot send events with no connected ports";
         return 1;
     }
-    else{
+    else
+#endif
+    {
         LOG( INFO ) << "Running Initialisation function";
         lua_getglobal( L, "initialise" );
         lua_call( L, 0, 0);
@@ -564,8 +618,10 @@ main( int argc, const char **argv )
 
     // FIXME this code is never run due to the infinate loop above. make a way
     // to exit the loop without CTRL+C
-
+    //
+#ifdef WITH_JACK
     jack_client_close( client );
+#endif
     lua_close( L );
     exit( 0 );
 }
