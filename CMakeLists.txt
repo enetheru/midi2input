@@ -39,6 +39,7 @@ pkg_check_modules( LUA lua52 )
 
 include_directories(
     ${JACK_INCLUDE_DIRS}
+    ${PROJECT_SOURCE_DIR}/include
     ${XTST_INCLUDE_DIRS}
     ${X11_INCLUDE_DIRS}
     ${LUA_INCLUDE_DIRS}
@@ -53,7 +54,10 @@ set( LIBS ${LIBS}
 # sub directories
 # ===============
 add_subdirectory( src )
-add_subdirectory( doc )
+
+if( ${BUILD_DOCS} )
+    add_subdirectory( doc )
+endif()
 
 # CPack
 # =====
