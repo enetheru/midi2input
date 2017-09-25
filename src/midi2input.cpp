@@ -59,7 +59,7 @@ const char *helptext =
 static int
 lua_keypress( lua_State *L )
 {
-    KeySym keysym = luaL_checknumber( L, 1 );
+    auto keysym = static_cast<KeySym>( luaL_checknumber( L, 1 ) );
     KeyCode keycode = XKeysymToKeycode( xdp, keysym );
     XTestFakeKeyEvent( xdp, keycode, 1, CurrentTime );
     XTestFakeKeyEvent( xdp, keycode, 0, CurrentTime );
@@ -70,7 +70,7 @@ lua_keypress( lua_State *L )
 static int
 lua_keydown( lua_State *L )
 {
-    KeySym keysym = luaL_checknumber( L, 1 );
+    auto keysym = static_cast<KeySym>( luaL_checknumber( L, 1 ) );
     KeyCode keycode = XKeysymToKeycode( xdp, keysym );
     XTestFakeKeyEvent( xdp, keycode, 1, CurrentTime );
     LOG(INFO) << "keydown: " << XKeysymToString( keysym );
@@ -80,7 +80,7 @@ lua_keydown( lua_State *L )
 static int
 lua_keyup( lua_State *L )
 {
-    KeySym keysym = luaL_checknumber( L, 1 );
+    auto keysym = static_cast<KeySym>( luaL_checknumber( L, 1 ) );
     KeyCode keycode = XKeysymToKeycode( xdp, keysym );
     XTestFakeKeyEvent( xdp, keycode, 0, CurrentTime );
     LOG(INFO) << "keyup: " << XKeysymToString( keysym );
@@ -90,7 +90,7 @@ lua_keyup( lua_State *L )
 static int
 lua_buttonpress( lua_State *L )
 {
-    unsigned int button = luaL_checknumber( L, 1 );
+    auto button = static_cast<uint32_t>( luaL_checknumber( L, 1 ) );
     XTestFakeButtonEvent( xdp, button, 1, CurrentTime );
     XTestFakeButtonEvent( xdp, button, 0, CurrentTime );
     LOG(INFO) << "buttonpress: " << button;
@@ -100,7 +100,7 @@ lua_buttonpress( lua_State *L )
 static int
 lua_buttondown( lua_State *L )
 {
-    unsigned int button = luaL_checknumber( L, 1 );
+    auto button = static_cast<uint32_t>( luaL_checknumber( L, 1 ) );
     XTestFakeButtonEvent( xdp, button, 1, CurrentTime );
     LOG(INFO) << "buttondown: " << button;
     return 0;
@@ -109,7 +109,7 @@ lua_buttondown( lua_State *L )
 static int
 lua_buttonup( lua_State *L )
 {
-    unsigned int button = luaL_checknumber( L, 1 );
+    auto button = static_cast<uint32_t>( luaL_checknumber( L, 1 ) );
     XTestFakeButtonEvent( xdp, button, 0, CurrentTime );
     LOG(INFO) << "buttonup: " << button;
     return 0;
@@ -118,8 +118,8 @@ lua_buttonup( lua_State *L )
 static int
 lua_mousemove( lua_State *L )
 {
-    int x = luaL_checknumber( L, 1 );
-    int y = luaL_checknumber( L, 2 );
+    auto x = static_cast<int32_t>( luaL_checknumber( L, 1 ) );
+    auto y = static_cast<int32_t>( luaL_checknumber( L, 2 ) );
     XTestFakeRelativeMotionEvent( xdp, x, y, CurrentTime );
     LOG(INFO) << "mousemove: " << x << "," << y;
     return 0;
@@ -128,8 +128,8 @@ lua_mousemove( lua_State *L )
 static int
 lua_mousepos( lua_State *L )
 {
-    int x = luaL_checknumber( L, 1 );
-    int y = luaL_checknumber( L, 2 );
+    auto x = static_cast<int32_t>( luaL_checknumber( L, 1 ) );
+    auto y = static_cast<int32_t>( luaL_checknumber( L, 2 ) );;
     XTestFakeMotionEvent( xdp, -1, x, y, CurrentTime );
     LOG(INFO) << "mousewarp: " << x << "," << y;
     return 0;
@@ -190,7 +190,7 @@ lua_exec( lua_State *L )
     if(! (in = popen( command.c_str(), "r" ))){
         return 1;
     }
-    while( fgets(buff, sizeof(buff), in) != NULL ){
+    while( fgets(buff, sizeof(buff), in) != nullptr ){
         LOG( INFO ) << buff;
     }
     pclose( in );
@@ -198,7 +198,7 @@ lua_exec( lua_State *L )
 }
 
 bool
-load_config( std::string name )
+load_config( const std::string &name )
 {
     // load configuration from a priority list of locations
     // * specified from the command line
@@ -254,7 +254,7 @@ XGetTopLevelParent( Display *xdp, Window w )
     int actual_format_return = 0;
     unsigned long nitems_return = 0L;
     unsigned long bytes_after_return = 0L;
-    unsigned char *prop_return = NULL;
+    unsigned char *prop_return = nullptr;
 
     if( XGetWindowProperty( xdp, w, property, 0L, 1024L, False, XA_STRING,
                 &actual_type_return,
@@ -277,7 +277,7 @@ XGetTopLevelParent( Display *xdp, Window w )
     // no WM_CLASS property found, so lets get the parent window
     Window root_return;
     Window parent_return;
-    Window *children_return = NULL;
+    Window *children_return = nullptr;
     unsigned int nchildren_return = 0;
 
     if( XQueryTree( xdp, w,
@@ -285,7 +285,7 @@ XGetTopLevelParent( Display *xdp, Window w )
                 &parent_return,
                 &children_return,
                 &nchildren_return ) ){
-        if( children_return != NULL ) XFree( children_return );
+        if( children_return != nullptr ) XFree( children_return );
         if( parent_return != DefaultRootWindow( xdp ) )
             w = XGetTopLevelParent( xdp, parent_return );
     }
@@ -429,7 +429,7 @@ main( int argc, const char **argv )
     lua_setglobal( L, "exec" );
 
     LOG( INFO ) << "Lua: Loading configuration file";
-    if(! load_config( luaScript.c_str() ) ){
+    if(! load_config( luaScript ) ){
         LOG( FATAL ) << "Unable to open configuration file, expecting ~/.config/midi2input.lua, or -c switch.";
         exit( -1 );
 
@@ -614,9 +614,9 @@ main( int argc, const char **argv )
 
     /* main loop */
     LOG( INFO ) << "Main: Entering sleep, waiting for jack events";
-    while( 1 ) sleep( 1 );
+    while( true ) sleep( 1 );
 
-    // FIXME this code is never run due to the infinate loop above. make a way
+    // FIXME this code is never run due to the infinite loop above. make a way
     // to exit the loop without CTRL+C
     //
 #ifdef WITH_JACK

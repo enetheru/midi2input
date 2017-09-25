@@ -328,9 +328,9 @@ ddj = {
 --[[ add the four decks substituting the channel ]]--
 decks = { deckA = 1; deckB = 2; deckC = 3, deckD = 4 }
 for deck, ch in pairs(decks) do
-    note_on =  0x90 + ch -1
-    note_off =  0x80 + ch -1
-    control = 0xB0 + ch -1
+    local note_on =  0x90 + ch -1
+    local note_off =  0x80 + ch -1
+    local control = 0xB0 + ch -1
 
     ddj[deck] = {}
     ddj[deck] = {
@@ -894,14 +894,14 @@ end
 
 --[[ Input Event Handler ]]--
 function midi_recv( status, data1, data2 )
-    message = { status, data1, data2 }
+    local message = { status, data1, data2 }
 
     -- select application based on wm_name pulled from X11
     local app = applications[ wm_class ]
     if( not app ) then
         app = default
     end
-    table = app.map
+    local table = app.map
 
     -- look for control in the application map first, before the default map
     while( table ) do

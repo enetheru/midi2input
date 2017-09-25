@@ -20,8 +20,8 @@ additional to the above we use:
 
 **Why?:**<br>
 Because I had a midi controller, and I thought it was a shame that I could not
-control my pc using it. I did a little research online and it didnt seem that
-there was an existing solution that fit my needs, indeed I didnt find a solution
+control my pc using it. I did a little research online and it didn't seem that
+there was an existing solution that fit my needs, indeed I didn't find a solution
 at all that was FLOSS.
 
 | Intro Vid |
