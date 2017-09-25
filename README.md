@@ -1,24 +1,28 @@
 midi2input
 =======
-[![Build Status](https://travis-ci.org/enetheru/midi2input.svg?branch=master)](https://travis-ci.org/enetheru/midi2input)
-
-This program takes midi events from jackd and translates them to input events.
+This program takes midi events and translates them to input events.
 Configuration files and scripts are written in Lua
 
 **Requires:**
   * X11 with the XTest extension
-  * jack audio connection it
+  * jack or alsa
   * lua
+
+**depends**
+additional to the above we use:
+* adishavit argh
 
 **Features:**
   * ability to map events from midi device to keyboard and mouse
-  * per application maps, based on currently focused application
-  * default fallback map
-  * input maps are programmed in lua.
+  * some knowledge about currently focused application
+  * scriptable with lua
   * ability to send midi events to the controller, for control of led buttons, etc
 
 **Why?:**<br>
-Because I had a midi controller, and I thought it was a shame that I could not control my pc using it. I did a little research online and it didnt seem that there was an existing solution that fit my needs, indeed I didnt find a solution at all that was FLOSS.
+Because I had a midi controller, and I thought it was a shame that I could not
+control my pc using it. I did a little research online and it didn't seem that
+there was an existing solution that fit my needs, indeed I didn't find a solution
+at all that was FLOSS.
 
 | Intro Vid |
 | --------- |

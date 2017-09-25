@@ -14,59 +14,52 @@ extern "C" {
     #include <lua5.2/lualib.h>
 }
 
-#include <jack/jack.h>
-#include <jack/midiport.h>
+#ifdef WITH_JACK
+    #include <jack/jack.h>
+    #include <jack/midiport.h>
+#endif
+
+#ifdef WITH_ALSA
+    #include <alsa/asoundlib.h>
+#endif
 
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 #include <X11/extensions/XTest.h>
 
-#include "options.h"
+#include "argh.h"
 
-#include "elog/elog.h"
+#define INFO "[INFO]"
+#define WARN "[WARN]"
+#define ERROR "[ERROR]"
+#define FATAL "[FATAL]"
+#define LOG( TYPE ) std::cout << "\n" << TYPE
 
 lua_State *L;
 Display* xdp;
-jack_client_t *client;
-jack_port_t *input_port;
-jack_port_t *output_port;
 
-/* options */
-enum optionsIndex
-{
-    UNKNOWN,
-    HELP,
-    VERBOSE,
-    CONFIG
-};
+#ifdef WITH_ALSA
+    snd_seq_t *handle;
+#endif
 
-const option::Descriptor usage[] = {
-    { UNKNOWN, 0, "", "", Arg::Nope,
-        "USAGE: ./midi2input [options]\n"
-        "\nGENERAL OPTIONS:"
-    },
+#ifdef WITH_JACK
+    jack_client_t *client;
+    jack_port_t *input_port;
+    jack_port_t *output_port;
+#endif
 
-    { HELP, 0, "h", "help", Arg::Nope,
-        "  -h  \t--help "
-        "\tPrint usage and exit."
-    },
+const char *helptext =
+"USAGE: ./midi2input [options]"
+"GENERAL OPTIONS:"
+"   -h  --help      Print usage and exit"
+"   -v  --verbose   Output more information"
+"   -c  --config    SpeSpecify config file, default = ~/.config/midi2input.lua";
 
-    { VERBOSE, 0, "v", "verbose", Arg::Nope,
-        "  -v  \t--verbose "
-        "\tOutput more data."
-    },
-
-    { CONFIG, 0, "c", "config", Arg::Required,
-        "  -c  \t--config "
-        "\tSpecify config file, default = ~/.config/midi2input.lua"
-    },
-    {0,0,0,0,0,0}
-};
 
 static int
 lua_keypress( lua_State *L )
 {
-    KeySym keysym = luaL_checknumber( L, 1 );
+    auto keysym = static_cast<KeySym>( luaL_checknumber( L, 1 ) );
     KeyCode keycode = XKeysymToKeycode( xdp, keysym );
     XTestFakeKeyEvent( xdp, keycode, 1, CurrentTime );
     XTestFakeKeyEvent( xdp, keycode, 0, CurrentTime );
@@ -77,7 +70,7 @@ lua_keypress( lua_State *L )
 static int
 lua_keydown( lua_State *L )
 {
-    KeySym keysym = luaL_checknumber( L, 1 );
+    auto keysym = static_cast<KeySym>( luaL_checknumber( L, 1 ) );
     KeyCode keycode = XKeysymToKeycode( xdp, keysym );
     XTestFakeKeyEvent( xdp, keycode, 1, CurrentTime );
     LOG(INFO) << "keydown: " << XKeysymToString( keysym );
@@ -87,7 +80,7 @@ lua_keydown( lua_State *L )
 static int
 lua_keyup( lua_State *L )
 {
-    KeySym keysym = luaL_checknumber( L, 1 );
+    auto keysym = static_cast<KeySym>( luaL_checknumber( L, 1 ) );
     KeyCode keycode = XKeysymToKeycode( xdp, keysym );
     XTestFakeKeyEvent( xdp, keycode, 0, CurrentTime );
     LOG(INFO) << "keyup: " << XKeysymToString( keysym );
@@ -97,7 +90,7 @@ lua_keyup( lua_State *L )
 static int
 lua_buttonpress( lua_State *L )
 {
-    unsigned int button = luaL_checknumber( L, 1 );
+    auto button = static_cast<uint32_t>( luaL_checknumber( L, 1 ) );
     XTestFakeButtonEvent( xdp, button, 1, CurrentTime );
     XTestFakeButtonEvent( xdp, button, 0, CurrentTime );
     LOG(INFO) << "buttonpress: " << button;
@@ -107,7 +100,7 @@ lua_buttonpress( lua_State *L )
 static int
 lua_buttondown( lua_State *L )
 {
-    unsigned int button = luaL_checknumber( L, 1 );
+    auto button = static_cast<uint32_t>( luaL_checknumber( L, 1 ) );
     XTestFakeButtonEvent( xdp, button, 1, CurrentTime );
     LOG(INFO) << "buttondown: " << button;
     return 0;
@@ -116,7 +109,7 @@ lua_buttondown( lua_State *L )
 static int
 lua_buttonup( lua_State *L )
 {
-    unsigned int button = luaL_checknumber( L, 1 );
+    auto button = static_cast<uint32_t>( luaL_checknumber( L, 1 ) );
     XTestFakeButtonEvent( xdp, button, 0, CurrentTime );
     LOG(INFO) << "buttonup: " << button;
     return 0;
@@ -125,8 +118,8 @@ lua_buttonup( lua_State *L )
 static int
 lua_mousemove( lua_State *L )
 {
-    int x = luaL_checknumber( L, 1 );
-    int y = luaL_checknumber( L, 2 );
+    auto x = static_cast<int32_t>( luaL_checknumber( L, 1 ) );
+    auto y = static_cast<int32_t>( luaL_checknumber( L, 2 ) );
     XTestFakeRelativeMotionEvent( xdp, x, y, CurrentTime );
     LOG(INFO) << "mousemove: " << x << "," << y;
     return 0;
@@ -135,8 +128,8 @@ lua_mousemove( lua_State *L )
 static int
 lua_mousepos( lua_State *L )
 {
-    int x = luaL_checknumber( L, 1 );
-    int y = luaL_checknumber( L, 2 );
+    auto x = static_cast<int32_t>( luaL_checknumber( L, 1 ) );
+    auto y = static_cast<int32_t>( luaL_checknumber( L, 2 ) );;
     XTestFakeMotionEvent( xdp, -1, x, y, CurrentTime );
     LOG(INFO) << "mousewarp: " << x << "," << y;
     return 0;
@@ -145,6 +138,20 @@ lua_mousepos( lua_State *L )
 static int
 lua_midi_send( lua_State *L )
 {
+#ifdef WITH_ALSA
+    //example of how to send midi data to the port.
+        snd_seq_event_t ev;
+        snd_seq_ev_clear( &ev );
+        snd_seq_ev_set_source( &ev, 1 );
+        snd_seq_ev_set_subs( &ev );
+        snd_seq_ev_set_direct( &ev );
+
+        // set event type, data, so on..
+        snd_seq_event_output( handle, &ev);
+        snd_seq_drain_output( handle );  // if necessary
+#endif
+
+#ifdef WITH_JACK
     void *port_buf = jack_port_get_buffer( output_port, 0 );
     if(! port_buf ){
         LOG( ERROR ) << "Cannot send events with no connected ports";
@@ -167,6 +174,7 @@ lua_midi_send( lua_State *L )
        << std::dec << std::setfill( ' ' ) << std::setw( 3 ) << event[ 2 ];
 
     jack_midi_event_write( port_buf, 0, event, 3 );
+#endif
     return 0;
 }
 
@@ -182,7 +190,7 @@ lua_exec( lua_State *L )
     if(! (in = popen( command.c_str(), "r" ))){
         return 1;
     }
-    while( fgets(buff, sizeof(buff), in) != NULL ){
+    while( fgets(buff, sizeof(buff), in) != nullptr ){
         LOG( INFO ) << buff;
     }
     pclose( in );
@@ -190,7 +198,7 @@ lua_exec( lua_State *L )
 }
 
 bool
-load_config( std::string name )
+load_config( const std::string &name )
 {
     // load configuration from a priority list of locations
     // * specified from the command line
@@ -237,17 +245,16 @@ int XErrorCatcher( Display *disp, XErrorEvent *xe )
 Window
 XGetTopLevelParent( Display *xdp, Window w )
 {
-    Atom property;
-
-    if( (property = XInternAtom( xdp, "WM_CLASS", False )) == None ){
         LOG( ERROR ) << "Failed XInternAtom for WM_CLASS";
+    Atom property = XInternAtom( xdp, "WM_CLASS", False );
+    if( property == None ){
     }
 
     Atom actual_type_return;
     int actual_format_return = 0;
     unsigned long nitems_return = 0L;
     unsigned long bytes_after_return = 0L;
-    unsigned char *prop_return = NULL;
+    unsigned char *prop_return = nullptr;
 
     if( XGetWindowProperty( xdp, w, property, 0L, 1024L, False, XA_STRING,
                 &actual_type_return,
@@ -270,7 +277,7 @@ XGetTopLevelParent( Display *xdp, Window w )
     // no WM_CLASS property found, so lets get the parent window
     Window root_return;
     Window parent_return;
-    Window *children_return = NULL;
+    Window *children_return = nullptr;
     unsigned int nchildren_return = 0;
 
     if( XQueryTree( xdp, w,
@@ -278,7 +285,7 @@ XGetTopLevelParent( Display *xdp, Window w )
                 &parent_return,
                 &children_return,
                 &nchildren_return ) ){
-        if( children_return != NULL ) XFree( children_return );
+        if( children_return != nullptr ) XFree( children_return );
         if( parent_return != DefaultRootWindow( xdp ) )
             w = XGetTopLevelParent( xdp, parent_return );
     }
@@ -289,6 +296,7 @@ XGetTopLevelParent( Display *xdp, Window w )
     return w;
 }
 
+#ifdef WITH_JACK
 int
 process( jack_nframes_t nframes, void *arg )
 {
@@ -348,50 +356,38 @@ jack_shutdown( void *arg )
     exit( 1 );
 }
 
+#endif
+
 int
-main( int argc, char** argv )
+main( int argc, const char **argv )
 {
+    argh::parser cmdl( argc, argv );
 
     // Options Parsing
     // ===============
-    bool fail = false;
-    argc -= (argc > 0); argv += (argc > 0);
-    option::Stats stats( usage, argc, argv );
-    option::Option* options = new option::Option[ stats.options_max ];
-    option::Option* buffer = new option::Option[ stats.buffer_max ];
-    option::Parser parse( usage, argc, argv, options, buffer );
-
     // setup logging level.
-    LOG::SetDefaultLoggerLevel( LOG::ERROR );
-    if( options[ VERBOSE ] )
-        LOG::SetDefaultLoggerLevel( LOG::INFO );
+    if( cmdl[{ "-v", "--verbose" }] )
     //if( options[ QUIET ] )
     //    LOG::SetDefaultLoggerLevel( LOG::CHECK );
 
-    if( options[ HELP ] ){
-        int columns = getenv( "COLUMNS" ) ? atoi( getenv( "COLUMNS" ) ) : 80;
-        option::printUsage( std::cout, usage, columns );
+    if( cmdl[{"-h", "--help"}] ){
+        LOG(INFO) << helptext;
         exit( 0 );
     }
-
-    // unknown options
-    for( option::Option* opt = options[ UNKNOWN ]; opt; opt = opt->next() ){
-        LOG( WARN ) << "Unknown option: " << std::string( opt->name, opt->namelen );
-        fail = true;
-    }
-
-    if( fail ) exit( 1 );
 
     // --config
     LOG( INFO ) << "Parsing cmd line options";
     std::string luaScript;
-    if( options[ CONFIG ] ) luaScript = options[ CONFIG ].arg;
-    else luaScript = "~/.config/midi2input.lua";
+    if( cmdl[{"-c", "--config"}] )
+    {
+        luaScript = "";
+    } else luaScript = "~/.config/midi2input.lua";
 
     /* X11 */
     LOG( INFO ) << "Getting X11 Display";
     if(! (xdp = XOpenDisplay( getenv( "DISPLAY" ) )) ){
         LOG( FATAL ) << "Unable to open X display";
+        exit( -1 );
     }
     // set XErrorHandler
     XSetErrorHandler( XErrorCatcher );
@@ -433,14 +429,35 @@ main( int argc, char** argv )
     lua_setglobal( L, "exec" );
 
     LOG( INFO ) << "Lua: Loading configuration file";
-    if(! load_config( luaScript.c_str() ) ){
+    if(! load_config( luaScript ) ){
         LOG( FATAL ) << "Unable to open configuration file, expecting ~/.config/midi2input.lua, or -c switch.";
-    }
+        exit( -1 );
 
+    }
+#ifdef WITH_ALSA
+    int err;
+    err = snd_seq_open( &handle, "default", SND_SEQ_OPEN_INPUT, 0 );
+    if( err < 0 ) LOG( FATAL ) << "Problem creating midi sequencer ports";
+
+    snd_seq_set_client_name( handle, "midi2input" );
+
+    snd_seq_create_simple_port( handle, "in",
+            SND_SEQ_PORT_CAP_WRITE | SND_SEQ_PORT_CAP_SUBS_WRITE,
+            SND_SEQ_PORT_TYPE_MIDI_GENERIC );
+
+    snd_seq_create_simple_port( handle, "out",
+            SND_SEQ_PORT_CAP_READ | SND_SEQ_PORT_CAP_SUBS_READ,
+            SND_SEQ_PORT_TYPE_MIDI_GENERIC );
+#endif
+
+
+#ifdef WITH_JACK
     /* Jack */
     LOG( INFO ) << "Initialising Jack";
     if( (client = jack_client_open( "midi2input", JackNullOption, NULL )) == 0 ){
         LOG( FATAL ) << "jack server not running?";
+        exit( -1 );
+
     }
 
     LOG( INFO ) << "Jack: setting callbacks";
@@ -456,7 +473,10 @@ main( int argc, char** argv )
     LOG( INFO ) << "Jack: Activating client";
     if( jack_activate( client ) ){
         LOG( FATAL ) << "cannot activate client";
+        exit( -1 );
+
     }
+#endif
 
     /* Lua: get port connection configuration */
     LOG( INFO ) << "Lua: Getting autoconnection setting";
@@ -483,12 +503,15 @@ main( int argc, char** argv )
     LOG( INFO ) << "Lua: autoconnect = " << autoconnect;
     lua_pop( L, 1 );
 
+#ifdef WITH_JACK
     /* Jack: get list of output ports */
     LOG( INFO ) << "Jack: Looking up output ports";
     int i = 0;
     const char ** portnames = jack_get_ports( client, ".midi.", NULL, JackPortIsOutput );
     if(! portnames ){
         LOG( FATAL ) << "ERROR: no ports available";
+        exit( -1 );
+
     }
 
     while( *(portnames + i) ){
@@ -502,7 +525,10 @@ main( int argc, char** argv )
     std::string portname;
     if( autoconnect.compare( "None" ) ){
         if(! autoconnect.compare( "All" ) ){
-            if(! portnames ) LOG( FATAL ) << "No ports to connect to";
+            if(! portnames ){
+                LOG( FATAL ) << "No ports to connect to";
+                exit( -1 );
+            }
             i = 0;
             while( *(portnames + i) ){
                 portname = *(portnames + i);
@@ -527,7 +553,7 @@ main( int argc, char** argv )
             } else {
                     message << " - SUCCESS\n";
             }
-            LOG( INFO ) << message;
+            LOG(INFO) << message.str();
         }
     }
     jack_free( portnames );
@@ -538,6 +564,7 @@ main( int argc, char** argv )
     portnames = jack_get_ports( client, ".midi.", NULL, JackPortIsInput );
     if(! portnames ){
         LOG( FATAL ) << "ERROR: no ports available";
+        exit( -1 );
     }
     while( *(portnames + i) ){
         LOG( INFO ) << "Jack: Found: " << *(portnames+i);
@@ -546,7 +573,10 @@ main( int argc, char** argv )
 
     /* Jack: Connect to input ports */
     LOG( INFO ) << "Jack: Connecting to input ports";
-    if(! portnames ) LOG( FATAL ) << "No ports to connect to";
+    if(! portnames ){
+        LOG( FATAL ) << "No ports to connect to";
+        exit( -1 );
+    }
     i = 0;
     while( *(portnames + i) ){
         portname = *(portnames + i);
@@ -565,14 +595,18 @@ main( int argc, char** argv )
         i++;
     }
     jack_free( portnames );
+#endif
 
     // Run initialisation lua function if output ports are set
+#ifdef WITH_JACK
     void *port_buf = jack_port_get_buffer( output_port, 0 );
     if(! port_buf ){
         LOG( ERROR ) << "Cannot send events with no connected ports";
         return 1;
     }
-    else{
+    else
+#endif
+    {
         LOG( INFO ) << "Running Initialisation function";
         lua_getglobal( L, "initialise" );
         lua_call( L, 0, 0);
@@ -580,12 +614,14 @@ main( int argc, char** argv )
 
     /* main loop */
     LOG( INFO ) << "Main: Entering sleep, waiting for jack events";
-    while( 1 ) sleep( 1 );
+    while( true ) sleep( 1 );
 
-    // FIXME this code is never run due to the infinate loop above. make a way
+    // FIXME this code is never run due to the infinite loop above. make a way
     // to exit the loop without CTRL+C
-
+    //
+#ifdef WITH_JACK
     jack_client_close( client );
+#endif
     lua_close( L );
     exit( 0 );
 }
