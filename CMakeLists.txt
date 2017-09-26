@@ -24,9 +24,8 @@ if( NOT DEFINED WITH_JACK )
 endif()
 
 if( NOT DEFINED WITH_ALSA )
-    set( WITH_ALSA false CACHE BOOL "whether to build with alsa midi support" FORCE )
+    set( WITH_ALSA true CACHE BOOL "whether to build with alsa midi support" FORCE )
 endif()
-
 
 if( NOT DEFINED WITH_X11 )
     set( WITH_XORG false CACHE BOOL "whether to build with XORG support support" FORCE )

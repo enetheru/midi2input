@@ -1,6 +1,18 @@
 include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
 
-add_executable( midi2input midi2input.cpp )
+if( WITH_ALSA )
+    set( SOURCES ${SOURCES} alsa.h alsa.cpp )
+endif()
+
+if( WITH_JACK )
+    set( SOURCES ${SOURCES} jack.h jack.cpp )
+endif()
+
+add_executable( midi2input
+        midi2input.cpp
+        log.h
+        midi.h
+        ${SOURCES} )
 target_link_libraries( midi2input ${LIBS} )
 
 if( BUILD_DOCS )
