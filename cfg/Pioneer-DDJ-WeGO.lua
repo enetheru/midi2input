@@ -282,6 +282,7 @@ default.map[0x90] = {
     [0x2F] = { [127] = default.toggle  }, --         hotcue2
     [0x30] = { [127] = default.toggle  }, --         hotcue3
     [0x31] = { [127] = default.toggle  }, --         hotcue4
+    [0x36] = { [127] = unassigned      }, --         touch
     [0x3C] = { [127] = default.toggle  }, --         sampler1
     [0x3D] = { [127] = unassigned      }, -- [shift] sampler1
     [0x3E] = { [127] = default.toggle  }, --         sampler2
@@ -300,6 +301,7 @@ default.map[0x90] = {
     [0x60] = { [127] = unassigned      }, -- [shift] hotcue2
     [0x61] = { [127] = unassigned      }, -- [shift] hotcue3
     [0x62] = { [127] = unassigned      }, -- [shift] hotcue4
+    [0x67] = { [127] = unassigned      }, -- [shift] touch
 }
 default.map[0xB0] = {
     [0x00] = { ['*'] = MSB             }, --         tempo MSB
@@ -322,6 +324,7 @@ default.map[0x91] = {
     [0x2F] = { [127] = default.toggle  }, --         hotcue2
     [0x30] = { [127] = default.toggle  }, --         hotcue3
     [0x31] = { [127] = default.toggle  }, --         hotcue4
+    [0x36] = { [127] = unassigned      }, --         touch
     [0x3C] = { [127] = default.toggle  }, --         sampler1
     [0x3D] = { [127] = unassigned      }, -- [shift] sampler1
     [0x3E] = { [127] = default.toggle  }, --         sampler2
@@ -340,6 +343,7 @@ default.map[0x91] = {
     [0x60] = { [127] = unassigned      }, -- [shift] hotcue2
     [0x61] = { [127] = unassigned      }, -- [shift] hotcue3
     [0x62] = { [127] = unassigned      }, -- [shift] hotcue4
+    [0x67] = { [127] = unassigned      }, -- [shift] touch
 }
 default.map[0xB1] = {
     [0x00] = { ['*'] = MSB             }, --         tempo MSB
@@ -362,6 +366,7 @@ default.map[0x92] = {
     [0x2F] = { [127] = default.toggle  }, --         hotcue2
     [0x30] = { [127] = default.toggle  }, --         hotcue3
     [0x31] = { [127] = default.toggle  }, --         hotcue4
+    [0x36] = { [127] = unassigned      }, --         touch
     [0x3C] = { [127] = default.toggle  }, --         sampler1
     [0x3D] = { [127] = unassigned      }, -- [shift] sampler1
     [0x3E] = { [127] = default.toggle  }, --         sampler2
@@ -380,6 +385,7 @@ default.map[0x92] = {
     [0x60] = { [127] = unassigned      }, -- [shift] hotcue2
     [0x61] = { [127] = unassigned      }, -- [shift] hotcue3
     [0x62] = { [127] = unassigned      }, -- [shift] hotcue4
+    [0x67] = { [127] = unassigned      }, -- [shift] touch
 }
 default.map[0xB2] = {
     [0x00] = { ['*'] = MSB             }, --         tempo MSB
@@ -402,6 +408,7 @@ default.map[0x93] = {
     [0x2F] = { [127] = default.toggle  }, --         hotcue2
     [0x30] = { [127] = default.toggle  }, --         hotcue3
     [0x31] = { [127] = default.toggle  }, --         hotcue4
+    [0x36] = { [127] = unassigned      }, --         touch
     [0x3C] = { [127] = default.toggle  }, --         sampler1
     [0x3D] = { [127] = unassigned      }, -- [shift] sampler1
     [0x3E] = { [127] = default.toggle  }, --         sampler2
@@ -420,6 +427,7 @@ default.map[0x93] = {
     [0x60] = { [127] = unassigned      }, -- [shift] hotcue2
     [0x61] = { [127] = unassigned      }, -- [shift] hotcue3
     [0x62] = { [127] = unassigned      }, -- [shift] hotcue4
+    [0x67] = { [127] = unassigned      }, -- [shift] touch
 }
 default.map[0xB3] = {
     [0x00] = { ['*'] = MSB             }, --         tempo MSB
