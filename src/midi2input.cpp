@@ -18,7 +18,7 @@ extern "C" {
 #endif
 
 #ifdef WITH_ALSA
-    #include <alsa/asoundlib.h>
+    #include "alsa.h"
 #endif
 
 #include <X11/Xlib.h>
@@ -32,10 +32,6 @@ namespace midi2input {
     lua_State *L;
     Display* xdp;
 }
-
-#ifdef WITH_ALSA
-    snd_seq_t *handle;
-#endif
 
 const char *helptext =
 "USAGE: ./midi2input [options]"
@@ -136,16 +132,8 @@ lua_midi_send( lua_State *L )
     }
 
 #ifdef WITH_ALSA
-    //example of how to send midi data to the port.
-        snd_seq_event_t ev;
-        snd_seq_ev_clear( &ev );
-        snd_seq_ev_set_source( &ev, 1 );
-        snd_seq_ev_set_subs( &ev );
-        snd_seq_ev_set_direct( &ev );
-
-        // set event type, data, so on..
-        snd_seq_event_output( handle, &ev);
-        snd_seq_drain_output( handle );  // if necessary
+    auto &alsa = alsa_singleton::getInstance();
+    alsa.midi_send( event );
 #endif
 
 #ifdef WITH_JACK
@@ -388,21 +376,10 @@ main( int argc, const char **argv )
 
     }
 #ifdef WITH_ALSA
-    int err;
-    err = snd_seq_open( &handle, "default", SND_SEQ_OPEN_INPUT, 0 );
-    if( err < 0 ) LOG( FATAL ) << "Problem creating midi sequencer ports";
-
-    snd_seq_set_client_name( handle, "midi2input" );
-
-    snd_seq_create_simple_port( handle, "in",
-            SND_SEQ_PORT_CAP_WRITE | SND_SEQ_PORT_CAP_SUBS_WRITE,
-            SND_SEQ_PORT_TYPE_MIDI_GENERIC );
-
-    snd_seq_create_simple_port( handle, "out",
-            SND_SEQ_PORT_CAP_READ | SND_SEQ_PORT_CAP_SUBS_READ,
-            SND_SEQ_PORT_TYPE_MIDI_GENERIC );
+    /* ALSA */
+    auto &alsa = alsa_singleton::getInstance();
+    alsa.set_eventProcessor( processEvent );
 #endif
-
 
 #ifdef WITH_JACK
     /* Jack */
@@ -412,11 +389,14 @@ main( int argc, const char **argv )
 
     /* main loop */
     LOG( INFO ) << "Main: Entering sleep, waiting for jack events";
-    while( true ) sleep( 1 );
-
-    // FIXME this code is never run due to the infinite loop above. make a way
-    // to exit the loop without CTRL+C
-    //
+    while( true ){
+#ifdef WITH_ALSA
+        alsa.midi_recv();
+#endif
+        sleep( 1 );
+        //fixme put in something to read alsa events here
+        //fixme and maybe something else to read a global variable to know when to quit.
+    }
 
     lua_close( L );
     exit( 0 );
