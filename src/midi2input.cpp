@@ -138,7 +138,7 @@ lua_midi_send( lua_State *L )
 
 #ifdef WITH_JACK
     auto &jack = jack_singleton::getInstance();
-    jack.midi_send( event );
+    if( jack.valid )jack.midi_send( event );
 #endif
     return 0;
 }
@@ -385,8 +385,8 @@ main( int argc, const char **argv )
 
 #ifdef WITH_JACK
     /* Jack */
-    auto &jack = jack_singleton::getInstance();
-    jack.set_eventProcessor( processEvent );
+    auto &jack = jack_singleton::getInstance( true );
+    if( jack.valid )jack.set_eventProcessor( processEvent );
 #endif
 
     /* main loop */

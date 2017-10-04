@@ -2,16 +2,17 @@
 #include "log.h"
 
 jack_singleton&
-jack_singleton::getInstance()
+jack_singleton::getInstance( bool init )
 {
-    static bool init = false;
     static jack_singleton jack;
 
-    if(! init ){
-        init = true;
+    if( init ){
         LOG( INFO ) << "Initialising Jack";
         jack.client = jack_client_open( "midi2input", JackNullOption, nullptr );
-        if(! jack.client ) LOG( FATAL ) << "unable to open client on jack server";
+        if(! jack.client ){
+            LOG( ERROR ) << "unable to open client on jack server";
+            return jack;
+        }
 
         LOG( INFO ) << "Jack: registering ports";
         jack.input_port = jack_port_register( jack.client, "in", JACK_DEFAULT_MIDI_TYPE, JackPortIsInput, 0 );
@@ -21,7 +22,11 @@ jack_singleton::getInstance()
         jack_set_process_callback( jack.client, jack_singleton::jack_process, 0 );
 
         LOG( INFO ) << "Jack: Activating client";
-        if( jack_activate( jack.client ) ) LOG( FATAL ) << "cannot activate client";
+        if( jack_activate( jack.client ) ){
+            LOG( ERROR ) << "cannot activate client";
+            return jack;
+        }
+        jack.valid = true;
     }
     return jack;
 }
@@ -62,7 +67,9 @@ jack_singleton::midi_send( const midi_event &event )
 int
 jack_singleton::jack_process( jack_nframes_t nframes, void *unused )
 {
+    (void)unused;
     auto &jack = jack_singleton::getInstance();
+    if(! jack.valid )return -1;
 
     void* port_buf = jack_port_get_buffer( jack.input_port, nframes );
     auto event_count = jack_midi_get_event_count( port_buf );

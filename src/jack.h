@@ -10,9 +10,11 @@ typedef int32_t (*EventProcessor)( const midi_event &);
 
 class jack_singleton{
 public:
-    static jack_singleton &getInstance();
+    static jack_singleton &getInstance( bool init = false );
     int32_t set_eventProcessor( EventProcessor );
     int32_t midi_send( const midi_event &event );
+
+    bool valid = false;
 
     ~jack_singleton();
 private:
