@@ -95,7 +95,7 @@ alsa_singleton::midi_recv()
                     << std::hex << std::setfill( '0' ) << std::uppercase
                     << "0x" << std::setw( 2 ) << (int)result[0] << ", "
                     << "0x" << std::setw( 2 ) << (int)result[1] << ", "
-                    << std::dec << std::setfill( ' ' ) << std::setw( 3 ) << (int)result[3];
+                    << std::dec << std::setfill( ' ' ) << std::setw( 3 ) << (int)result[2];
     }
 }
 

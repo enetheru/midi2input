@@ -204,6 +204,8 @@ load_config( const std::string &name )
 
 int XErrorCatcher( Display *disp, XErrorEvent *xe )
 {
+    (void)disp; (void)xe;//FIXME this is to shut things up; we might want to
+    // handle this at some point in the future though
     printf( "Something had happened, bruh.\n" );
     return 0;
 }
@@ -389,7 +391,9 @@ main( int argc, const char **argv )
 
     /* main loop */
     LOG( INFO ) << "Main: Entering sleep, waiting for jack events";
-    while( true ){
+    bool cont = true;//FIXME this is just to shut up the linter, honestly i
+    // want to make a way to get out of the loop so we can exit cleanly.
+    while( cont ){
 #ifdef WITH_ALSA
         alsa.midi_recv();
 #endif
