@@ -31,6 +31,8 @@ extern "C" {
 namespace midi2input {
     lua_State *L;
     Display* xdp;
+    jack_singleton *jack = nullptr;
+    alsa_singleton *alsa = nullptr;
 }
 
 const char *helptext =
@@ -38,7 +40,9 @@ const char *helptext =
 "GENERAL OPTIONS:"
 "   -h  --help      Print usage and exit"
 "   -v  --verbose   Output more information"
-"   -c  --config    SpeSpecify config file, default = ~/.config/midi2input.lua";
+"   -c  --config    Specify config file, default = ~/.config/midi2input.lua"
+"   -a  --alsa      Use ALSA midi backend "
+"   -j  --jack      Use Jack midi backend ";
 
 
 static int
@@ -131,15 +135,17 @@ lua_midi_send( lua_State *L )
         lua_pop( L, 1 );
     }
 
-#ifdef WITH_ALSA
-    auto &alsa = alsa_singleton::getInstance();
-    alsa.midi_send( event );
-#endif
+    #ifdef WITH_ALSA
+    if( midi2input::alsa )
+        if( midi2input::alsa->valid )
+            midi2input::alsa->midi_send( event );
+    #endif
 
-#ifdef WITH_JACK
-    auto &jack = jack_singleton::getInstance();
-    if( jack.valid )jack.midi_send( event );
-#endif
+    #ifdef WITH_JACK
+    if( midi2input::jack )
+        if( midi2input::jack->valid )
+            midi2input::jack->midi_send( event );
+    #endif
     return 0;
 }
 
@@ -316,6 +322,39 @@ main( int argc, const char **argv )
         exit( 0 );
     }
 
+    /* ============================== ALSA ============================== */
+    if( cmdl[{"-a","--alsa"}] ){
+    #ifdef WITH_ALSA
+        midi2input::alsa = alsa_singleton::getInstance( true );
+        if( midi2input::alsa->valid )
+            midi2input::alsa->set_eventProcessor( processEvent );
+    #else
+        LOG( ERROR ) << "Not compiled with ALSA midi backend";
+        exit(-1);
+    #endif
+    }
+
+    /* ============================== Jack ============================== */
+    if( cmdl[{"-j","--jack"}] ){
+    #ifdef WITH_JACK
+        midi2input::jack = jack_singleton::getInstance( true );
+        if( midi2input::jack->valid )
+            midi2input::jack->set_eventProcessor( processEvent );
+    #else
+        LOG( ERROR ) << "Not compiled with Jack midi backend";
+        exit(-1);
+    #endif
+    }
+
+    /* ============================= X11 ================================ */
+    LOG( INFO ) << "Getting X11 Display";
+    if(! (midi2input::xdp = XOpenDisplay( getenv( "DISPLAY" ) )) ){
+        LOG( FATAL ) << "Unable to open X display";
+        exit( -1 );
+    }
+    XSetErrorHandler( XErrorCatcher );
+
+    /* ============================== Lua =============================== */
     // --config
     LOG( INFO ) << "Parsing cmd line options";
     std::string luaScript;
@@ -324,16 +363,6 @@ main( int argc, const char **argv )
         luaScript = "";
     } else luaScript = "~/.config/midi2input.lua";
 
-    /* X11 */
-    LOG( INFO ) << "Getting X11 Display";
-    if(! (midi2input::xdp = XOpenDisplay( getenv( "DISPLAY" ) )) ){
-        LOG( FATAL ) << "Unable to open X display";
-        exit( -1 );
-    }
-    // set XErrorHandler
-    XSetErrorHandler( XErrorCatcher );
-
-    /* Lua */
     LOG( INFO ) << "Initialising Lua";
 
     midi2input::L = luaL_newstate();
@@ -377,29 +406,23 @@ main( int argc, const char **argv )
         exit( -1 );
 
     }
-#ifdef WITH_ALSA
-    /* ALSA */
-    auto &alsa = alsa_singleton::getInstance();
-    alsa.set_eventProcessor( processEvent );
-#endif
 
-#ifdef WITH_JACK
-    /* Jack */
-    auto &jack = jack_singleton::getInstance( true );
-    if( jack.valid )jack.set_eventProcessor( processEvent );
-#endif
-
-    /* main loop */
+    /* =========================== Main Loop ============================ */
     LOG( INFO ) << "Main: Entering sleep, waiting for jack events";
     bool cont = true;//FIXME this is just to shut up the linter, honestly i
     // want to make a way to get out of the loop so we can exit cleanly.
     while( cont ){
-#ifdef WITH_ALSA
-        alsa.midi_recv();
-#endif
+        #ifdef WITH_ALSA
+        if( midi2input::alsa ) if( midi2input::alsa->valid )
+            midi2input::alsa->midi_recv();
+        #endif
+        //FIXME put in something to read alsa events here
+        //FIXME and maybe something else to read a global variable to know when to quit.
+        if( !midi2input::alsa || !midi2input::jack ){
+            LOG( ERROR ) << "no midi backend running";
+            break;
+        }
         sleep( 1 );
-        //fixme put in something to read alsa events here
-        //fixme and maybe something else to read a global variable to know when to quit.
     }
 
     lua_close( L );

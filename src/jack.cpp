@@ -1,8 +1,8 @@
 #include "jack.h"
 #include "log.h"
 
-jack_singleton&
-jack_singleton::getInstance( bool init )
+jack_singleton *
+jack_singleton::getInstance( const bool init )
 {
     static jack_singleton jack;
 
@@ -11,7 +11,7 @@ jack_singleton::getInstance( bool init )
         jack.client = jack_client_open( "midi2input", JackNullOption, nullptr );
         if(! jack.client ){
             LOG( ERROR ) << "unable to open client on jack server";
-            return jack;
+            return &jack;
         }
 
         LOG( INFO ) << "Jack: registering ports";
@@ -24,11 +24,11 @@ jack_singleton::getInstance( bool init )
         LOG( INFO ) << "Jack: Activating client";
         if( jack_activate( jack.client ) ){
             LOG( ERROR ) << "cannot activate client";
-            return jack;
+            return &jack;
         }
-        jack.valid = true;
+        jack.valid_ = true;
     }
-    return jack;
+    return &jack;
 }
 
 int32_t
@@ -68,7 +68,7 @@ int
 jack_singleton::jack_process( jack_nframes_t nframes, void *unused )
 {
     (void)unused;
-    auto &jack = jack_singleton::getInstance();
+    auto &jack = *jack_singleton::getInstance();
     if(! jack.valid )return -1;
 
     void* port_buf = jack_port_get_buffer( jack.input_port, nframes );

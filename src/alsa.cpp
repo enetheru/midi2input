@@ -1,35 +1,46 @@
 #include "alsa.h"
 #include "log.h"
 
-alsa_singleton&
-alsa_singleton::getInstance()
+alsa_singleton *
+alsa_singleton::getInstance( const bool init )
 {
-    static bool init = false;
     static alsa_singleton alsa;
 
-    if(! init ){
-        init = true;
+    if( init ){
         LOG( INFO ) << "Initialising ALSA";
 
         int err;
         err = snd_seq_open( &alsa.handle, "default", SND_SEQ_OPEN_DUPLEX, 0 );
-        if( err < 0 ) LOG( FATAL ) << "ALSA: Problem creating midi sequencer client";
-
+        if( err < 0 ){
+            LOG( FATAL ) << "ALSA: Problem creating midi sequencer client";
+            return &alsa;
+        }
         snd_seq_set_client_name( alsa.handle, "midi2input" );
 
-        alsa.in_port = snd_seq_create_simple_port( alsa.handle, "in",
-                                    SND_SEQ_PORT_CAP_WRITE | SND_SEQ_PORT_CAP_SUBS_WRITE,
-                                    SND_SEQ_PORT_TYPE_MIDI_GENERIC );
-        if( alsa.in_port < 0 ) LOG( FATAL ) << "ALSA: Problem creating input midi port";
+        alsa.in_port = snd_seq_create_simple_port(
+            alsa.handle,
+            "in",
+            SND_SEQ_PORT_CAP_WRITE | SND_SEQ_PORT_CAP_SUBS_WRITE,
+            SND_SEQ_PORT_TYPE_MIDI_GENERIC
+        );
+        if( alsa.in_port < 0 ){
+            LOG( FATAL ) << "ALSA: Problem creating input midi port";
+            return &alsa;
+        }
 
-
-        alsa.out_port = snd_seq_create_simple_port( alsa.handle, "out",
-                                    SND_SEQ_PORT_CAP_READ | SND_SEQ_PORT_CAP_SUBS_READ,
-                                    SND_SEQ_PORT_TYPE_MIDI_GENERIC );
-        if( alsa.out_port < 0 ) LOG( FATAL ) << "ALSA: Problem creating output midi port";
-
+        alsa.out_port = snd_seq_create_simple_port(
+            alsa.handle,
+            "out",
+            SND_SEQ_PORT_CAP_READ | SND_SEQ_PORT_CAP_SUBS_READ,
+            SND_SEQ_PORT_TYPE_MIDI_GENERIC
+        );
+        if( alsa.out_port < 0 ){
+            LOG( FATAL ) << "ALSA: Problem creating output midi port";
+            return &alsa;
+        }
+        alsa.valid_ = true;
     }
-    return alsa;
+    return &alsa;
 }
 
 int32_t
