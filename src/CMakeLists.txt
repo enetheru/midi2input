@@ -8,6 +8,10 @@ if( WITH_JACK )
     set( SOURCES ${SOURCES} jack.h jack.cpp )
 endif()
 
+if( WITH_XORG )
+    set( SOURCES ${SOURCES} x11.h x11.cpp )
+endif()
+
 add_executable( midi2input
         midi2input.cpp
         log.h

@@ -17,8 +17,6 @@ if( NOT DEFINED CHECK_DOCS )
 endif()
 
 # Optional Features
-#TODO make sure either jack or alsa support is enabled
-#TODO add xwindows in here
 if( NOT DEFINED WITH_JACK )
     set( WITH_JACK false CACHE BOOL "whether to build with jack midi support" FORCE )
 endif()
@@ -27,7 +25,7 @@ if( NOT DEFINED WITH_ALSA )
     set( WITH_ALSA true CACHE BOOL "whether to build with alsa midi support" FORCE )
 endif()
 
-if( NOT DEFINED WITH_X11 )
+if( NOT DEFINED WITH_XORG )
     set( WITH_XORG false CACHE BOOL "whether to build with XORG support support" FORCE )
 endif()
 
@@ -62,24 +60,20 @@ if( ${WITH_JACK} )
     add_definitions( -DWITH_JACK )
 endif()
 
-pkg_check_modules( XTST xtst )
-pkg_check_modules( X11 x11 )
+if( ${WITH_XORG} )
+    pkg_check_modules( XTST xtst )
+    pkg_check_modules( X11 x11 )
+    include_directories( ${X11_INCLUDE_DIRS} ${XTST_INCLUDE_DIRS} )
+    set( LIBS ${LIBS} ${XTST_LIBRARIES} ${X11_LIBRARIES} )
+    add_definitions( -DWITH_XORG )
+endif()
+
 pkg_check_modules( LUA lua52 )
-
-include_directories(
-    ${PROJECT_SOURCE_DIR}/include
-    ${XTST_INCLUDE_DIRS}
-    ${X11_INCLUDE_DIRS}
-    ${LUA_INCLUDE_DIRS}
-)
+include_directories( ${LUA_INCLUDE_DIRS} )
+set( LIBS ${LIBS} ${LUA_LIBRARIES} )
 
 
-set( LIBS ${LIBS}
-    ${XTST_LIBRARIES}
-    ${X11_LIBRARIES}
-    ${LUA_LIBRARIES}
-)
-
+include_directories( ${PROJECT_SOURCE_DIR}/include )
 # sub directories
 # ===============
 add_subdirectory( src )
