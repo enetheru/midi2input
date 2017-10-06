@@ -13,14 +13,6 @@ extern "C" {
     #include <lua5.2/lualib.h>
 }
 
-#ifdef WITH_JACK
-    #include "jack.h"
-#endif
-
-#ifdef WITH_ALSA
-    #include "alsa.h"
-#endif
-
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 #include <X11/extensions/XTest.h>
@@ -28,11 +20,24 @@ extern "C" {
 #include "argh.h"
 #include "log.h"
 
+#include "midi.h"
+
+#ifdef WITH_JACK
+    #include "jack.h"
+#endif
+#ifdef WITH_ALSA
+    #include "alsa.h"
+#endif
+
 namespace midi2input {
     lua_State *L;
     Display* xdp;
-    jack_singleton *jack = nullptr;
+#ifdef WITH_ALSA
     alsa_singleton *alsa = nullptr;
+#endif
+#ifdef WITH_JACK
+    jack_singleton *jack = nullptr;
+#endif
 }
 
 const char *helptext =
@@ -408,7 +413,7 @@ main( int argc, const char **argv )
     }
 
     /* =========================== Main Loop ============================ */
-    LOG( INFO ) << "Main: Entering sleep, waiting for jack events";
+    LOG( INFO ) << "Main: Entering sleep, waiting for events";
     bool cont = true;//FIXME this is just to shut up the linter, honestly i
     // want to make a way to get out of the loop so we can exit cleanly.
     while( cont ){
@@ -418,10 +423,10 @@ main( int argc, const char **argv )
         #endif
         //FIXME put in something to read alsa events here
         //FIXME and maybe something else to read a global variable to know when to quit.
-        if( !midi2input::alsa || !midi2input::jack ){
-            LOG( ERROR ) << "no midi backend running";
-            break;
-        }
+#if !defined WITH_ALSA && !defined WITH_JACK
+        LOG( ERROR ) << "no midi backend compiled into binary, nothing to do.";
+        break;
+#endif
         sleep( 1 );
     }
 
