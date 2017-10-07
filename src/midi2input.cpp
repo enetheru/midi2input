@@ -4,7 +4,8 @@
 #include <queue>
 #include <sstream>
 #include <cstring>
-
+#include <chrono>
+#include <thread>
 #include <unistd.h>
 
 extern "C" {
@@ -31,6 +32,7 @@ extern "C" {
 
 namespace midi2input {
     lua_State *L;
+    bool quit = false;
 
     #ifdef WITH_ALSA
     alsa_singleton *alsa = nullptr;
@@ -80,7 +82,7 @@ lua_exec( lua_State *L )
 {
     std::string command;
     command = luaL_checkstring( L, -1 );
-    LOG( INFO ) << "exec: " << command;
+    LOG( INFO ) << "exec: " << command << "\n";
 
     FILE *in;
     char buff[512];
@@ -88,9 +90,17 @@ lua_exec( lua_State *L )
         return 1;
     }
     while( fgets(buff, sizeof(buff), in) != nullptr ){
-        LOG( INFO ) << buff;
+        LOG( INFO ) << buff << "\n";
     }
     pclose( in );
+    return 0;
+}
+
+static int
+lua_quit( lua_State *L )
+{
+    (void)L; //shutup unused variable;
+    midi2input::quit = true;
     return 0;
 }
 
@@ -127,14 +137,12 @@ load_config( const std::string &name )
     if( paths.empty() ) return false;
 
     if( luaL_loadfile( L, paths.front().c_str() ) || lua_pcall( L, 0, 0, 0 ) ){
-        LOG( ERROR ) << "cannot run configuration file: " << lua_tostring( L, -1 );
+        LOG( ERROR ) << "cannot run configuration file: " << lua_tostring( L, -1 ) << "\n";
         return false;
     }
-    LOG( INFO ) << "Using: " << paths.front();
+    LOG( INFO ) << "Using: " << paths.front() << "\n";
     return true;
 }
-
-
 
 int32_t
 processEvent( const midi_event &event )
@@ -145,7 +153,7 @@ processEvent( const midi_event &event )
     lua_pushnumber( L, event[1] );
     lua_pushnumber( L, event[2] );
     if( lua_pcall( L, 3, 0, 0 ) != 0 )
-        LOG( ERROR ) << "call to function 'event_in' failed" << lua_tostring( L, -1 );
+        LOG( ERROR ) << "call to function 'event_in' failed" << lua_tostring( L, -1 ) << "\n";
     return 0;
 }
 
@@ -162,20 +170,20 @@ main( int argc, const char **argv )
     //    LOG::SetDefaultLoggerLevel( LOG::CHECK );
 
     if( cmdl[{"-h", "--help"}] ){
-        LOG(INFO) << helptext;
+        LOG(INFO) << helptext << "\n";
         exit( 0 );
     }
 
     /* ============================== Lua =============================== */
     // --config
-    LOG( INFO ) << "Parsing cmd line options";
+    LOG( INFO ) << "Parsing cmd line options\n";
     std::string luaScript;
     if( cmdl[{"-c", "--config"}] )
     {
         luaScript = "";
     } else luaScript = "~/.config/midi2input.lua";
 
-    LOG( INFO ) << "Initialising Lua";
+    LOG( INFO ) << "Initialising Lua\n";
 
     midi2input::L = luaL_newstate();
     auto L = midi2input::L;
@@ -187,9 +195,12 @@ main( int argc, const char **argv )
     lua_pushcfunction( L, lua_exec );
     lua_setglobal( L, "exec" );
 
-    LOG( INFO ) << "Lua: Loading configuration file";
+    lua_pushcfunction( L, lua_quit );
+    lua_setglobal( L, "quit" );
+
+    LOG( INFO ) << "Lua: Loading configuration file\n";
     if(! load_config( luaScript ) ){
-        LOG( FATAL ) << "Unable to open configuration file, expecting ~/.config/midi2input.lua, or -c switch.";
+        LOG( FATAL ) << "Unable to open configuration file, expecting ~/.config/midi2input.lua, or -c switch.\n";
         exit( -1 );
 
     }
@@ -201,7 +212,7 @@ main( int argc, const char **argv )
         if( midi2input::alsa->valid )
             midi2input::alsa->set_eventProcessor( processEvent );
     #else
-        LOG( ERROR ) << "Not compiled with ALSA midi backend";
+        LOG( ERROR ) << "Not compiled with ALSA midi backend\n";
         exit(-1);
     #endif
     }
@@ -213,7 +224,7 @@ main( int argc, const char **argv )
         if( midi2input::jack->valid )
             midi2input::jack->set_eventProcessor( processEvent );
     #else
-        LOG( ERROR ) << "Not compiled with Jack midi backend";
+        LOG( ERROR ) << "Not compiled with Jack midi backend\n";
         exit(-1);
     #endif
     }
@@ -225,8 +236,8 @@ main( int argc, const char **argv )
 
 
     /* =========================== Main Loop ============================ */
-    LOG( INFO ) << "Main: Entering sleep, waiting for events";
-    while( true )
+    LOG( INFO ) << "Main: Entering sleep, waiting for events\n";
+    while(! midi2input::quit )
     {
         #ifdef WITH_XORG
         detect_window();
@@ -241,10 +252,11 @@ main( int argc, const char **argv )
         //TODO inotify to monitor and reload configuration
 
         #if !defined WITH_ALSA && !defined WITH_JACK
-        LOG( ERROR ) << "no midi backend compiled into binary, nothing to do.";
+        LOG( ERROR ) << "no midi backend compiled into binary, nothing to do\n";
         break;
         #endif
-        sleep( 1 );
+
+        std::this_thread::sleep_for( std::chrono::milliseconds(100) );
     }
 
     lua_close( L );

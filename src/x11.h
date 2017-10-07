@@ -12,7 +12,7 @@ extern "C" {
 }
 
 int XErrorCatcher( Display *disp, XErrorEvent *xe );
-Window XGetTopLevelParent( Display *xdp, Window w );
+Window XGetParent( Display *xdp, Window w );
 void detect_window();
 int initialise( lua_State *L );
 

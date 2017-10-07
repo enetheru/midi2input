@@ -12,6 +12,6 @@
 #define WARN "[WARN]"
 #define ERROR "[ERROR]"
 #define FATAL "[FATAL]"
-#define LOG( TYPE ) std::cout << "\n" << TYPE
+#define LOG( TYPE ) std::cout << TYPE
 
 #endif //MIDI2INPUT_LOG_H

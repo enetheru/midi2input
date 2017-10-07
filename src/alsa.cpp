@@ -7,12 +7,12 @@ alsa_singleton::getInstance( const bool init )
     static alsa_singleton alsa;
 
     if( init ){
-        LOG( INFO ) << "Initialising ALSA";
+        LOG( INFO ) << "Initialising ALSA\n";
 
         int err;
-        err = snd_seq_open( &alsa.handle, "default", SND_SEQ_OPEN_DUPLEX, 0 );
+        err = snd_seq_open( &alsa.handle, "default", SND_SEQ_OPEN_DUPLEX, SND_SEQ_NONBLOCK );
         if( err < 0 ){
-            LOG( FATAL ) << "ALSA: Problem creating midi sequencer client";
+            LOG( FATAL ) << "ALSA: Problem creating midi sequencer client\n";
             return &alsa;
         }
         snd_seq_set_client_name( alsa.handle, "midi2input" );
@@ -24,7 +24,7 @@ alsa_singleton::getInstance( const bool init )
             SND_SEQ_PORT_TYPE_MIDI_GENERIC
         );
         if( alsa.in_port < 0 ){
-            LOG( FATAL ) << "ALSA: Problem creating input midi port";
+            LOG( FATAL ) << "ALSA: Problem creating input midi port\n";
             return &alsa;
         }
 
@@ -35,7 +35,7 @@ alsa_singleton::getInstance( const bool init )
             SND_SEQ_PORT_TYPE_MIDI_GENERIC
         );
         if( alsa.out_port < 0 ){
-            LOG( FATAL ) << "ALSA: Problem creating output midi port";
+            LOG( FATAL ) << "ALSA: Problem creating output midi port\n";
             return &alsa;
         }
         alsa.valid_ = true;
@@ -68,7 +68,8 @@ alsa_singleton::midi_send( const midi_event &event )
                 << std::hex << std::setfill( '0' ) << std::uppercase
                 << "0x" << std::setw( 2 ) << (int)event[0] << ", "
                 << "0x" << std::setw( 2 ) << (int)event[1] << ", "
-                << std::dec << std::setfill( ' ' ) << std::setw( 3 ) << (int)event[2];
+                << std::dec << std::setfill( ' ' ) << std::setw( 3 ) << (int)event[2]
+                << "\n";
     return 0;
 }
 
@@ -81,7 +82,7 @@ alsa_singleton::midi_recv()
     midi_event result = {};
     snd_seq_event_t *ev = nullptr;
     int status = 0;
-    while( snd_seq_event_input( handle, &ev ) ) {
+    while( snd_seq_event_input( handle, &ev ) > 0 ){
         if( ev->type == SND_SEQ_EVENT_NOTEON ) {
             status = 0x90;
             result[0] = ev->data.note.channel + status;
@@ -98,7 +99,7 @@ alsa_singleton::midi_recv()
             result[1] = ev->data.control.param;
             result[2] = ev->data.control.value;
         } else {
-            LOG( INFO ) << "ALSA: Unhandled Event Received";
+            LOG( INFO ) << "ALSA: Unhandled Event Received\n";
             continue;
         }
         eventProcessor( result );
@@ -106,12 +107,13 @@ alsa_singleton::midi_recv()
                     << std::hex << std::setfill( '0' ) << std::uppercase
                     << "0x" << std::setw( 2 ) << (int)result[0] << ", "
                     << "0x" << std::setw( 2 ) << (int)result[1] << ", "
-                    << std::dec << std::setfill( ' ' ) << std::setw( 3 ) << (int)result[2];
+                    << std::dec << std::setfill( ' ' ) << std::setw( 3 ) << (int)result[2]
+                    << "\n";
     }
 }
 
 alsa_singleton::~alsa_singleton() {
-    LOG(INFO) << "destroying alsa singleton.";
+    LOG(INFO) << "destroying alsa singleton\n";
 
     snd_seq_delete_simple_port( handle, out_port );
     snd_seq_delete_simple_port( handle, in_port );
