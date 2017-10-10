@@ -19,6 +19,9 @@ add_executable( midi2input
         ${SOURCES} )
 target_link_libraries( midi2input ${LIBS} )
 
+set_target_properties( midi2input PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR} )
+
 if( BUILD_DOCS )
     add_custom_command( TARGET midi2input POST_BUILD
         COMMAND ${CMAKE_CURRENT_BINARY_DIR}/midi2input -h > ${CMAKE_BINARY_DIR}/doc/help.txt
