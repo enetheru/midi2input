@@ -30,12 +30,17 @@ if( NOT DEFINED WITH_XORG )
 endif()
 
 # messages
-message( "Build Type: " ${CMAKE_BUILD_TYPE} )
-message( "Build Documentation: " ${BUILD_DOCS} )
-message( "Check Documentation: " ${CHECK_DOCS} )
-message( "With jack: " ${WITH_JACK} )
-message( "With alsa: " ${WITH_ALSA} )
-message( "With xorg: " ${WITH_XORG} )
+message( "Configuration:" )
+message( "\tCMAKE_BUILD_TYPE=" ${CMAKE_BUILD_TYPE} )
+message( "\tBUILD_DOCS=" ${BUILD_DOCS} )
+message( "\tCHECK_DOCS=" ${CHECK_DOCS} )
+message( "\tWITH_ALSA=" ${WITH_ALSA} )
+message( "\tWITH_JACK=" ${WITH_JACK} )
+message( "\tWITH_XORG=" ${WITH_XORG} )
+
+if( NOT ${WITH_ALSA} AND NOT ${WITH_JACK} )
+    message( SEND_ERROR "Either -DWITH_ALSA=ON or -DWITH_JACK=ON needs to be specified.") 
+endif()
 
 # Compiler
 # --------

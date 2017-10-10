@@ -251,11 +251,6 @@ main( int argc, const char **argv )
         //TODO something to know when to quit.
         //TODO inotify to monitor and reload configuration
 
-        #if !defined WITH_ALSA && !defined WITH_JACK
-        LOG( ERROR ) << "no midi backend compiled into binary, nothing to do\n";
-        break;
-        #endif
-
         std::this_thread::sleep_for( std::chrono::milliseconds(100) );
     }
 
