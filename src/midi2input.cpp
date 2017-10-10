@@ -16,6 +16,7 @@ extern "C" {
 
 #include "argh.h"
 #include "log.h"
+#include "cache_data.h"
 
 #include "midi.h"
 
