@@ -208,6 +208,7 @@ main( int argc, const char **argv )
         LOG( FATAL ) << "Unable to open configuration file, expecting ~/.config/midi2input.lua, or -c switch.\n";
         exit( -1 );
     }
+    //TODO pull configuration from file before continuing.
 
     /* ============================== ALSA ============================== */
     if( cmdl[{"-a","--alsa"}] ){
@@ -259,6 +260,9 @@ main( int argc, const char **argv )
         //TODO something to know when to quit.
         //TODO inotify to monitor and reload configuration
 
+        // loop spin has fixed interval at the moment, and there may be multiple
+        // requirements for faster and slower interfals depending on the task at
+        // hand. FIXME
         std::this_thread::sleep_for( std::chrono::milliseconds(100) );
     }
 
