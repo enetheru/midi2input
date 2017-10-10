@@ -174,6 +174,11 @@ main( int argc, const char **argv )
         exit( 0 );
     }
 
+    //FIXME dont quit here, instead check configuration first.
+    if( !cmdl[{"-a","--alsa"}] && !cmdl[{"-j","--jack"}] ){
+        LOG( ERROR ) << "neither jack nor alsa specified on the command line, whats the point in going on?\n";
+        exit(-1);
+    }
     /* ============================== Lua =============================== */
     // --config
     LOG( INFO ) << "Parsing cmd line options\n";
@@ -202,7 +207,6 @@ main( int argc, const char **argv )
     if(! load_config( luaScript ) ){
         LOG( FATAL ) << "Unable to open configuration file, expecting ~/.config/midi2input.lua, or -c switch.\n";
         exit( -1 );
-
     }
 
     /* ============================== ALSA ============================== */
@@ -223,6 +227,10 @@ main( int argc, const char **argv )
         midi2input::jack = jack_singleton::getInstance( true );
         if( midi2input::jack->valid )
             midi2input::jack->set_eventProcessor( processEvent );
+        else{
+            LOG( ERROR ) << "Unable to connect to jack\n";
+            exit(-1);
+        }
     #else
         LOG( ERROR ) << "Not compiled with Jack midi backend\n";
         exit(-1);
