@@ -16,6 +16,7 @@ add_executable( midi2input
         midi2input.cpp
         log.h
         midi.h
+        midi.cpp
         cache_data.h
         cache_data.cpp
         ${SOURCES} )
