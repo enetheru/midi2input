@@ -15,7 +15,7 @@ alsa_singleton::getInstance( const bool init )
             LOG( FATAL ) << "ALSA: Problem creating midi sequencer client\n";
             return &alsa;
         }
-        snd_seq_set_client_name( alsa.handle, "midi2input" );
+        snd_seq_set_client_name( alsa.handle, "midi2input_alsa" );
 
         alsa.in_port = snd_seq_create_simple_port(
             alsa.handle,

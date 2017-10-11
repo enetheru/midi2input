@@ -8,7 +8,7 @@ jack_singleton::getInstance( const bool init )
 
     if( init ){
         LOG( INFO ) << "Initialising Jack\n";
-        jack.client = jack_client_open( "midi2input", JackNullOption, nullptr );
+        jack.client = jack_client_open( "midi2input_jack", JackNullOption, nullptr );
         if(! jack.client ){
             LOG( ERROR ) << "unable to open client on jack server\n";
             return &jack;
