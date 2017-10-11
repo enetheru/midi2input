@@ -54,11 +54,7 @@ jack_singleton::midi_send( const midi_event &event )
     mdata[1] = event[1];
     mdata[2] = event[2];
 
-    LOG( INFO ) << "jack-midi-send: "
-                << std::hex << std::setfill( '0' ) << std::uppercase
-                << "0x" << std::setw( 2 ) << (int)event[0] << ", "
-                << "0x" << std::setw( 2 ) << (int)event[1] << ", "
-                << std::dec << std::setfill( ' ' ) << std::setw( 3 ) << (int)event[2] << "\n";
+    LOG( INFO ) << "jack-midi-send: " << midi2string( event ) << "\n";
 
     jack_midi_event_write( port_buf, 0, mdata, 3 );
     return 0;
@@ -84,17 +80,12 @@ jack_singleton::jack_process( jack_nframes_t nframes, void *unused )
         {
             jack_midi_event_get( &event, port_buf, i );
 
-            LOG( INFO ) << "jack-midi-recv: "
-                << std::hex << std::setfill( '0' ) << std::uppercase
-                << "0x" << std::setw( 2 ) << (int)event.buffer[ 0 ] << ", "
-                << "0x" << std::setw( 2 ) << (int)event.buffer[ 1 ] << ", "
-                << std::dec << std::setfill( ' ' ) << std::setw( 3 ) << (int)event.buffer[ 2 ] << "\n";
-
             result[0] = event.buffer[0];
             result[1] = event.buffer[1];
             result[2] = event.buffer[2];
-            jack.eventProcessor( result );
+            LOG( INFO ) << "jack-midi-recv: " << midi2string( result ) << "\n";
 
+            jack.eventProcessor( result );
         }
     }
     return 0;

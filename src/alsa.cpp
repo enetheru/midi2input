@@ -64,12 +64,7 @@ alsa_singleton::midi_send( const midi_event &event )
     snd_seq_event_output( handle, &ev);
     snd_seq_drain_output( handle );  // if necessary
 
-    LOG( INFO ) << "alsa-midi-send: "
-                << std::hex << std::setfill( '0' ) << std::uppercase
-                << "0x" << std::setw( 2 ) << (int)event[0] << ", "
-                << "0x" << std::setw( 2 ) << (int)event[1] << ", "
-                << std::dec << std::setfill( ' ' ) << std::setw( 3 ) << (int)event[2]
-                << "\n";
+    LOG( INFO ) << "alsa-midi-send: " << midi2string( event ) << "\n";
     return 0;
 }
 
@@ -103,19 +98,12 @@ alsa_singleton::midi_recv()
             continue;
         }
         eventProcessor( result );
-        LOG( INFO ) << "alsa-midi-recv: "
-                    << std::hex << std::setfill( '0' ) << std::uppercase
-                    << "0x" << std::setw( 2 ) << (int)result[0] << ", "
-                    << "0x" << std::setw( 2 ) << (int)result[1] << ", "
-                    << std::dec << std::setfill( ' ' ) << std::setw( 3 ) << (int)result[2]
-                    << "\n";
+        LOG( INFO ) << "alsa-midi-recv: " << midi2string( result ) << "\n";
     }
 }
 
 alsa_singleton::~alsa_singleton() {
     LOG(INFO) << "destroying alsa singleton\n";
-
     snd_seq_delete_simple_port( handle, out_port );
     snd_seq_delete_simple_port( handle, in_port );
-
 }
