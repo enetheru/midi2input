@@ -7,7 +7,7 @@
 #include <string>
 
 //FIXME ZOMG this is so ugly.
-namespace midi2input {
+namespace m2i {
     #ifdef WITH_ALSA
     extern alsa_singleton *alsa;
     #endif//WITH_ALSA
@@ -28,9 +28,9 @@ getPath( const fs::path &path )
 
     fs::path temp;
     if( getenv( "XDG_CONFIG_HOME" ) )
-        temp = std::string( getenv( "XDG_CONFIG_HOME") ) + "/midi2input/" + path.string();
+        temp = std::string( getenv( "XDG_CONFIG_HOME") ) + "/m2i/" + path.string();
     else
-        temp = std::string( getenv( "HOME") ) + "/.config/midi2input/" + path.string();
+        temp = std::string( getenv( "HOME") ) + "/.config/m2i/" + path.string();
 
     if( fs::exists( temp ) && fs::is_regular_file( temp ) ){
         return fs::absolute( temp );
@@ -75,15 +75,15 @@ lua_midi_send( lua_State *L )
     }
 
     #ifdef WITH_ALSA
-    if( midi2input::alsa )
-        if( midi2input::alsa->valid )
-            midi2input::alsa->midi_send( event );
+    if( m2i::alsa )
+        if( m2i::alsa->valid )
+            m2i::alsa->midi_send( event );
     #endif
 
     #ifdef WITH_JACK
-    if( midi2input::jack )
-        if( midi2input::jack->valid )
-            midi2input::jack->midi_send( event );
+    if( m2i::jack )
+        if( m2i::jack->valid )
+            m2i::jack->midi_send( event );
     #endif
     return 0;
 }
@@ -111,6 +111,6 @@ int
 lua_quit( lua_State *L )
 {
     (void)L; //shutup unused variable;
-    midi2input::quit = true;
+    m2i::quit = true;
     return 0;
 }

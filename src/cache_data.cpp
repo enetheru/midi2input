@@ -11,13 +11,13 @@ static std::string
 cachePath()
 {
     if( getenv( "XDG_CACHE_HOME" ) )
-        return std::string( getenv( "XDG_CACHE_HOME" ) ) + "/midi2input/";
+        return std::string( getenv( "XDG_CACHE_HOME" ) ) + "/m2i/";
 
     std::string home;
     if(! getenv( "HOME" ) )home = "~";
     else home = getenv( "HOME" );
 
-    return home + "/.cache/midi2input/";
+    return home + "/.cache/m2i/";
 }
 
 //get list of values from cache key
@@ -78,7 +78,7 @@ cacheExists( const std::string& key )
 int32_t
 cacheClear()
 {
-    /* delete all files in $XDG_CACHE_HOME/midi2input */
+    /* delete all files in $XDG_CACHE_HOME/m2i */
     fs::remove_all( cachePath() );
     return 0;
 }

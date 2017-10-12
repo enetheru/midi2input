@@ -1,7 +1,7 @@
 #include "log.h"
 #include "x11.h"
 
-namespace midi2input {
+namespace m2i {
     Display *xdp = nullptr;
     extern lua_State *L;
 }
@@ -43,9 +43,9 @@ void
 detect_window()
 {
     static Window w_current;
-    auto L = midi2input::L;
+    auto L = m2i::L;
 
-    auto xdp = midi2input::xdp;
+    auto xdp = m2i::xdp;
     if(! xdp ){
         LOG( ERROR ) << "invalid handle to X display\n";
         return;
@@ -104,7 +104,7 @@ ECODE
 initialise( lua_State* L )
 {
     LOG( INFO ) << "Getting X11 Display\n";
-    if(! (midi2input::xdp = XOpenDisplay( getenv( "DISPLAY" ) )) ){
+    if(! (m2i::xdp = XOpenDisplay( getenv( "DISPLAY" ) )) ){
         LOG( FATAL ) << "Unable to open X display\n";
         return ECODE::FAILURE;
     }
@@ -142,9 +142,9 @@ int
 lua_keypress( lua_State *L )
 {
     auto keysym = static_cast<KeySym>( luaL_checknumber( L, 1 ) );
-    KeyCode keycode = XKeysymToKeycode( midi2input::xdp, keysym );
-    XTestFakeKeyEvent( midi2input::xdp, keycode, 1, CurrentTime );
-    XTestFakeKeyEvent( midi2input::xdp, keycode, 0, CurrentTime );
+    KeyCode keycode = XKeysymToKeycode( m2i::xdp, keysym );
+    XTestFakeKeyEvent( m2i::xdp, keycode, 1, CurrentTime );
+    XTestFakeKeyEvent( m2i::xdp, keycode, 0, CurrentTime );
     LOG(INFO) << "keypress: " << XKeysymToString( keysym ) << "\n";
     return 0;
 }
@@ -153,8 +153,8 @@ int
 lua_keydown( lua_State *L )
 {
     auto keysym = static_cast<KeySym>( luaL_checknumber( L, 1 ) );
-    KeyCode keycode = XKeysymToKeycode( midi2input::xdp, keysym );
-    XTestFakeKeyEvent( midi2input::xdp, keycode, 1, CurrentTime );
+    KeyCode keycode = XKeysymToKeycode( m2i::xdp, keysym );
+    XTestFakeKeyEvent( m2i::xdp, keycode, 1, CurrentTime );
     LOG(INFO) << "keydown: " << XKeysymToString( keysym ) << "\n";
     return 0;
 }
@@ -163,8 +163,8 @@ int
 lua_keyup( lua_State *L )
 {
     auto keysym = static_cast<KeySym>( luaL_checknumber( L, 1 ) );
-    KeyCode keycode = XKeysymToKeycode( midi2input::xdp, keysym );
-    XTestFakeKeyEvent( midi2input::xdp, keycode, 0, CurrentTime );
+    KeyCode keycode = XKeysymToKeycode( m2i::xdp, keysym );
+    XTestFakeKeyEvent( m2i::xdp, keycode, 0, CurrentTime );
     LOG(INFO) << "keyup: " << XKeysymToString( keysym ) << "\n";
     return 0;
 }
@@ -173,8 +173,8 @@ int
 lua_buttonpress( lua_State *L )
 {
     auto button = static_cast<uint32_t>( luaL_checknumber( L, 1 ) );
-    XTestFakeButtonEvent( midi2input::xdp, button, 1, CurrentTime );
-    XTestFakeButtonEvent( midi2input::xdp, button, 0, CurrentTime );
+    XTestFakeButtonEvent( m2i::xdp, button, 1, CurrentTime );
+    XTestFakeButtonEvent( m2i::xdp, button, 0, CurrentTime );
     LOG(INFO) << "buttonpress: " << button << "\n";
     return 0;
 }
@@ -183,7 +183,7 @@ int
 lua_buttondown( lua_State *L )
 {
     auto button = static_cast<uint32_t>( luaL_checknumber( L, 1 ) );
-    XTestFakeButtonEvent( midi2input::xdp, button, 1, CurrentTime );
+    XTestFakeButtonEvent( m2i::xdp, button, 1, CurrentTime );
     LOG(INFO) << "buttondown: " << button << "\n";
     return 0;
 }
@@ -192,7 +192,7 @@ int
 lua_buttonup( lua_State *L )
 {
     auto button = static_cast<uint32_t>( luaL_checknumber( L, 1 ) );
-    XTestFakeButtonEvent( midi2input::xdp, button, 0, CurrentTime );
+    XTestFakeButtonEvent( m2i::xdp, button, 0, CurrentTime );
     LOG(INFO) << "buttonup: " << button << "\n";
     return 0;
 }
@@ -202,7 +202,7 @@ lua_mousemove( lua_State *L )
 {
     auto x = static_cast<int32_t>( luaL_checknumber( L, 1 ) );
     auto y = static_cast<int32_t>( luaL_checknumber( L, 2 ) );
-    XTestFakeRelativeMotionEvent( midi2input::xdp, x, y, CurrentTime );
+    XTestFakeRelativeMotionEvent( m2i::xdp, x, y, CurrentTime );
     LOG(INFO) << "mousemove: " << x << "," << y << "\n";
     return 0;
 }
@@ -212,7 +212,7 @@ lua_mousepos( lua_State *L )
 {
     auto x = static_cast<int32_t>( luaL_checknumber( L, 1 ) );
     auto y = static_cast<int32_t>( luaL_checknumber( L, 2 ) );;
-    XTestFakeMotionEvent( midi2input::xdp, -1, x, y, CurrentTime );
+    XTestFakeMotionEvent( m2i::xdp, -1, x, y, CurrentTime );
     LOG(INFO) << "mousewarp: " << x << "," << y << "\n";
     return 0;
 }

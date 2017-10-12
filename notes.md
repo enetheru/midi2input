@@ -60,7 +60,7 @@ use dbus to controll the service
     * reload configuration
     * quit
 
-But why? I guess the primary requirement I have is that midi2input stays alive
+But why? I guess the primary requirement I have is that m2i stays alive
 even even after an alsa or jack failure, and will reconnect automatically. that
 way i can just have it sit in the background on startup. what happens now?
 
@@ -87,7 +87,7 @@ application needs to know when to purge attempted connections from its list.
 lets enumerate
 **jack fails** - jack ports are not removed from cache and reconnection is attempted when it is detected that jack comes back online
 **alsa fails** - as above
-**midi2input fails** - cache is retained for reconnection on startup
+**m2i fails** - cache is retained for reconnection on startup
 **manual disconnection** - cache is clobbered with new list
 
 if there is a 3rd party application connected that goes away and comes back, i want that to be kept in the cache too
@@ -99,5 +99,5 @@ simply reacting to connection attempts might be a good start.
 Configuration
 =============
 firstly cmd line options
-secondly XDG_CONFIG_HOME/midi2input/config
-separation between midi2input behaviour and action and response.
+secondly XDG_CONFIG_HOME/m2i/config
+separation between m2i behaviour and action and response.

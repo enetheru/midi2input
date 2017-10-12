@@ -1,4 +1,4 @@
-midi2input
+m2i
 =======
 This program takes midi events and translates them to input events.
 Configuration files and scripts are written in Lua
@@ -29,9 +29,9 @@ at all that was FLOSS.
 | [![Intro Vid](https://img.youtube.com/vi/wr1AqlDXnYI/0.jpg)](http://www.youtube.com/watch?v=wr1AqlDXnYI) | 
 
 ```
-USAGE: ./midi2input [options]
+USAGE: ./m2i [options]
 
 GENERAL OPTIONS:
   -h  --help   Print usage and exit.
-  -c  --config Specify config file, default = ~/.config/midi2input.lua
+  -c  --config Specify config file, default = ~/.config/m2i.lua
 ```
