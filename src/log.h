@@ -14,4 +14,9 @@
 #define FATAL "[FATAL]"
 #define LOG( TYPE ) std::cout << TYPE
 
+enum class ECODE {
+    SUCCESS,
+    FAILURE,
+};
+
 #endif //MIDI2INPUT_LOG_H

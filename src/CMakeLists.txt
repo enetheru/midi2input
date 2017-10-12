@@ -17,6 +17,8 @@ add_executable( midi2input
         log.h
         midi.h
         midi.cpp
+        lua.cpp
+        lua.h
         cache_data.h
         cache_data.cpp
         ${SOURCES} )

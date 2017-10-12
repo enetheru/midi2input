@@ -100,13 +100,13 @@ detect_window()
     }
 }
 
-int
+ECODE
 initialise( lua_State* L )
 {
     LOG( INFO ) << "Getting X11 Display\n";
     if(! (midi2input::xdp = XOpenDisplay( getenv( "DISPLAY" ) )) ){
         LOG( FATAL ) << "Unable to open X display\n";
-        return -1;
+        return ECODE::FAILURE;
     }
     XSetErrorHandler( XErrorCatcher );
 
@@ -135,7 +135,7 @@ initialise( lua_State* L )
     lua_pushcfunction( L, lua_mousepos );
     lua_setglobal( L, "mousepos" );
 
-    return 0;
+    return ECODE::SUCCESS;
 }
 
 int

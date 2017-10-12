@@ -70,3 +70,34 @@ will continue to run.
 if the jack server quits then there is a jack failure during running but it
 doesnt quit either. so at some point i will need to check for jack validity and
 re-initialise the jack thingo.
+
+lets consider the reconnection options
+there exists a couple of different points at which reconnection is valid
+* on application startup
+* on jack or alsa restart
+* on both application and subsystem restart
+
+if i'm keeping a cache of what ports are connected then there needs to be a
+distinction between whether a port is disconnected on purpose, or whether it
+was disconnected through a failure.
+
+if there is a failure of both application and subsystem then on startup the
+application needs to know when to purge attempted connections from its list.
+
+lets enumerate
+**jack fails** - jack ports are not removed from cache and reconnection is attempted when it is detected that jack comes back online
+**alsa fails** - as above
+**midi2input fails** - cache is retained for reconnection on startup
+**manual disconnection** - cache is clobbered with new list
+
+if there is a 3rd party application connected that goes away and comes back, i want that to be kept in the cache too
+
+marking ports as reconnect or ignore in configuration
+
+simply reacting to connection attempts might be a good start.
+
+Configuration
+=============
+firstly cmd line options
+secondly XDG_CONFIG_HOME/midi2input/config
+separation between midi2input behaviour and action and response.

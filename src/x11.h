@@ -14,7 +14,7 @@ extern "C" {
 int XErrorCatcher( Display *disp, XErrorEvent *xe );
 Window XGetParent( Display *xdp, Window w );
 void detect_window();
-int initialise( lua_State *L );
+ECODE initialise( lua_State *L );
 
 // functions to pass to lua
 int lua_keypress( lua_State *L );

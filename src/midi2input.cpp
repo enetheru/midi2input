@@ -1,21 +1,9 @@
-#include <iostream>
-#include <iomanip>
-#include <fstream>
-#include <queue>
-#include <sstream>
-#include <cstring>
 #include <chrono>
 #include <thread>
-#include <unistd.h>
-#include <experimental/filesystem>
+#include <signal.h>
 
+#include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
-//FIXME create enumerations of error messages from functions rather than use the
-//c convention of using integers with error numbers
-enum class ECODE {
-    SUCCESS,
-    FAILURE,
-};
 
 extern "C" {
     #include <lua5.2/lua.h>
@@ -26,7 +14,7 @@ extern "C" {
 #include "argh.h"
 #include "log.h"
 #include "cache_data.h"
-
+#include "lua.h"
 #include "midi.h"
 
 #ifdef WITH_JACK
@@ -54,138 +42,32 @@ namespace midi2input {
     //configuration with defaults
     bool use_alsa = true;
     bool use_jack = false;
+    bool use_xorg = true;
     bool verbose = false;
     bool quiet = false;
+    bool reconnect = true;
+    std::chrono::milliseconds timer_resolution( 100 );
     fs::path config( "config.lua" );
     fs::path script( "script.lua" );
 }
 
 const char *helptext =
-"USAGE: ./midi2input [options]"
-"GENERAL OPTIONS:"
-"   -h  --help      Print usage and exit"
-"   -v  --verbose   Output more information"
-"   -c  --config    Specify config file, default = ~/.config/midi2input/config.lua"
-"   -s  --script    Specify script file, default = ~/.config/midi2input/script.lua"
-"   -a  --alsa      Use ALSA midi backend"
-"   -j  --jack      Use Jack midi backend";
+"USAGE: ./midi2input [options]\n"
+"OPTIONS:\n"
+"   -h  --help                  Print usage and exit\n"
+"   -v  --verbose               Output more information\n"
+"   -c  --config <config.lua>   Specify config file\n"
+"   -s  --script <script.lua>   Specify script file\n"
+"   -a  --alsa                  Use ALSA midi backend\n"
+"   -j  --jack                  Use Jack midi backend\n";
+//TODO implement
+//"   -r  --reconnect             Reconnect to previousl connected ports, or\n"
+//"                               on jack or alsa failure\n";
+//"   -x  --xorg_XORG             use xorg subsystems\n";
 
-static int
-lua_midi_send( lua_State *L )
-{
-    midi_event event;
-    for( int i = 0; i < 3; ++i ){
-        lua_pushnumber( L, i + 1 );
-        lua_gettable( L, -2 );
-        event[ i ] =  static_cast<unsigned char>( luaL_checknumber( L, -1 ) );
-        lua_pop( L, 1 );
-    }
-
-    #ifdef WITH_ALSA
-    if( midi2input::alsa )
-        if( midi2input::alsa->valid )
-            midi2input::alsa->midi_send( event );
-    #endif
-
-    #ifdef WITH_JACK
-    if( midi2input::jack )
-        if( midi2input::jack->valid )
-            midi2input::jack->midi_send( event );
-    #endif
-    return 0;
-}
-
-static int
-lua_exec( lua_State *L )
-{
-    std::string command;
-    command = luaL_checkstring( L, -1 );
-    LOG( INFO ) << "exec: " << command << "\n";
-
-    FILE *in;
-    char buff[512];
-    if(! (in = popen( command.c_str(), "r" ))){
-        return 1;
-    }
-    while( fgets(buff, sizeof(buff), in) != nullptr ){
-        LOG( INFO ) << buff << "\n";
-    }
-    pclose( in );
-    return 0;
-}
-
-static int
-lua_quit( lua_State *L )
-{
-    (void)L; //shutup unused variable;
+void intHandler( int dummy ){
+    (void)dummy;
     midi2input::quit = true;
-    return 0;
-}
-
-fs::path
-getPath( const fs::path &path )
-{
-    if( fs::exists( path ) && fs::is_regular_file( path ) )
-        return fs::absolute( path );
-
-    if( path.is_absolute() ) return fs::path();
-
-    fs::path temp;
-    if( getenv( "XDG_CONFIG_HOME" ) )
-        temp = std::string( getenv( "XDG_CONFIG_HOME") ) + "/midi2input/" + path.string();
-    else
-        temp = std::string( getenv( "HOME") ) + "/.config/midi2input/" + path.string();
-
-    if( fs::exists( temp ) && fs::is_regular_file( temp ) ){
-        return fs::absolute( temp );
-    }
-    return fs::path();
-}
-
-ECODE
-loadScript( lua_State *L, const fs::path &script )
-{
-    fs::path path = getPath( script );
-    if( path.empty() ) return ECODE::FAILURE;
-
-    LOG( INFO ) << "Loading script: " << path << "\n";
-
-    if( luaL_loadfile( L, path.c_str() ) || lua_pcall( L, 0, 0, 0 ) ){
-        LOG( ERROR ) << "cannot execute script file: " << lua_tostring( L, -1 ) << "\n";
-        return ECODE::FAILURE;
-    }
-    return ECODE::SUCCESS;
-}
-
-ECODE
-loadConfig( lua_State *L, const fs::path &config )
-{
-    fs::path path = getPath( config );
-    if( path.empty() ) return ECODE::FAILURE;
-
-    LOG( INFO ) << "Loading config: " << path << "\n";
-    if( luaL_loadfile( L, path.c_str() ) || lua_pcall( L, 0, 0, 0 ) ){
-        LOG( ERROR ) << "cannot load config file: " << lua_tostring( L, -1 ) << "\n";
-        return ECODE::FAILURE;
-    }
-    //else
-    cacheSet( "config", path );
-
-    lua_getglobal( L, "config" );
-    lua_pushnil(L);
-
-    while(lua_next(L, -2) != 0)
-    {
-        std::string var( lua_tostring( L, -2 ) );
-                if( var == "script"   ) midi2input::script   = lua_tostring( L, -1 );
-        else if( var == "verbose"  ) midi2input::verbose  = lua_toboolean( L, -1 );
-        else if( var == "quiet"    ) midi2input::quiet    = lua_toboolean( L, -1 );
-        else if( var == "use_alsa" ) midi2input::use_alsa = lua_toboolean( L, -1 );
-        else if( var == "use_jack" ) midi2input::use_jack = lua_toboolean( L, -1 );
-
-        lua_pop(L, 1);
-    }
-    return ECODE::SUCCESS;
 }
 
 int32_t
@@ -204,6 +86,9 @@ processEvent( const midi_event &event )
 int
 main( int argc, const char **argv )
 {
+    //handle ctrl+c to exit the main loop.
+    signal(SIGINT, intHandler);
+
     argh::parser cmdl( { "-c", "--config", "-s", "--script" } );
     cmdl.parse( argc, argv, argh::parser::PREFER_PARAM_FOR_UNREG_OPTION );
 
@@ -213,17 +98,52 @@ main( int argc, const char **argv )
     }
 
     //load lua environment first
+    /* ============================== Lua =============================== */
     midi2input::L = luaL_newstate();
     auto L = midi2input::L;
     luaL_openlibs( L );
 
-    // Load configuraton
+    // Load configuraton lua script
     cmdl({"-c", "--config"}) >> midi2input::config;
-    if( loadConfig( L, midi2input::config ) != ECODE::SUCCESS ){
+    if( loadLua( L, midi2input::config ) != ECODE::SUCCESS ){
         LOG( ERROR ) << "unable to load config: " << midi2input::config << "\n";
         LOG( WARN ) << "using default configuration\n";
+    } else {
+        cacheSet( "config", midi2input::config );
+
+        //pull configuration from config.lua
+        lua_getglobal( L, "config" );
+        if( lua_istable(L, -1 ) ){
+            lua_pushnil(L);
+
+            while( lua_next( L, -2 ) != 0 ){
+                std::string var( lua_tostring( L, -2 ) );
+                    if( var == "script"   ) midi2input::script   = lua_tostring( L, -1 );
+                else if( var == "verbose"  ) midi2input::verbose  = lua_toboolean( L, -1 );
+                else if( var == "quiet"    ) midi2input::quiet    = lua_toboolean( L, -1 );
+                else if( var == "use_alsa" ) midi2input::use_alsa = lua_toboolean( L, -1 );
+                else if( var == "use_jack" ) midi2input::use_jack = lua_toboolean( L, -1 );
+                else if( var == "reconnect" ) midi2input::reconnect = lua_toboolean( L, -1 );
+
+                lua_pop(L, 1);
+            }
+        }
+        else {
+            LOG( ERROR ) << "No 'config' table found in lua file\n";
+        }
     }
 
+    lua_pushcfunction( L, lua_midi_send );
+    lua_setglobal( L, "midi_send" );
+
+    lua_pushcfunction( L, lua_exec );
+    lua_setglobal( L, "exec" );
+
+    lua_pushcfunction( L, lua_quit );
+    lua_setglobal( L, "quit" );
+
+    
+    /* ============================= cmdl =============================== */
     //cmdl overrides
     if( cmdl[{ "-v", "--verbose" }] )
         midi2input::verbose = true;
@@ -237,25 +157,18 @@ main( int argc, const char **argv )
     if( cmdl[{ "-j", "--jack" }] )
         midi2input::use_jack = true;
 
+    if( !cmdl({"-s", "--script"}).str().empty() )
+        cmdl({"-s", "--script"}) >> midi2input::script;
+    if( loadLua( L, midi2input::script ) != ECODE::SUCCESS ){
+        LOG( ERROR ) << "Unable to find script file:" << midi2input::script << "\n";
+    } else {
+        cacheSet( "script", midi2input::script );
+    }
+
+    //one final check before continuing
     if( !midi2input::use_alsa && !midi2input::use_jack ){
         LOG( ERROR ) << "neither jack nor alsa has been specified\n";
         exit(-1);
-    }
-    /* ============================== Lua =============================== */
-
-    lua_pushcfunction( L, lua_midi_send );
-    lua_setglobal( L, "midi_send" );
-
-    lua_pushcfunction( L, lua_exec );
-    lua_setglobal( L, "exec" );
-
-    lua_pushcfunction( L, lua_quit );
-    lua_setglobal( L, "quit" );
-
-    if( !cmdl({"-s", "--script"}).str().empty() )
-        cmdl({"-s", "--script"}) >> midi2input::script;
-    if( loadScript( L, midi2input::script ) != ECODE::SUCCESS ){
-        LOG( ERROR ) << "Unable to find script file:" << midi2input::script << "\n";
     }
 
     /* ============================== ALSA ============================== */
@@ -288,14 +201,16 @@ main( int argc, const char **argv )
 
     /* ============================= X11 ================================ */
     #ifdef WITH_XORG
-    if( initialise( midi2input::L ) ) exit(-1);
+    if( initialise( midi2input::L ) == ECODE::FAILURE ) exit(-1);
     #endif
 
 
     /* =========================== Main Loop ============================ */
     LOG( INFO ) << "Main: Entering sleep, waiting for events\n";
+    auto last_time = std::chrono::system_clock::now();
     while(! midi2input::quit )
     {
+        auto this_time = std::chrono::system_clock::now();
         #ifdef WITH_XORG
         detect_window();
         #endif
@@ -305,14 +220,23 @@ main( int argc, const char **argv )
             midi2input::alsa->midi_recv();
         #endif
 
-        //TODO something to know when to quit.
         //TODO inotify to monitor and reload configuration
         //TODO update cache for connected ports
 
         // loop spin has fixed interval at the moment, and there may be multiple
         // requirements for faster and slower interfals depending on the task at
         // hand. FIXME
-        std::this_thread::sleep_for( std::chrono::milliseconds(100) );
+        //I want this value configurable, infact I would really like multiple frequencies for different things.
+        //a tight event loop with timers, triggers, can spin off threads and coroutines.
+        //whats the minimum i need? call a function after a certain time with there being a certain minimum resolution
+
+        //minimum resolution of time
+        std::chrono::duration< double > seconds = this_time - last_time;
+        last_time = this_time;
+        if( this_time - last_time > midi2input::timer_resolution )
+            LOG( WARN ) << "processing is taking longer than timer resolution\n";
+        else
+            std::this_thread::sleep_for( midi2input::timer_resolution - seconds );
     }
 
     lua_close( L );
