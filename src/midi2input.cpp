@@ -124,6 +124,8 @@ main( int argc, const char **argv )
                 else if( var == "use_alsa" ) midi2input::use_alsa = lua_toboolean( L, -1 );
                 else if( var == "use_jack" ) midi2input::use_jack = lua_toboolean( L, -1 );
                 else if( var == "reconnect" ) midi2input::reconnect = lua_toboolean( L, -1 );
+                else if( var == "timer_resolution" )
+                    midi2input::timer_resolution = std::chrono::milliseconds( lua_tointeger( L, -1 ) );
 
                 lua_pop(L, 1);
             }
@@ -207,10 +209,9 @@ main( int argc, const char **argv )
 
     /* =========================== Main Loop ============================ */
     LOG( INFO ) << "Main: Entering sleep, waiting for events\n";
-    auto last_time = std::chrono::system_clock::now();
     while(! midi2input::quit )
     {
-        auto this_time = std::chrono::system_clock::now();
+        auto start_time = std::chrono::system_clock::now();
         #ifdef WITH_XORG
         detect_window();
         #endif
@@ -231,10 +232,10 @@ main( int argc, const char **argv )
         //whats the minimum i need? call a function after a certain time with there being a certain minimum resolution
 
         //minimum resolution of time
-        std::chrono::duration< double > seconds = this_time - last_time;
-        last_time = this_time;
-        if( this_time - last_time > midi2input::timer_resolution )
-            LOG( WARN ) << "processing is taking longer than timer resolution\n";
+        auto end_time = std::chrono::system_clock::now();
+        std::chrono::duration< double > seconds = end_time - start_time;
+        if( seconds > midi2input::timer_resolution )
+            LOG( WARN ) << "processing time( " << std::setprecision(2) << seconds.count() * 1000 << "ms ) is longer than timer resolution\n";
         else
             std::this_thread::sleep_for( midi2input::timer_resolution - seconds );
     }
