@@ -3,22 +3,24 @@ m2i
 This program takes midi events and translates them to input events.
 Configuration files and scripts are written in Lua
 
-**Requires:**
-  * X11 with the XTest extension
-  * jack or alsa
-  * lua
-
-**depends**
-additional to the above we use:
+Requires
+--------
+* lua
 * adishavit argh
+* jack OR alsa
+* [optional] X11 with the XTest extension
 
-**Features:**
-  * ability to map events from midi device to keyboard and mouse
-  * some knowledge about currently focused application
-  * scriptable with lua
-  * ability to send midi events to the controller, for control of led buttons, etc
+Features
+--------
+* lua script reactions to midi events
+* sending of midi events
+* routing via alsa or jack using standard tools
+* sending keyboard and mouse events from scripts
+* executing commands from scripts
+* per application control by switching on WM_CLASS attribute
 
-**Why?:**<br>
+Why?
+====
 Because I had a midi controller, and I thought it was a shame that I could not
 control my pc using it. I did a little research online and it didn't seem that
 there was an existing solution that fit my needs, indeed I didn't find a solution
@@ -30,8 +32,20 @@ at all that was FLOSS.
 
 ```
 USAGE: ./m2i [options]
-
-GENERAL OPTIONS:
-  -h  --help   Print usage and exit.
-  -c  --config Specify config file, default = ~/.config/m2i.lua
+OPTIONS:
+   -h  --help                  Print usage and exit
+   -v  --verbose               Output more information
+   -c  --config <config.lua>   Specify config file
+   -s  --script <script.lua>   Specify script file
+   -a  --alsa                  Use ALSA midi backend
+   -j  --jack                  Use Jack midi backend
 ```
+
+examples
+========
+* using my controller play/pause, jogwheel, volume, tempo etc to dbus-send to 
+  currently running media player
+* using the jobwheel and buttons to have a custom controller for video editing
+  software
+* A sound and video board and controlling cameras for video streaming
+* jogwheel as mouse scroll
