@@ -1,16 +1,20 @@
+//system includes
 #include <chrono>
 #include <thread>
 #include <signal.h>
+#include <functional>
 
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
 
+//library includes
 extern "C" {
     #include <lua5.2/lua.h>
     #include <lua5.2/lauxlib.h>
     #include <lua5.2/lualib.h>
 }
 
+//local includes
 #include "argh.h"
 #include "log.h"
 #include "cache_data.h"
@@ -19,36 +23,41 @@ extern "C" {
 
 #ifdef WITH_JACK
     #include "jack.h"
-#endif
+#endif//WITH_JACK
+
 #ifdef WITH_ALSA
     #include "alsa.h"
-#endif
+#endif//WITH_ALSA
 
 #ifdef WITH_XORG
     #include "x11.h"
-#endif
+#endif//WITH_XORG
 
 namespace midi2input {
-    lua_State *L;
-    bool quit = false;
-
-    #ifdef WITH_ALSA
-    alsa_singleton *alsa = nullptr;
-    #endif
-
-    #ifdef WITH_JACK
-    jack_singleton *jack = nullptr;
-    #endif
-    //configuration with defaults
+    //configuration
     bool use_alsa = true;
     bool use_jack = false;
     bool use_xorg = true;
     bool verbose = false;
     bool quiet = false;
     bool reconnect = true;
-    std::chrono::milliseconds timer_resolution( 100 );
+    bool loop_enabled = true;
+    std::chrono::milliseconds main_freq( 25 );
+    std::chrono::milliseconds loop_freq( 100 );
+    std::chrono::milliseconds watch_freq( 3000 );
     fs::path config( "config.lua" );
     fs::path script( "script.lua" );
+
+    //program state
+    lua_State *L;
+    bool quit = false;
+    #ifdef WITH_ALSA
+    alsa_singleton *alsa = nullptr;
+    #endif//WITH_ALSA
+
+    #ifdef WITH_JACK
+    jack_singleton *jack = nullptr;
+    #endif//WITH_XORG
 }
 
 const char *helptext =
@@ -65,6 +74,7 @@ const char *helptext =
 //"                               on jack or alsa failure\n";
 //"   -x  --xorg_XORG             use xorg subsystems\n";
 
+//signal interrupt handler for ctrl+c
 void intHandler( int dummy ){
     (void)dummy;
     midi2input::quit = true;
@@ -118,14 +128,16 @@ main( int argc, const char **argv )
 
             while( lua_next( L, -2 ) != 0 ){
                 std::string var( lua_tostring( L, -2 ) );
-                    if( var == "script"   ) midi2input::script   = lua_tostring( L, -1 );
+                     if( var == "script"   ) midi2input::script   = lua_tostring( L, -1 );
                 else if( var == "verbose"  ) midi2input::verbose  = lua_toboolean( L, -1 );
                 else if( var == "quiet"    ) midi2input::quiet    = lua_toboolean( L, -1 );
                 else if( var == "use_alsa" ) midi2input::use_alsa = lua_toboolean( L, -1 );
                 else if( var == "use_jack" ) midi2input::use_jack = lua_toboolean( L, -1 );
                 else if( var == "reconnect" ) midi2input::reconnect = lua_toboolean( L, -1 );
-                else if( var == "timer_resolution" )
-                    midi2input::timer_resolution = std::chrono::milliseconds( lua_tointeger( L, -1 ) );
+                else if( var == "loop_enabled" ) midi2input::loop_enabled = lua_toboolean( L, -1 );
+                else if( var == "main_freq" ) midi2input::main_freq = std::chrono::milliseconds( lua_tointeger( L, -1 ) );
+                else if( var == "loop_freq" ) midi2input::loop_freq = std::chrono::milliseconds( lua_tointeger( L, -1 ) );
+                else if( var == "watch_freq" ) midi2input::watch_freq = std::chrono::milliseconds( lua_tointeger( L, -1 ) );
 
                 lua_pop(L, 1);
             }
@@ -209,35 +221,48 @@ main( int argc, const char **argv )
 
     /* =========================== Main Loop ============================ */
     LOG( INFO ) << "Main: Entering sleep, waiting for events\n";
+    std::chrono::system_clock::time_point loop_last = std::chrono::system_clock::now();
+    std::chrono::system_clock::time_point watch_last = std::chrono::system_clock::now();
     while(! midi2input::quit )
     {
-        auto start_time = std::chrono::system_clock::now();
+        auto main_start = std::chrono::system_clock::now();
         #ifdef WITH_XORG
         detect_window();
-        #endif
+        #endif//WITH_XORG
 
         #ifdef WITH_ALSA
         if( midi2input::alsa ) if( midi2input::alsa->valid )
             midi2input::alsa->midi_recv();
-        #endif
+        #endif//WITH_ALSA
 
-        //TODO inotify to monitor and reload configuration
-        //TODO update cache for connected ports
+        #ifdef WITH_JACK
+        //TODO have a look as to whether we can put jack in here, instead of its
+        //own thing. or alternatively, find out how jack does it and copy them.
+        #endif//WITH_JACK
 
-        // loop spin has fixed interval at the moment, and there may be multiple
-        // requirements for faster and slower interfals depending on the task at
-        // hand. FIXME
-        //I want this value configurable, infact I would really like multiple frequencies for different things.
-        //a tight event loop with timers, triggers, can spin off threads and coroutines.
-        //whats the minimum i need? call a function after a certain time with there being a certain minimum resolution
+        // run regular checks at watch_freq
+        auto watch_wait = std::chrono::system_clock::now() - watch_last;
+        if( watch_wait > midi2input::watch_freq ){
+            watch_last = std::chrono::system_clock::now();
+            //TODO inotify to monitor and reload configuration
+            //TODO update cache for connected ports
+        }
 
-        //minimum resolution of time
-        auto end_time = std::chrono::system_clock::now();
-        std::chrono::duration< double > seconds = end_time - start_time;
-        if( seconds > midi2input::timer_resolution )
-            LOG( WARN ) << "processing time( " << std::setprecision(2) << seconds.count() * 1000 << "ms ) is longer than timer resolution\n";
+        // run the loop lua function at loop_freq
+        auto loop_wait = std::chrono::system_clock::now() - loop_last;
+        if( midi2input::loop_enabled && loop_wait > midi2input::loop_freq ){
+            loop_last = std::chrono::system_clock::now();
+            lua_getglobal( L, "loop" );
+            if( lua_pcall( L, 1, 0, 0 ) != 0 ) midi2input::loop_enabled = false;
+        }
+
+        //limit mainloop to midi2input::main_freq
+        auto main_end = std::chrono::system_clock::now();
+        std::chrono::duration< double > main_time = main_end - main_start;
+        if( main_time > midi2input::main_freq )
+            LOG( WARN ) << "processing time( " << std::setprecision(2) << main_time.count() * 1000 << "ms ) is longer than timer resolution\n";
         else
-            std::this_thread::sleep_for( midi2input::timer_resolution - seconds );
+            std::this_thread::sleep_for( midi2input::main_freq - main_time );
     }
 
     lua_close( L );
