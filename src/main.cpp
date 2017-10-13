@@ -58,7 +58,7 @@ namespace m2i {
     #endif//WITH_ALSA
 
     #ifdef WITH_JACK
-    jack_singleton *jack = nullptr;
+    JackSeq jack;
     #endif//WITH_XORG
 
     #ifdef WITH_XORG
@@ -180,12 +180,7 @@ main( int argc, const char **argv )
     /* ============================== Jack ============================== */
     if( m2i::use_jack ){
     #ifdef WITH_JACK
-        m2i::jack = jack_singleton::getInstance( true );
-//        if( m2i::jack->valid )
-//            m2i::jack->set_eventProcessor( processEvent );
-//        else{
-//            LOG( ERROR ) << "Unable to connect to jack\n";
-//        }
+        m2i::jack.init();
     #else
         LOG( ERROR ) << "Not compiled with Jack midi backend\n";
         exit(-1);
@@ -220,9 +215,9 @@ main( int argc, const char **argv )
         #endif//WITH_ALSA
 
         #ifdef WITH_JACK
-        if( m2i::jack ) if( m2i::jack->valid ){
-            while( m2i::jack->event_pending() > 0 ){
-                m2i::lua_midirecv( m2i::L, m2i::jack->event_receive() );
+        if( m2i::jack.valid ){
+            while( m2i::jack.event_pending() > 0 ){
+                m2i::lua_midirecv( m2i::L, m2i::jack.event_receive() );
             }
         }
         #endif//WITH_JACK
@@ -233,16 +228,13 @@ main( int argc, const char **argv )
             watch_last = std::chrono::system_clock::now();
 
             #ifdef WITH_JACK
-            if( m2i::use_jack && m2i::reconnect && !m2i::jack->valid ){
-                /* FIXME I'm not really happy with this, there are multiple levels
-                 * to why i think this is a bad idea, one of them being the re-
-                 * initialisation of jack and the other which is not reliably
-                 * destroying the jack alsa_singleton
+            if( m2i::use_jack && m2i::reconnect && !m2i::jack.valid ){
+                /* FIXME I'm not really happy with the re-initialisation of jack
                  */
                 LOG( ERROR ) << "Jack not valid attempting to re\n";
                 //attempt to re-instantiate jack connection
-                m2i::jack->~jack_singleton();
-                m2i::jack->getInstance( true );
+                m2i::jack.~JackSeq();
+                m2i::jack.init();
                 //TODO reconnect to previously connected ports.
             }
             #endif//WITH_JACK

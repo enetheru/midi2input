@@ -6,29 +6,29 @@
 #include <jack/midiport.h>
 #include "midi.h"
 
-typedef int (*EventProcessor)( const midi_event &);
-
-class jack_singleton{
+class JackSeq{
 public:
-    static jack_singleton *getInstance( const bool init = false );
+    JackSeq() = default;
+    void init();
+
     void event_send( const midi_event &event );
     int event_pending();
     midi_event event_receive();
 
     const bool &valid = valid_;
 
-    ~jack_singleton();
+    ~JackSeq();
 private:
-    jack_singleton() = default;
-
-    static void error_func( const char *msg );
-
     bool valid_ = false;
+
     jack_client_t *client = nullptr;
     jack_port_t *input_port = nullptr;
-    void *in_portbuf = nullptr;
     jack_port_t *output_port = nullptr;
-    EventProcessor eventProcessor = nullptr;
+
+    friend void error_func(const char* msg);
+
 };
+
+void error_func( const char *msg );
 
 #endif // MIDI2INPUT_JACK_H

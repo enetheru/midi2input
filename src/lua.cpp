@@ -23,7 +23,7 @@ namespace m2i {
     #endif//WITH_ALSA
 
     #ifdef WITH_JACK
-    extern jack_singleton *jack;
+    extern JackSeq jack;
     #endif//WITH_JACK
 
     #ifdef WITH_XORG
@@ -126,9 +126,7 @@ lua_midisend( lua_State *L )
     #endif
 
     #ifdef WITH_JACK
-    if( m2i::jack )
-        if( m2i::jack->valid )
-            m2i::jack->event_send( event );
+    if( m2i::jack.valid )m2i::jack.event_send( event );
     #endif
     return 0;
 }

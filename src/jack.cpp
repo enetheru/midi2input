@@ -1,39 +1,30 @@
 #include "jack.h"
 #include "util.h"
 
-jack_singleton *
-jack_singleton::getInstance( const bool init )
+void
+JackSeq::init()
 {
-    static jack_singleton jack;
-
-    if( init ){
-        LOG( INFO ) << "Initialising Jack\n";
-        jack.client = jack_client_open( "midi2input_jack", JackNoStartServer, nullptr );
-        if(! jack.client ){
-            LOG( ERROR ) << "unable to open client on jack server\n";
-            return &jack;
-        }
-
-        LOG( INFO ) << "Jack: registering ports\n";
-        jack.input_port = jack_port_register( jack.client, "in", JACK_DEFAULT_MIDI_TYPE, JackPortIsInput, 0 );
-        jack.output_port = jack_port_register( jack.client, "out", JACK_DEFAULT_MIDI_TYPE, JackPortIsOutput, 0 );
-
-        LOG( INFO ) << "Jack: setting event callback\n";
-        jack_set_error_function( jack_singleton::error_func );
-
-
-        LOG( INFO ) << "Jack: Activating client\n";
-        if( jack_activate( jack.client ) ){
-            LOG( ERROR ) << "cannot activate client\n";
-            return &jack;
-        }
-        jack.valid_ = true;
+    LOG( INFO ) << "Initialising Jack\n";
+    client = jack_client_open( "midi2input_jack", JackNoStartServer, nullptr );
+    if(! client ){
+        LOG( ERROR ) << "unable to open client on jack server\n";
+        return;
     }
-    return &jack;
+
+    LOG( INFO ) << "Jack: registering ports\n";
+    input_port = jack_port_register( client, "in", JACK_DEFAULT_MIDI_TYPE, JackPortIsInput, 0 );
+    output_port = jack_port_register( client, "out", JACK_DEFAULT_MIDI_TYPE, JackPortIsOutput, 0 );
+
+    LOG( INFO ) << "Jack: Activating client\n";
+    if( jack_activate( client ) ){
+        LOG( ERROR ) << "cannot activate client\n";
+        return;
+    }
+    valid_ = true;
 }
 
 void
-jack_singleton::event_send( const midi_event &event )
+JackSeq::event_send( const midi_event &event )
 {
     //FIXME there is a bug in here somewhere that makes sending a midi event to the
     //controller fail.
@@ -56,7 +47,7 @@ jack_singleton::event_send( const midi_event &event )
 }
 
 int
-jack_singleton::event_pending()
+JackSeq::event_pending()
 {
     //FIXME there is a bug here somewhere, because sometimes the count differs
     // from this function to the one below it if called one after the other
@@ -65,7 +56,7 @@ jack_singleton::event_pending()
 }
 
 midi_event
-jack_singleton::event_receive()
+JackSeq::event_receive()
 {
     void* port_buf = jack_port_get_buffer( input_port, 0 );
 
@@ -84,15 +75,7 @@ jack_singleton::event_receive()
     return result ;
 }
 
-void
-jack_singleton::error_func( const char *msg )
-{
-    auto jack = jack_singleton::getInstance();
-    LOG( ERROR ) << msg << "\n";
-    jack->valid_ = false;
-}
-
-jack_singleton::~jack_singleton() {
+JackSeq::~JackSeq(){
     LOG(INFO) << "destroying jack singleton\n";
     jack_client_close( client );
 }
