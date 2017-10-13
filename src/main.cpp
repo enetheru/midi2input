@@ -242,7 +242,11 @@ main( int argc, const char **argv )
         if( watch_wait > m2i::watch_freq ){
             watch_last = std::chrono::system_clock::now();
             if( !m2i::jack->valid ){
-                // FIXMEI'm not really happy with this
+                /* FIXME I'm not really happy with this, there are multiple levels
+                 * to why i think this is a bad idea, one of them being the re-
+                 * initialisation of jack and the other which is not reliably
+                 * destroying the jack alsa_singleton
+                 */
                 LOG( ERROR ) << "Jack not valid attempting to re\n";
                 m2i::jack->~jack_singleton();
                 m2i::jack->getInstance( true );
