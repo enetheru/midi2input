@@ -19,7 +19,7 @@
 //FIXME ZOMG this is so ugly.
 namespace m2i {
     #ifdef WITH_ALSA
-    extern alsa_singleton *alsa;
+    extern AlsaSeq alsa;
     #endif//WITH_ALSA
 
     #ifdef WITH_JACK
@@ -122,9 +122,7 @@ lua_midisend( lua_State *L )
     lua_pop( L, 1 );
 
     #ifdef WITH_ALSA
-    if( m2i::alsa )
-        if( m2i::alsa->valid )
-            m2i::alsa->event_send( event );
+    if( m2i::alsa.valid )m2i::alsa.event_send( event );
     #endif
 
     #ifdef WITH_JACK

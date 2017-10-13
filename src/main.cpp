@@ -54,7 +54,7 @@ namespace m2i {
     lua_State *L = nullptr;
     bool quit = false;
     #ifdef WITH_ALSA
-    alsa_singleton *alsa = nullptr;
+    AlsaSeq alsa;
     #endif//WITH_ALSA
 
     #ifdef WITH_JACK
@@ -170,9 +170,7 @@ main( int argc, const char **argv )
     /* ============================== ALSA ============================== */
     if( m2i::use_alsa ){
     #ifdef WITH_ALSA
-        m2i::alsa = alsa_singleton::getInstance( true );
-//        if( m2i::alsa->valid )
-//            m2i::alsa->set_eventProcessor( lua_midirecv );
+        m2i::alsa.init();
     #else
         LOG( ERROR ) << "Not compiled with ALSA midi backend\n";
         exit(-1);
@@ -214,9 +212,9 @@ main( int argc, const char **argv )
         auto main_start = std::chrono::system_clock::now();
 
         #ifdef WITH_ALSA
-        if( m2i::alsa ) if( m2i::alsa->valid ){
-            while( m2i::alsa->event_pending() > 0 ){
-                m2i::lua_midirecv( m2i::L, m2i::alsa->event_receive() );
+        if( m2i::alsa.valid ){
+            while( m2i::alsa.event_pending() > 0 ){
+                m2i::lua_midirecv( m2i::L, m2i::alsa.event_receive() );
             }
         }
         #endif//WITH_ALSA

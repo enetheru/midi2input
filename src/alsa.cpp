@@ -1,50 +1,44 @@
 #include "alsa.h"
 #include "util.h"
 
-alsa_singleton *
-alsa_singleton::getInstance( const bool init )
+void
+AlsaSeq::init()
 {
-    static alsa_singleton alsa;
+    LOG( INFO ) << "Initialising ALSA\n";
 
-    if( init ){
-        LOG( INFO ) << "Initialising ALSA\n";
-
-        int err;
-        err = snd_seq_open( &alsa.seq, "default", SND_SEQ_OPEN_DUPLEX, SND_SEQ_NONBLOCK );
-        if( err < 0 ){
-            LOG( FATAL ) << "ALSA: Problem creating midi sequencer client\n";
-            return &alsa;
-        }
-        snd_seq_set_client_name( alsa.seq, "midi2input_alsa" );
-
-        alsa.in_port = snd_seq_create_simple_port(
-            alsa.seq,
-            "in",
-            SND_SEQ_PORT_CAP_WRITE | SND_SEQ_PORT_CAP_SUBS_WRITE,
-            SND_SEQ_PORT_TYPE_MIDI_GENERIC
-        );
-        if( alsa.in_port < 0 ){
-            LOG( FATAL ) << "ALSA: Problem creating input midi port\n";
-            return &alsa;
-        }
-
-        alsa.out_port = snd_seq_create_simple_port(
-            alsa.seq,
-            "out",
-            SND_SEQ_PORT_CAP_READ | SND_SEQ_PORT_CAP_SUBS_READ,
-            SND_SEQ_PORT_TYPE_MIDI_GENERIC
-        );
-        if( alsa.out_port < 0 ){
-            LOG( FATAL ) << "ALSA: Problem creating output midi port\n";
-            return &alsa;
-        }
-        alsa.valid_ = true;
+    if( snd_seq_open( &seq, "default", SND_SEQ_OPEN_DUPLEX, SND_SEQ_NONBLOCK ) < 0 )
+    {
+        LOG( FATAL ) << "ALSA: Problem creating midi sequencer client\n";
+        return;
     }
-    return &alsa;
+    snd_seq_set_client_name( seq, "midi2input_alsa" );
+
+    in_port = snd_seq_create_simple_port(
+        seq,
+        "in",
+        SND_SEQ_PORT_CAP_WRITE | SND_SEQ_PORT_CAP_SUBS_WRITE,
+        SND_SEQ_PORT_TYPE_MIDI_GENERIC
+    );
+    if( in_port < 0 ){
+        LOG( FATAL ) << "ALSA: Problem creating input midi port\n";
+        return;
+    }
+
+    out_port = snd_seq_create_simple_port(
+        seq,
+        "out",
+        SND_SEQ_PORT_CAP_READ | SND_SEQ_PORT_CAP_SUBS_READ,
+        SND_SEQ_PORT_TYPE_MIDI_GENERIC
+    );
+    if( out_port < 0 ){
+        LOG( FATAL ) << "ALSA: Problem creating output midi port\n";
+        return;
+    }
+    valid_ = true;
 }
 
 void
-alsa_singleton::event_send( const midi_event &event )
+AlsaSeq::event_send( const midi_event &event )
 {
     snd_seq_event_t ev;
     snd_seq_ev_clear( &ev );
@@ -60,13 +54,12 @@ alsa_singleton::event_send( const midi_event &event )
 }
 
 int
-alsa_singleton::event_pending()//FIXME snd_seq_t * seq )
-{
+AlsaSeq::event_pending(){
     return snd_seq_event_input_pending( seq, 1 );
 }
 
 midi_event
-alsa_singleton::event_receive()//FIXME snd_seq_t *seq )
+AlsaSeq::event_receive()
 {
     midi_event result;
     snd_seq_event_t *ev = nullptr;
@@ -94,7 +87,7 @@ alsa_singleton::event_receive()//FIXME snd_seq_t *seq )
     return result;
 }
 
-alsa_singleton::~alsa_singleton() {
+AlsaSeq::~AlsaSeq() {
     LOG(INFO) << "destroying alsa singleton\n";
     snd_seq_delete_simple_port( seq, out_port );
     snd_seq_delete_simple_port( seq, in_port );
