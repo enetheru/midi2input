@@ -21,6 +21,7 @@ private:
     jack_singleton() = default;
 
     static int jack_process( jack_nframes_t, void *);
+    static void error_func( const char *msg );
 
     bool valid_ = false;
     jack_client_t *client = nullptr;

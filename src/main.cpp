@@ -203,7 +203,6 @@ main( int argc, const char **argv )
             m2i::jack->set_eventProcessor( processEvent );
         else{
             LOG( ERROR ) << "Unable to connect to jack\n";
-            exit(-1);
         }
     #else
         LOG( ERROR ) << "Not compiled with Jack midi backend\n";
@@ -242,8 +241,15 @@ main( int argc, const char **argv )
         auto watch_wait = std::chrono::system_clock::now() - watch_last;
         if( watch_wait > m2i::watch_freq ){
             watch_last = std::chrono::system_clock::now();
+            if( !m2i::jack->valid ){
+                // FIXMEI'm not really happy with this
+                LOG( ERROR ) << "Jack not valid attempting to re\n";
+                m2i::jack->~jack_singleton();
+                m2i::jack->getInstance( true );
+            }
             //TODO inotify to monitor and reload configuration
             //TODO update cache for connected ports
+            //TODO monitor for alsa failure?
         }
 
         // run the loop lua function at loop_freq

@@ -8,7 +8,7 @@ jack_singleton::getInstance( const bool init )
 
     if( init ){
         LOG( INFO ) << "Initialising Jack\n";
-        jack.client = jack_client_open( "midi2input_jack", JackNullOption, nullptr );
+        jack.client = jack_client_open( "midi2input_jack", JackNoStartServer, nullptr );
         if(! jack.client ){
             LOG( ERROR ) << "unable to open client on jack server\n";
             return &jack;
@@ -20,6 +20,8 @@ jack_singleton::getInstance( const bool init )
 
         LOG( INFO ) << "Jack: setting event callback\n";
         jack_set_process_callback( jack.client, jack_singleton::jack_process, 0 );
+        jack_set_error_function( jack_singleton::error_func );
+
 
         LOG( INFO ) << "Jack: Activating client\n";
         if( jack_activate( jack.client ) ){
@@ -89,6 +91,14 @@ jack_singleton::jack_process( jack_nframes_t nframes, void *unused )
         }
     }
     return 0;
+}
+
+void
+jack_singleton::error_func( const char *msg )
+{
+    auto jack = jack_singleton::getInstance();
+    LOG( ERROR ) << msg << "\n";
+    jack->valid_ = false;
 }
 
 jack_singleton::~jack_singleton() {
