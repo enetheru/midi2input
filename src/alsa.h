@@ -11,6 +11,8 @@ class alsa_singleton{
 public:
     static alsa_singleton *getInstance( const bool init = false );
     int32_t set_eventProcessor( EventProcessor );
+    midi_event event_get();// snd_seq_t *seq );
+    int event_pending();// snd_seq_t *seq );
     int32_t midi_send( const midi_event &event );
     void midi_recv();
 
@@ -23,7 +25,7 @@ private:
     bool valid_ = false;
     int out_port = -1;
     int in_port = -1;
-    snd_seq_t *handle = nullptr;
+    snd_seq_t *seq = nullptr;
     EventProcessor eventProcessor = nullptr;
 };
 

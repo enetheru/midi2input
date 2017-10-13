@@ -1,10 +1,8 @@
-#include "log.h"
+#include "util.h"
 #include "x11.h"
+#include <sstream>
 
 namespace m2i {
-    Display *xdp = nullptr;
-    extern lua_State *L;
-}
 
 int XErrorCatcher( Display *disp, XErrorEvent *xe )
 {
@@ -39,22 +37,20 @@ XGetParent( Display *xdp, Window w )
     return -1;
 }
 
-void
-detect_window()
+std::string
+XDetectWindow( Display* xdp )
 {
     static Window w_current;
-    auto L = m2i::L;
 
-    auto xdp = m2i::xdp;
     if(! xdp ){
         LOG( ERROR ) << "invalid handle to X display\n";
-        return;
+        return "None";
     }
 
     Window w;
     int revert_to;
     XGetInputFocus( xdp, &w, &revert_to );
-    if( w == None || w == w_current )return;
+    if( w == None || w == w_current ) return "None";
     else w_current = w;
 
     while( true ){
@@ -80,139 +76,24 @@ detect_window()
         {
             if( actual_type_return == XA_STRING
              && actual_format_return == 8 ){
-                LOG( INFO ) << "WM_CLASS: " << prop_return << "\n";
-
-                lua_pushstring( L , reinterpret_cast< const char *>( prop_return ) );
-                lua_setglobal( L, "wm_class" );
-
+                std::string retval( reinterpret_cast< const char*>( prop_return ) );
                 XFree( prop_return );
-                return;
+                LOG( INFO ) << "WM_CLASS: " << retval << "\n";
+                return retval;
             }
             if( actual_format_return == None )
                 LOG( INFO ) << "property: WM_CLASS not present\n";
         }
         else{
             LOG( ERROR ) << "XGetWindowProperty did not return Success\n";
-            return;
+            return "None";
         }
 
         w = XGetParent( xdp, w );
     }
+    return "None";
 }
 
-ECODE
-initialise( lua_State* L )
-{
-    LOG( INFO ) << "Getting X11 Display\n";
-    if(! (m2i::xdp = XOpenDisplay( getenv( "DISPLAY" ) )) ){
-        LOG( FATAL ) << "Unable to open X display\n";
-        return ECODE::FAILURE;
-    }
-    XSetErrorHandler( XErrorCatcher );
+}// end namespace m2i
 
-    LOG( INFO ) << "Lua: pushing X11 functions\n";
-    lua_pushcfunction( L, lua_keypress );
-    lua_setglobal( L, "keypress" );
 
-    lua_pushcfunction( L, lua_keydown );
-    lua_setglobal( L, "keydown" );
-
-    lua_pushcfunction( L, lua_keyup );
-    lua_setglobal( L, "keyup" );
-
-    lua_pushcfunction( L, lua_buttonpress );
-    lua_setglobal( L, "buttonpress" );
-
-    lua_pushcfunction( L, lua_buttondown );
-    lua_setglobal( L, "buttondown" );
-
-    lua_pushcfunction( L, lua_buttonup );
-    lua_setglobal( L, "buttonup" );
-
-    lua_pushcfunction( L, lua_mousemove );
-    lua_setglobal( L, "mousemove" );
-
-    lua_pushcfunction( L, lua_mousepos );
-    lua_setglobal( L, "mousepos" );
-
-    return ECODE::SUCCESS;
-}
-
-int
-lua_keypress( lua_State *L )
-{
-    auto keysym = static_cast<KeySym>( luaL_checknumber( L, 1 ) );
-    KeyCode keycode = XKeysymToKeycode( m2i::xdp, keysym );
-    XTestFakeKeyEvent( m2i::xdp, keycode, 1, CurrentTime );
-    XTestFakeKeyEvent( m2i::xdp, keycode, 0, CurrentTime );
-    LOG(INFO) << "keypress: " << XKeysymToString( keysym ) << "\n";
-    return 0;
-}
-
-int
-lua_keydown( lua_State *L )
-{
-    auto keysym = static_cast<KeySym>( luaL_checknumber( L, 1 ) );
-    KeyCode keycode = XKeysymToKeycode( m2i::xdp, keysym );
-    XTestFakeKeyEvent( m2i::xdp, keycode, 1, CurrentTime );
-    LOG(INFO) << "keydown: " << XKeysymToString( keysym ) << "\n";
-    return 0;
-}
-
-int
-lua_keyup( lua_State *L )
-{
-    auto keysym = static_cast<KeySym>( luaL_checknumber( L, 1 ) );
-    KeyCode keycode = XKeysymToKeycode( m2i::xdp, keysym );
-    XTestFakeKeyEvent( m2i::xdp, keycode, 0, CurrentTime );
-    LOG(INFO) << "keyup: " << XKeysymToString( keysym ) << "\n";
-    return 0;
-}
-
-int
-lua_buttonpress( lua_State *L )
-{
-    auto button = static_cast<uint32_t>( luaL_checknumber( L, 1 ) );
-    XTestFakeButtonEvent( m2i::xdp, button, 1, CurrentTime );
-    XTestFakeButtonEvent( m2i::xdp, button, 0, CurrentTime );
-    LOG(INFO) << "buttonpress: " << button << "\n";
-    return 0;
-}
-
-int
-lua_buttondown( lua_State *L )
-{
-    auto button = static_cast<uint32_t>( luaL_checknumber( L, 1 ) );
-    XTestFakeButtonEvent( m2i::xdp, button, 1, CurrentTime );
-    LOG(INFO) << "buttondown: " << button << "\n";
-    return 0;
-}
-
-int
-lua_buttonup( lua_State *L )
-{
-    auto button = static_cast<uint32_t>( luaL_checknumber( L, 1 ) );
-    XTestFakeButtonEvent( m2i::xdp, button, 0, CurrentTime );
-    LOG(INFO) << "buttonup: " << button << "\n";
-    return 0;
-}
-
-int
-lua_mousemove( lua_State *L )
-{
-    auto x = static_cast<int32_t>( luaL_checknumber( L, 1 ) );
-    auto y = static_cast<int32_t>( luaL_checknumber( L, 2 ) );
-    XTestFakeRelativeMotionEvent( m2i::xdp, x, y, CurrentTime );
-    LOG(INFO) << "mousemove: " << x << "," << y << "\n";
-    return 0;
-}
-
-int
-lua_mousepos( lua_State *L )
-{
-    auto x = static_cast<int32_t>( luaL_checknumber( L, 1 ) );
-    auto y = static_cast<int32_t>( luaL_checknumber( L, 2 ) );;
-    XTestFakeMotionEvent( m2i::xdp, -1, x, y, CurrentTime );
-    LOG(INFO) << "mousewarp: " << x << "," << y << "\n";
-    return 0;
-}

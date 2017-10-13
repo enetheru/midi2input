@@ -6,7 +6,7 @@
 #include <jack/midiport.h>
 #include "midi.h"
 
-typedef int32_t (*EventProcessor)( const midi_event &);
+typedef int (*EventProcessor)( const midi_event &);
 
 class jack_singleton{
 public:

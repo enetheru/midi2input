@@ -1,5 +1,5 @@
 #include "jack.h"
-#include "log.h"
+#include "util.h"
 
 jack_singleton *
 jack_singleton::getInstance( const bool init )
@@ -52,9 +52,9 @@ jack_singleton::midi_send( const midi_event &event )
 
     jack_midi_data_t *mdata = jack_midi_event_reserve( port_buf, 0, 3 );
 
-    mdata[0] = event[0];
-    mdata[1] = event[1];
-    mdata[2] = event[2];
+    mdata[0] = event.status;
+    mdata[1] = event.data1;
+    mdata[2] = event.data2;
 
     LOG( INFO ) << "jack-midi-send: " << midi2string( event ) << "\n";
 
@@ -82,9 +82,9 @@ jack_singleton::jack_process( jack_nframes_t nframes, void *unused )
         {
             jack_midi_event_get( &event, port_buf, i );
 
-            result[0] = event.buffer[0];
-            result[1] = event.buffer[1];
-            result[2] = event.buffer[2];
+            result.status = event.buffer[0];
+            result.data1 = event.buffer[1];
+            result.data2 = event.buffer[2];
             LOG( INFO ) << "jack-midi-recv: " << midi2string( result ) << "\n";
 
             jack.eventProcessor( result );

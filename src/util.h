@@ -6,6 +6,8 @@
 #define MIDI2INPUT_LOG_H
 #include <iostream>
 #include <iomanip>
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
 
 
 #define INFO "[INFO]"
@@ -14,9 +16,14 @@
 #define FATAL "[FATAL]"
 #define LOG( TYPE ) std::cout << TYPE
 
-enum class ECODE {
-    SUCCESS,
-    FAILURE,
-};
+namespace m2i {
+    enum class ECODE {
+        SUCCESS,
+        FAILURE,
+    };
+
+    fs::path getPath( const fs::path &path );
+
+}//namespace m2i
 
 #endif //MIDI2INPUT_LOG_H
