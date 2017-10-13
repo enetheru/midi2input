@@ -10,11 +10,9 @@ typedef int32_t (*EventProcessor)( const midi_event &);
 class alsa_singleton{
 public:
     static alsa_singleton *getInstance( const bool init = false );
-    int32_t set_eventProcessor( EventProcessor );
-    midi_event event_get();// snd_seq_t *seq );
+    midi_event event_receive();// snd_seq_t *seq );
     int event_pending();// snd_seq_t *seq );
-    int32_t midi_send( const midi_event &event );
-    void midi_recv();
+    void event_send( const midi_event &event );
 
     const bool &valid = valid_;
 

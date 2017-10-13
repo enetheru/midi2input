@@ -83,7 +83,7 @@ lua_loadscript( lua_State *L, const fs::path &script )
 
     LOG( INFO ) << "Loading config: " << path << "\n";
     if( luaL_loadfile( L, path.c_str() ) || lua_pcall( L, 0, 0, 0 ) ){
-        LOG( ERROR ) << "cannot load config file: " << lua_tostring( L, -1 ) << "\n";
+        LOG( ERROR ) << "failure loading config file: " << lua_tostring( L, -1 ) << "\n";
         return -1;
     }
     return 0;
@@ -106,25 +106,31 @@ int
 lua_midisend( lua_State *L )
 {
     midi_event event;
-    for( int i = 0; i < 3; ++i ){
-        lua_pushnumber( L, i + 1 );
-        lua_gettable( L, -2 );
-        event.status =  static_cast<unsigned char>( luaL_checknumber( L, -1 ) );
-        event.data1 =  static_cast<unsigned char>( luaL_checknumber( L, -1 ) );
-        event.data2 =  static_cast<unsigned char>( luaL_checknumber( L, -1 ) );
-        lua_pop( L, 1 );
-    }
+    lua_pushnumber( L, 1 );
+    lua_gettable( L, -2 );
+    event.status =  static_cast<unsigned char>( luaL_checknumber( L, -1 ) );
+    lua_pop( L, 1 );
+
+    lua_pushnumber( L, 2 );
+    lua_gettable( L, -2 );
+    event.data1 =  static_cast<unsigned char>( luaL_checknumber( L, -1 ) );
+    lua_pop( L, 1 );
+
+    lua_pushnumber( L, 3 );
+    lua_gettable( L, -2 );
+    event.data2 =  static_cast<unsigned char>( luaL_checknumber( L, -1 ) );
+    lua_pop( L, 1 );
 
     #ifdef WITH_ALSA
     if( m2i::alsa )
         if( m2i::alsa->valid )
-            m2i::alsa->midi_send( event );
+            m2i::alsa->event_send( event );
     #endif
 
     #ifdef WITH_JACK
     if( m2i::jack )
         if( m2i::jack->valid )
-            m2i::jack->midi_send( event );
+            m2i::jack->event_send( event );
     #endif
     return 0;
 }

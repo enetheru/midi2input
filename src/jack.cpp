@@ -19,7 +19,6 @@ jack_singleton::getInstance( const bool init )
         jack.output_port = jack_port_register( jack.client, "out", JACK_DEFAULT_MIDI_TYPE, JackPortIsOutput, 0 );
 
         LOG( INFO ) << "Jack: setting event callback\n";
-        jack_set_process_callback( jack.client, jack_singleton::jack_process, 0 );
         jack_set_error_function( jack_singleton::error_func );
 
 
@@ -33,20 +32,15 @@ jack_singleton::getInstance( const bool init )
     return &jack;
 }
 
-int32_t
-jack_singleton::set_eventProcessor( EventProcessor evproc )
+void
+jack_singleton::event_send( const midi_event &event )
 {
-    eventProcessor = evproc;
-    return 0;
-}
-
-int32_t
-jack_singleton::midi_send( const midi_event &event )
-{
+    //FIXME there is a bug in here somewhere that makes sending a midi event to the
+    //controller fail.
     void *port_buf = jack_port_get_buffer( output_port, 0 );
     if(! port_buf ){
-        LOG( ERROR ) << "Cannot send events with no connected ports\n";
-        return -1;
+        LOG( WARN ) << "Cannot send events with no connected ports\n";
+        return;
     }
     jack_midi_clear_buffer( port_buf );
 
@@ -55,42 +49,39 @@ jack_singleton::midi_send( const midi_event &event )
     mdata[0] = event.status;
     mdata[1] = event.data1;
     mdata[2] = event.data2;
+    jack_midi_event_write( port_buf, 0, mdata, 3 );
 
     LOG( INFO ) << "jack-midi-send: " << midi2string( event ) << "\n";
-
-    jack_midi_event_write( port_buf, 0, mdata, 3 );
-    return 0;
+    return;
 }
 
 int
-jack_singleton::jack_process( jack_nframes_t nframes, void *unused )
+jack_singleton::event_pending()
 {
-    (void)unused;
-    auto &jack = *jack_singleton::getInstance();
-    if(! jack.valid )return -1;
+    //FIXME there is a bug here somewhere, because sometimes the count differs
+    // from this function to the one below it if called one after the other
+    void* port_buf = jack_port_get_buffer( input_port, 0 );
+    return jack_midi_get_event_count( port_buf );
+}
 
-    void* port_buf = jack_port_get_buffer( jack.input_port, nframes );
+midi_event
+jack_singleton::event_receive()
+{
+    void* port_buf = jack_port_get_buffer( input_port, 0 );
+
+    jack_midi_event_t event;
+    jack_midi_event_get( &event, port_buf, 0 );
     auto event_count = jack_midi_get_event_count( port_buf );
+    LOG( INFO ) << "Event Count: " << event_count << "\n";
 
+    midi_event result;
+    if( event_count < 1 ) return result;
+    result.status = event.buffer[0];
+    result.data1 = event.buffer[1];
+    result.data2 = event.buffer[2];
 
-    if( event_count > 0 )
-    {
-        jack_midi_event_t event;
-        midi_event result;
-        LOG( INFO ) << event_count << " Events in queue\n";
-        for( uint32_t i = 0; i < event_count; i++ )
-        {
-            jack_midi_event_get( &event, port_buf, i );
-
-            result.status = event.buffer[0];
-            result.data1 = event.buffer[1];
-            result.data2 = event.buffer[2];
-            LOG( INFO ) << "jack-midi-recv: " << midi2string( result ) << "\n";
-
-            jack.eventProcessor( result );
-        }
-    }
-    return 0;
+    LOG( INFO ) << "jack-midi-recv: " << midi2string( result ) << "\n";
+    return result ;
 }
 
 void

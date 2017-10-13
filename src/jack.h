@@ -11,8 +11,9 @@ typedef int (*EventProcessor)( const midi_event &);
 class jack_singleton{
 public:
     static jack_singleton *getInstance( const bool init = false );
-    int32_t set_eventProcessor( EventProcessor );
-    int32_t midi_send( const midi_event &event );
+    void event_send( const midi_event &event );
+    int event_pending();
+    midi_event event_receive();
 
     const bool &valid = valid_;
 
@@ -20,12 +21,12 @@ public:
 private:
     jack_singleton() = default;
 
-    static int jack_process( jack_nframes_t, void *);
     static void error_func( const char *msg );
 
     bool valid_ = false;
     jack_client_t *client = nullptr;
     jack_port_t *input_port = nullptr;
+    void *in_portbuf = nullptr;
     jack_port_t *output_port = nullptr;
     EventProcessor eventProcessor = nullptr;
 };

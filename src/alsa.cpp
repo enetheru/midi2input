@@ -43,17 +43,9 @@ alsa_singleton::getInstance( const bool init )
     return &alsa;
 }
 
-int32_t
-alsa_singleton::set_eventProcessor( EventProcessor evproc )
+void
+alsa_singleton::event_send( const midi_event &event )
 {
-    eventProcessor = evproc;
-    return 0;
-}
-
-int32_t
-alsa_singleton::midi_send( const midi_event &event )
-{
-
     snd_seq_event_t ev;
     snd_seq_ev_clear( &ev );
     snd_seq_ev_set_source( &ev, out_port );
@@ -62,54 +54,19 @@ alsa_singleton::midi_send( const midi_event &event )
     snd_seq_ev_set_noteon( &ev, event.status & 0x0F, event.data1, event.data2 );
 
     snd_seq_event_output( seq, &ev);
-    snd_seq_drain_output( seq );  // if necessary
+    snd_seq_drain_output( seq );
 
     LOG( INFO ) << "alsa-midi-send: " << midi2string( event ) << "\n";
-    return 0;
-}
-
-void
-alsa_singleton::midi_recv()
-{
-    // this requires some form of while loop to eat all the events currently sitting
-    // in the queue
-
-    midi_event result;
-    snd_seq_event_t *ev = nullptr;
-    int status = 0;
-    while( snd_seq_event_input( seq, &ev ) > 0 ){
-        if( ev->type == SND_SEQ_EVENT_NOTEON ) {
-            status = 0x90;
-            result.status = ev->data.note.channel + status;
-            result.data1 = ev->data.note.note;
-            result.data2 = ev->data.note.velocity;
-        } else if(ev->type == SND_SEQ_EVENT_NOTEOFF ) {
-            status = 0x80;
-            result.status = ev->data.note.channel + status;
-            result.data1 = ev->data.note.note;
-            result.data2 = ev->data.note.velocity;
-        } else if( ev->type == SND_SEQ_EVENT_CONTROLLER ) {
-            status = 0xB0;
-            result.status = ev->data.control.channel + status;
-            result.data1 = ev->data.control.param;
-            result.data2 = ev->data.control.value;
-        } else {
-            LOG( INFO ) << "ALSA: Unhandled Event Received\n";
-            continue;
-        }
-        eventProcessor( result );
-        LOG( INFO ) << "alsa-midi-recv: " << midi2string( result ) << "\n";
-    }
 }
 
 int
 alsa_singleton::event_pending()//FIXME snd_seq_t * seq )
 {
-    return snd_seq_event_input_pending( seq, 0 );
+    return snd_seq_event_input_pending( seq, 1 );
 }
 
 midi_event
-alsa_singleton::event_get()//FIXME snd_seq_t *seq )
+alsa_singleton::event_receive()//FIXME snd_seq_t *seq )
 {
     midi_event result;
     snd_seq_event_t *ev = nullptr;
@@ -134,7 +91,6 @@ alsa_singleton::event_get()//FIXME snd_seq_t *seq )
             LOG( INFO ) << "ALSA: Unhandled Event Received\n";
         }
     }
-    free(ev);//FIXME unsure about this;
     return result;
 }
 

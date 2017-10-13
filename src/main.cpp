@@ -52,7 +52,6 @@ namespace m2i {
 
     //program state
     lua_State *L = nullptr;
-    Display *xdp = nullptr;
     bool quit = false;
     #ifdef WITH_ALSA
     alsa_singleton *alsa = nullptr;
@@ -60,6 +59,10 @@ namespace m2i {
 
     #ifdef WITH_JACK
     jack_singleton *jack = nullptr;
+    #endif//WITH_XORG
+
+    #ifdef WITH_XORG
+    Display *xdp = nullptr;
     #endif//WITH_XORG
 }
 
@@ -104,7 +107,7 @@ main( int argc, const char **argv )
 
     // Load configuraton lua script
     cmdl({"-c", "--config"}) >> m2i::config;
-    if( !m2i::lua_loadscript( L, m2i::config ) ){
+    if( m2i::lua_loadscript( L, m2i::config ) < 0 ){
         LOG( ERROR ) << "unable to load config: " << m2i::config << "\n";
         LOG( WARN ) << "using default configuration\n";
     } else {
@@ -152,7 +155,7 @@ main( int argc, const char **argv )
 
     if( !cmdl({"-s", "--script"}).str().empty() )
         cmdl({"-s", "--script"}) >> m2i::script;
-    if( !m2i::lua_loadscript( L, m2i::script ) ){
+    if( m2i::lua_loadscript( L, m2i::script ) < 0 ){
         LOG( ERROR ) << "Unable to find script file:" << m2i::script << "\n";
     } else {
         cacheSet( "script", m2i::script );
@@ -211,15 +214,19 @@ main( int argc, const char **argv )
         auto main_start = std::chrono::system_clock::now();
 
         #ifdef WITH_ALSA
-        if( m2i::alsa ) if( m2i::alsa->valid )
-            while( m2i::alsa->event_pending() ){
-                m2i::lua_midirecv( m2i::L, m2i::alsa->event_get() );
+        if( m2i::alsa ) if( m2i::alsa->valid ){
+            while( m2i::alsa->event_pending() > 0 ){
+                m2i::lua_midirecv( m2i::L, m2i::alsa->event_receive() );
             }
+        }
         #endif//WITH_ALSA
 
         #ifdef WITH_JACK
-        //TODO have a look as to whether we can put jack in here, instead of its
-        //own thing. or alternatively, find out how jack does it and copy them.
+        if( m2i::jack ) if( m2i::jack->valid ){
+            while( m2i::jack->event_pending() > 0 ){
+                m2i::lua_midirecv( m2i::L, m2i::jack->event_receive() );
+            }
+        }
         #endif//WITH_JACK
 
         // run regular checks at watch_freq
