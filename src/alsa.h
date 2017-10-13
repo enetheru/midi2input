@@ -5,26 +5,23 @@
 #include <alsa/asoundlib.h>
 #include "midi.h"
 
-typedef int32_t (*EventProcessor)( const midi_event &);
-
-class alsa_singleton{
+class AlsaSeq{
 public:
-    static alsa_singleton *getInstance( const bool init = false );
-    int32_t set_eventProcessor( EventProcessor );
-    int32_t midi_send( const midi_event &event );
-    void midi_recv();
+    AlsaSeq() = default;
+    void init();
+
+    midi_event event_receive();
+    int event_pending();
+    void event_send( const midi_event &event );
 
     const bool &valid = valid_;
 
-    ~alsa_singleton();
+    ~AlsaSeq();
 private:
-    alsa_singleton() = default;
-
     bool valid_ = false;
     int out_port = -1;
     int in_port = -1;
-    snd_seq_t *handle = nullptr;
-    EventProcessor eventProcessor = nullptr;
+    snd_seq_t *seq = nullptr;
 };
 
 #endif // MIDI2INPUT_JACK_H

@@ -922,20 +922,56 @@ lightworks.map[0x91][0x00][0x00] = {func, "user data" }
 -- * mplayer controls
 -- * generic scrolling for right wheel
 -- * generic alsa volume controls
+--[[ Brainstorming things for future]]--
+-- * each application having a default state so that when switching between i
+--   can light up the buttons which have commands associated with them. or check
+--   using dbus to query the state and make the deck show whats up. so that
+--   would mean polling functions, or dbus subscriptions or some such.
 
---[[ receive and react ]]--
-current = {}
-current = default.map
+
 
 function initialise()
     print( "nothing to do" )
 end
 
+function trigger( app, event )
+    if not app then return -1 end
+    if not event then return -1 end
+
+    local channel = event[1]
+    local control = event[2]
+    local value   = event[3]
+
+    if app.map[channel] and app.map[channel][control]
+    then
+        local control = app.map[channel][control]
+        -- we have the control, now look for the value or wildcard
+        if control[value] then
+            action = control[value]
+        elseif control['*'] then
+            action = control['*']
+        else
+            return
+        end
+
+        --we have the action, so run it with its optional paremeter
+        if action[2] then
+            action[1]( event, action[2] )
+            return
+        else
+            action[1]( event )
+            return
+        end
+    end
+
+end
+--[[ receive and react ]]--
 function midi_recv( channel, control, value )
     local event = {channel, control, value}
     local app = _G[wm_class]
     if not app then app = default end
 
+    local current = app.map
     --check for channel and control first.
     if current[channel] and current[channel][control]
     then

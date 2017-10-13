@@ -1,6 +1,5 @@
 --[[ Imported c++ Functions ]]--
 --initialise()
---midi_recv( status, data1, data2 )
 --keypress( XK_keycode )
 --keydown( XK_keycode )
 --keyup( XK_keycode )
@@ -9,12 +8,16 @@
 --buttonup( n )
 --mousemove( x, y )
 --mousepos( x, y )
---send_midi( { status, data1, data2 } )
+--midi_send( { status, data1, data2 } )
 --exec( 'command' )
 --
 --[[ Imported Global Variables ]]--
 --wm_class
 --autoconnect
+--
+--[[ Functions you must create ]]
+--midi_recv( status, data1, data2 )
+--loop()
 
 ------------------------
 

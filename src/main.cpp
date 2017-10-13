@@ -13,13 +13,15 @@ extern "C" {
     #include <lua5.2/lauxlib.h>
     #include <lua5.2/lualib.h>
 }
+#include "argh.h"
 
 //local includes
-#include "argh.h"
-#include "log.h"
+#include "main.h"
+#include "util.h"
 #include "cache_data.h"
-#include "lua.h"
 #include "midi.h"
+
+#include "lua.h"
 
 #ifdef WITH_JACK
     #include "jack.h"
@@ -49,14 +51,18 @@ namespace m2i {
     fs::path script( "script.lua" );
 
     //program state
-    lua_State *L;
+    lua_State *L = nullptr;
     bool quit = false;
     #ifdef WITH_ALSA
-    alsa_singleton *alsa = nullptr;
+    AlsaSeq alsa;
     #endif//WITH_ALSA
 
     #ifdef WITH_JACK
-    jack_singleton *jack = nullptr;
+    JackSeq jack;
+    #endif//WITH_XORG
+
+    #ifdef WITH_XORG
+    Display *xdp = nullptr;
     #endif//WITH_XORG
 }
 
@@ -78,19 +84,6 @@ void intHandler( int dummy ){
     m2i::quit = true;
 }
 
-int32_t
-processEvent( const midi_event &event )
-{
-    auto L = m2i::L;
-    lua_getglobal( L, "midi_recv" );
-    lua_pushnumber( L, event[0] );
-    lua_pushnumber( L, event[1] );
-    lua_pushnumber( L, event[2] );
-    if( lua_pcall( L, 3, 0, 0 ) != 0 )
-        LOG( ERROR ) << "call to function 'event_in' failed" << lua_tostring( L, -1 ) << "\n";
-    return 0;
-}
-
 int
 main( int argc, const char **argv )
 {
@@ -107,13 +100,14 @@ main( int argc, const char **argv )
 
     //load lua environment first
     /* ============================== Lua =============================== */
-    m2i::L = luaL_newstate();
-    auto L = m2i::L;
+    lua_State *L = luaL_newstate();
+    m2i::L = L;
     luaL_openlibs( L );
+    m2i::lua_init_new( L );
 
     // Load configuraton lua script
     cmdl({"-c", "--config"}) >> m2i::config;
-    if( loadLua( L, m2i::config ) != ECODE::SUCCESS ){
+    if( m2i::lua_loadscript( L, m2i::config ) < 0 ){
         LOG( ERROR ) << "unable to load config: " << m2i::config << "\n";
         LOG( WARN ) << "using default configuration\n";
     } else {
@@ -145,16 +139,6 @@ main( int argc, const char **argv )
         }
     }
 
-    lua_pushcfunction( L, lua_midi_send );
-    lua_setglobal( L, "midi_send" );
-
-    lua_pushcfunction( L, lua_exec );
-    lua_setglobal( L, "exec" );
-
-    lua_pushcfunction( L, lua_quit );
-    lua_setglobal( L, "quit" );
-
-    
     /* ============================= cmdl =============================== */
     //cmdl overrides
     if( cmdl[{ "-v", "--verbose" }] )
@@ -171,7 +155,7 @@ main( int argc, const char **argv )
 
     if( !cmdl({"-s", "--script"}).str().empty() )
         cmdl({"-s", "--script"}) >> m2i::script;
-    if( loadLua( L, m2i::script ) != ECODE::SUCCESS ){
+    if( m2i::lua_loadscript( L, m2i::script ) < 0 ){
         LOG( ERROR ) << "Unable to find script file:" << m2i::script << "\n";
     } else {
         cacheSet( "script", m2i::script );
@@ -186,9 +170,7 @@ main( int argc, const char **argv )
     /* ============================== ALSA ============================== */
     if( m2i::use_alsa ){
     #ifdef WITH_ALSA
-        m2i::alsa = alsa_singleton::getInstance( true );
-        if( m2i::alsa->valid )
-            m2i::alsa->set_eventProcessor( processEvent );
+        m2i::alsa.init();
     #else
         LOG( ERROR ) << "Not compiled with ALSA midi backend\n";
         exit(-1);
@@ -198,12 +180,7 @@ main( int argc, const char **argv )
     /* ============================== Jack ============================== */
     if( m2i::use_jack ){
     #ifdef WITH_JACK
-        m2i::jack = jack_singleton::getInstance( true );
-        if( m2i::jack->valid )
-            m2i::jack->set_eventProcessor( processEvent );
-        else{
-            LOG( ERROR ) << "Unable to connect to jack\n";
-        }
+        m2i::jack.init();
     #else
         LOG( ERROR ) << "Not compiled with Jack midi backend\n";
         exit(-1);
@@ -212,7 +189,12 @@ main( int argc, const char **argv )
 
     /* ============================= X11 ================================ */
     #ifdef WITH_XORG
-    if( initialise( m2i::L ) == ECODE::FAILURE ) exit(-1);
+    LOG( INFO ) << "Getting X11 Display\n";
+    if(! (m2i::xdp = XOpenDisplay( getenv( "DISPLAY" ) )) ){
+        LOG( FATAL ) << "Unable to open X display\n";
+        exit( -1 );
+    }
+    XSetErrorHandler( m2i::XErrorCatcher );
     #endif
 
 
@@ -223,34 +205,39 @@ main( int argc, const char **argv )
     while(! m2i::quit )
     {
         auto main_start = std::chrono::system_clock::now();
-        #ifdef WITH_XORG
-        detect_window();
-        #endif//WITH_XORG
 
         #ifdef WITH_ALSA
-        if( m2i::alsa ) if( m2i::alsa->valid )
-            m2i::alsa->midi_recv();
+        if( m2i::alsa.valid ){
+            while( m2i::alsa.event_pending() > 0 ){
+                m2i::lua_midirecv( m2i::L, m2i::alsa.event_receive() );
+            }
+        }
         #endif//WITH_ALSA
 
         #ifdef WITH_JACK
-        //TODO have a look as to whether we can put jack in here, instead of its
-        //own thing. or alternatively, find out how jack does it and copy them.
+        if( m2i::jack.valid ){
+            while( m2i::jack.event_pending() > 0 ){
+                m2i::lua_midirecv( m2i::L, m2i::jack.event_receive() );
+            }
+        }
         #endif//WITH_JACK
 
         // run regular checks at watch_freq
         auto watch_wait = std::chrono::system_clock::now() - watch_last;
         if( watch_wait > m2i::watch_freq ){
             watch_last = std::chrono::system_clock::now();
-            if( !m2i::jack->valid ){
-                /* FIXME I'm not really happy with this, there are multiple levels
-                 * to why i think this is a bad idea, one of them being the re-
-                 * initialisation of jack and the other which is not reliably
-                 * destroying the jack alsa_singleton
+
+            #ifdef WITH_JACK
+            if( m2i::use_jack && m2i::reconnect && !m2i::jack.valid ){
+                /* FIXME I'm not really happy with the re-initialisation of jack
                  */
                 LOG( ERROR ) << "Jack not valid attempting to re\n";
-                m2i::jack->~jack_singleton();
-                m2i::jack->getInstance( true );
+                //attempt to re-instantiate jack connection
+                m2i::jack.~JackSeq();
+                m2i::jack.init();
+                //TODO reconnect to previously connected ports.
             }
+            #endif//WITH_JACK
             //TODO inotify to monitor and reload configuration
             //TODO update cache for connected ports
             //TODO monitor for alsa failure?

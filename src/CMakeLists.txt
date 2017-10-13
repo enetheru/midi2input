@@ -14,7 +14,8 @@ endif()
 
 add_executable( m2i
         main.cpp
-        log.h
+        util.h
+        util.cpp
         midi.h
         midi.cpp
         lua.cpp
