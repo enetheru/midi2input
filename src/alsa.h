@@ -12,13 +12,10 @@ public:
     void init();
     void fina();
 
-    m2i::ECODE connect( const std::string &client_name, const std::string &port_name );
+    int connect( const std::string &client_name, const std::string &port_name );
     midi_event event_receive();
     int event_pending();
     void event_send( const midi_event &event );
-    /*TODO functions
-     * connect to port( std::string portname )
-     */
 
     const bool &valid = valid_;
 

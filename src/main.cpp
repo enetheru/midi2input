@@ -149,7 +149,7 @@ main( int argc, const char **argv )
     if( cmdl[{ "-v", "--verbose" }] )
         m2i::loglevel = 5;
 
-    if( cmdl[{ "-q", "--quiet" }] )//FIXME quiet doesnt do anything anymore
+    if( cmdl[{ "-q", "--quiet" }] )
         m2i::loglevel = 1;
 
     if( cmdl[{ "-a", "--alsa" }] )

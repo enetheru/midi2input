@@ -12,8 +12,8 @@ Run-time Options
 having a cmd line options for 
 * -a --alsa = enable alsa backend
 * -j --jack = enable jack backend
-* [BROKEN] -q --quiet = supress all stdout and stderr
-* [BROKEN] -v --verbose = more stdout
+* -q --quiet = supress almost all output, setting logging level to 1
+* -v --verbose = more stdout, sets logging level to 5
 * -c --config = specify the configuration file to use eg. '-c $HOME/config.lua'
 
 TODO lua functions

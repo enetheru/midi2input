@@ -55,9 +55,10 @@ AlsaSeq::fina()
 }
 
 
-m2i::ECODE
+int
 AlsaSeq::connect( const std::string &client_name, const std::string &port_name )
 {
+    int connections = 0;
     //client info
     snd_seq_client_info_t *cinfo;
     snd_seq_client_info_alloca( &cinfo );
@@ -95,15 +96,16 @@ AlsaSeq::connect( const std::string &client_name, const std::string &port_name )
             if( capabilities & (SND_SEQ_PORT_CAP_READ | SND_SEQ_PORT_CAP_SUBS_READ) ){
                 LOG( INFO ) << "port: connect from: " << snd_seq_port_info_get_name( pinfo ) << "\n";
                 snd_seq_connect_from( seq, iport_id, client, snd_seq_port_info_get_port( pinfo ) );
+                connections++;
             }
             if( capabilities & (SND_SEQ_PORT_CAP_WRITE | SND_SEQ_PORT_CAP_SUBS_WRITE) ){
                 LOG( INFO ) << "port: connect to: " << snd_seq_port_info_get_name( pinfo ) << "\n";
                 snd_seq_connect_to( seq, oport_id, client, snd_seq_port_info_get_port( pinfo ) );
+                connections++;
             }
-            //return m2i::ECODE::SUCCESS;
         }
     }
-    return m2i::ECODE::FAILURE;
+    return connections;
 }
 
 void

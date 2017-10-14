@@ -11,10 +11,10 @@
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
 
-//FIXME I dont like this anonymous enum
 namespace m2i {
-    
-enum {
+
+//FIXME I dont like this anonymous enum
+enum { //log level
     INFO = 4,
     WARN = 3,
     ERROR = 2,
@@ -27,6 +27,7 @@ public:
     template< typename T>
     logger &operator<<( const T& input ){
         if( log ) std::cout << input;
+        //TODO give this stderr too
         return *this;
     }
 
@@ -36,12 +37,7 @@ public:
 
 logger LOG( int );
 
-    enum class ECODE {
-        SUCCESS,
-        FAILURE,
-    };
-
-    fs::path getPath( const fs::path &path );
+fs::path getPath( const fs::path &path );
 
 }//namespace m2i
 

@@ -5,6 +5,7 @@ namespace fs = std::experimental::filesystem;
 
 namespace m2i {
     extern int loglevel;
+    extern bool quit;
 
 logger LOG( int level )
 {
@@ -27,6 +28,7 @@ logger LOG( int level )
             break;
         case FATAL:
             tag = "[FATAL]";
+            m2i::quit = true;
             break;
         case NONE:
             tag = "[NONE]";
