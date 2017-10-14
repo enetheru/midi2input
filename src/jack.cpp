@@ -24,6 +24,16 @@ JackSeq::init()
 }
 
 void
+JackSeq::fina()
+{
+    if( valid ){
+        valid_ = false;
+        jack_client_close( client );
+    }
+    return;
+}
+
+void
 JackSeq::event_send( const midi_event &event )
 {
     //FIXME there is a bug in here somewhere that makes sending a midi event to the
@@ -76,6 +86,5 @@ JackSeq::event_receive()
 }
 
 JackSeq::~JackSeq(){
-    LOG(INFO) << "destroying jack singleton\n";
-    jack_client_close( client );
+    fina();
 }

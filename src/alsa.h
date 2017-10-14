@@ -4,23 +4,30 @@
 //header to initialise jack interface and keep it clean
 #include <alsa/asoundlib.h>
 #include "midi.h"
+#include "util.h"
 
 class AlsaSeq{
 public:
     AlsaSeq() = default;
     void init();
+    void fina();
 
+    m2i::ECODE connect( const std::string &client_name, const std::string &port_name );
     midi_event event_receive();
     int event_pending();
     void event_send( const midi_event &event );
+    /*TODO functions
+     * connect to port( std::string portname )
+     */
 
     const bool &valid = valid_;
 
     ~AlsaSeq();
 private:
     bool valid_ = false;
-    int out_port = -1;
-    int in_port = -1;
+    int iport_id = -1;
+    int oport_id = -1;
+    int client_id = -1;
     snd_seq_t *seq = nullptr;
 };
 

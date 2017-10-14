@@ -10,6 +10,7 @@ class JackSeq{
 public:
     JackSeq() = default;
     void init();
+    void fina();
 
     void event_send( const midi_event &event );
     int event_pending();
@@ -25,10 +26,7 @@ private:
     jack_port_t *input_port = nullptr;
     jack_port_t *output_port = nullptr;
 
-    friend void error_func(const char* msg);
 
 };
-
-void error_func( const char *msg );
 
 #endif // MIDI2INPUT_JACK_H

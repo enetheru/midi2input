@@ -233,7 +233,7 @@ main( int argc, const char **argv )
                  */
                 LOG( ERROR ) << "Jack not valid attempting to re\n";
                 //attempt to re-instantiate jack connection
-                m2i::jack.~JackSeq();
+                m2i::jack.fina();
                 m2i::jack.init();
                 //TODO reconnect to previously connected ports.
             }
@@ -241,6 +241,14 @@ main( int argc, const char **argv )
             //TODO inotify to monitor and reload configuration
             //TODO update cache for connected ports
             //TODO monitor for alsa failure?
+
+            #ifdef WITH_ALSA
+            //reconnect to alsa ports
+            if( m2i::alsa.connect( "*", "out" ) == m2i::ECODE::FAILURE )
+                LOG( ERROR ) << "Unable to connect to port\n";
+            else
+                LOG( INFO ) << "Alsa connect didnt fail\n";
+            #endif//WITH_ALSA
         }
 
         // run the loop lua function at loop_freq
