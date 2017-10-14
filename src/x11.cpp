@@ -4,12 +4,12 @@
 
 namespace m2i {
 
+/* NOTE this error call back is to avoid an assertion when X11 cant find the
+ * window properties, which is hardly important for our use case */
 int XErrorCatcher( Display *disp, XErrorEvent *xe )
 {
     (void)disp; (void)xe;
-    //FIXME this is to shut things up; we might want to
-    // handle this at some point in the future though
-    LOG( ERROR ) << "Something had happened, bruh\n";
+    LOG( ERROR ) << "Generic XError Catcher that does nothing\n";
     return 0;
 }
 
@@ -29,12 +29,12 @@ XGetParent( Display *xdp, Window w )
         if( children_return != nullptr ) XFree( children_return );
         if( parent_return != DefaultRootWindow( xdp ) )
             return parent_return;
-        else return -1;
+        else return None;
     }
     else {
         LOG( ERROR ) << "Failed XQueryTree\n";
     }
-    return -1;
+    return None;
 }
 
 std::string

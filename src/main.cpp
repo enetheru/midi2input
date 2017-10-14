@@ -84,6 +84,8 @@ void intHandler( int dummy ){
     m2i::quit = true;
 }
 
+//TODO jack error handler here
+
 int
 main( int argc, const char **argv )
 {
@@ -141,10 +143,10 @@ main( int argc, const char **argv )
 
     /* ============================= cmdl =============================== */
     //cmdl overrides
-    if( cmdl[{ "-v", "--verbose" }] )
+    if( cmdl[{ "-v", "--verbose" }] )//FIXME verbose doesnt do anything anymore
         m2i::verbose = true;
 
-    if( cmdl[{ "-q", "--quiet" }] )
+    if( cmdl[{ "-q", "--quiet" }] )//FIXME quiet doesnt do anything anymore
         m2i::quiet = true;
 
     if( cmdl[{ "-a", "--alsa" }] )
@@ -197,7 +199,6 @@ main( int argc, const char **argv )
     XSetErrorHandler( m2i::XErrorCatcher );
     #endif
 
-
     /* =========================== Main Loop ============================ */
     LOG( INFO ) << "Main: Entering sleep, waiting for events\n";
     std::chrono::system_clock::time_point loop_last = std::chrono::system_clock::now();
@@ -229,8 +230,7 @@ main( int argc, const char **argv )
 
             #ifdef WITH_JACK
             if( m2i::use_jack && m2i::reconnect && !m2i::jack.valid ){
-                /* FIXME I'm not really happy with the re-initialisation of jack
-                 */
+                // FIXME I'm not really happy with the re-initialisation of jack
                 LOG( ERROR ) << "Jack not valid attempting to re\n";
                 //attempt to re-instantiate jack connection
                 m2i::jack.fina();
@@ -240,7 +240,6 @@ main( int argc, const char **argv )
             #endif//WITH_JACK
             //TODO inotify to monitor and reload configuration
             //TODO update cache for connected ports
-            //TODO monitor for alsa failure?
 
             #ifdef WITH_ALSA
             //reconnect to alsa ports

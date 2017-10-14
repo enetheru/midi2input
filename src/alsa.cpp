@@ -149,9 +149,8 @@ AlsaSeq::event_receive()
         result.data2 = ev->data.note.velocity;
         break;
     case SND_SEQ_EVENT_KEYPRESS:
-        //ev->data.note.channel
-        //ev->data.note.note
-        //ev->data.note.velocity
+        LOG( INFO ) << fmt::format( "Keypress: {}, {}, {}\n",
+            ev->data.note.channel, ev->data.note.note, ev->data.note.velocity );
         break;
     case SND_SEQ_EVENT_CONTROLLER:
         result.status = ev->data.control.channel + 0xB0;
