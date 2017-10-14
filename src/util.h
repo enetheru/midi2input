@@ -6,19 +6,36 @@
 #define M2I_UTIL_H
 #include <iostream>
 #include <iomanip>
+#include <memory>
 #include "fmt/format.h"
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
 
-//TODO replace this with actual logging facility
-#define INFO "[INFO]"
-#define WARN "[WARN]"
-#define ERROR "[ERROR]"
-#define FATAL "[FATAL]"
-#define NONE ""
-#define LOG( TYPE ) std::cout << TYPE
-
+//FIXME I dont like this anonymous enum
 namespace m2i {
+    
+enum {
+    INFO = 4,
+    WARN = 3,
+    ERROR = 2,
+    FATAL = 1,
+    NONE = 0,
+};
+
+class logger{
+public:
+    template< typename T>
+    logger &operator<<( const T& input ){
+        if( log ) std::cout << input;
+        return *this;
+    }
+
+    bool log = true;
+    friend logger LOG( const std::string &input );
+};
+
+logger LOG( int );
+
     enum class ECODE {
         SUCCESS,
         FAILURE,

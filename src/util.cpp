@@ -4,6 +4,38 @@ namespace fs = std::experimental::filesystem;
 #include "util.h"
 
 namespace m2i {
+    extern int loglevel;
+
+logger LOG( int level )
+{
+    logger mylog;
+    if( level > m2i::loglevel ){
+        mylog.log = false;
+        return mylog;
+    }
+
+    std::string tag;
+    switch( level ){
+        case INFO:
+            tag = "[INFO]";
+            break;
+        case WARN:
+            tag = "[WARN]";
+            break;
+        case ERROR:
+            tag = "[ERROR]";
+            break;
+        case FATAL:
+            tag = "[FATAL]";
+            break;
+        case NONE:
+            tag = "[NONE]";
+            break;
+        default:
+            break;
+    }
+    return mylog << tag;
+}
 
 fs::path
 getPath( const fs::path &path )

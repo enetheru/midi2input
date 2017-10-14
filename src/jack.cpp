@@ -1,6 +1,8 @@
 #include "jack.h"
 #include "util.h"
 
+using namespace m2i;
+
 void
 JackSeq::init()
 {

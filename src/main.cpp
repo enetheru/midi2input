@@ -37,6 +37,7 @@ extern "C" {
 
 namespace m2i {
     //configuration
+    int loglevel = 2;
     bool verbose = false;
     bool quiet = false;
     bool use_alsa = true;
@@ -85,6 +86,8 @@ void intHandler( int dummy ){
 }
 
 //TODO jack error handler here
+
+using namespace m2i;
 
 int
 main( int argc, const char **argv )
@@ -143,11 +146,11 @@ main( int argc, const char **argv )
 
     /* ============================= cmdl =============================== */
     //cmdl overrides
-    if( cmdl[{ "-v", "--verbose" }] )//FIXME verbose doesnt do anything anymore
-        m2i::verbose = true;
+    if( cmdl[{ "-v", "--verbose" }] )
+        m2i::loglevel = 5;
 
     if( cmdl[{ "-q", "--quiet" }] )//FIXME quiet doesnt do anything anymore
-        m2i::quiet = true;
+        m2i::loglevel = 1;
 
     if( cmdl[{ "-a", "--alsa" }] )
         m2i::use_alsa = true;

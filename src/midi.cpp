@@ -5,7 +5,7 @@
 std::string
 midi_event::str() const
 {
-    return fmt::format("{:#02x}, {:#02x}, {:3d}", status, data1, data2 );
+    return fmt::format("{:#04x}, {:#04x}, {:3d}", status, data1, data2 );
 }
 
 

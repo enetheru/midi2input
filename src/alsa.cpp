@@ -1,6 +1,8 @@
 #include "alsa.h"
 #include "util.h"
 
+using namespace m2i;
+
 void
 AlsaSeq::init()
 {
@@ -117,7 +119,7 @@ AlsaSeq::event_send( const midi_event &event )
     snd_seq_event_output( seq, &ev);
     snd_seq_drain_output( seq );
 
-    LOG( INFO ) << fmt::format( "alsa-midi-send: {}\n", event.str() );
+    LOG( INFO ) << fmt::format( "ALSA event_send: {}\n", event.str() );
 }
 
 int
@@ -135,24 +137,26 @@ AlsaSeq::event_receive()
 
     switch( ev->type ){
     case SND_SEQ_EVENT_NOTEON:
-        LOG( INFO ) << fmt::format( "Note On: {}, {}, {}\n",
+        LOG( INFO ) << fmt::format( "Note On: {:#04x}, {:#04x}, {:3d}\n",
             ev->data.note.channel, ev->data.note.note, ev->data.note.velocity );
         result.status = ev->data.note.channel + 0x90;
         result.data1 = ev->data.note.note;
         result.data2 = ev->data.note.velocity;
         break;
     case SND_SEQ_EVENT_NOTEOFF:
-        LOG( INFO ) << fmt::format( "Note Off: {}, {}, {}\n",
+        LOG( INFO ) << fmt::format( "Note Off: {:#04x}, {:#04x}, {:3d}\n",
             ev->data.note.channel, ev->data.note.note, ev->data.note.velocity );
         result.status = ev->data.note.channel + 0x80;
         result.data1 = ev->data.note.note;
         result.data2 = ev->data.note.velocity;
         break;
     case SND_SEQ_EVENT_KEYPRESS:
-        LOG( INFO ) << fmt::format( "Keypress: {}, {}, {}\n",
+        LOG( INFO ) << fmt::format( "Polyphonic aftertouch: {}, {}, {}\n",
             ev->data.note.channel, ev->data.note.note, ev->data.note.velocity );
         break;
     case SND_SEQ_EVENT_CONTROLLER:
+        LOG( INFO ) << fmt::format( "Control Change: {:#04x}, {:#04x}, {:3d}\n",
+            ev->data.control.channel, ev->data.control.param, ev->data.control.value );
         result.status = ev->data.control.channel + 0xB0;
         result.data1 = ev->data.control.param;
         result.data2 = ev->data.control.value;

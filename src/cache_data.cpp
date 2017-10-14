@@ -6,6 +6,8 @@
 
 namespace fs = std::experimental::filesystem;
 
+using namespace m2i;
+
 //helper method to get the path of the cache
 static std::string
 cachePath()
