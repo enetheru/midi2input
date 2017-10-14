@@ -52,7 +52,7 @@ JackSeq::event_send( const midi_event &event )
     mdata[2] = event.data2;
     jack_midi_event_write( port_buf, 0, mdata, 3 );
 
-    LOG( INFO ) << "jack-midi-send: " << midi2string( event ) << "\n";
+    LOG( INFO ) << "jack-midi-send: " << event.str() << "\n";
     return;
 }
 
@@ -81,7 +81,7 @@ JackSeq::event_receive()
     result.data1 = event.buffer[1];
     result.data2 = event.buffer[2];
 
-    LOG( INFO ) << "jack-midi-recv: " << midi2string( result ) << "\n";
+    LOG( INFO ) << "jack-midi-recv: " << result.str() << "\n";
     return result ;
 }
 

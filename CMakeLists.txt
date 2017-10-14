@@ -81,6 +81,7 @@ set( LIBS ${LIBS} ${LUA_LIBRARIES} )
 include_directories( ${PROJECT_SOURCE_DIR}/include )
 # sub directories
 # ===============
+add_subdirectory( lib/fmt EXCLUDE_FROM_ALL )
 add_subdirectory( src )
 
 if( ${BUILD_DOCS} )

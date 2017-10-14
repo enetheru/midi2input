@@ -117,7 +117,7 @@ AlsaSeq::event_send( const midi_event &event )
     snd_seq_event_output( seq, &ev);
     snd_seq_drain_output( seq );
 
-    LOG( INFO ) << "alsa-midi-send: " << midi2string( event ) << "\n";
+    LOG( INFO ) << fmt::format( "alsa-midi-send: {}\n", event.str() );
 }
 
 int
@@ -133,14 +133,17 @@ AlsaSeq::event_receive()
     if( snd_seq_event_input( seq, &ev ) < 0)
         return result;
 
-    LOG( INFO ) << ev->source.client << ":" << ev->source.port << "\n";
     switch( ev->type ){
     case SND_SEQ_EVENT_NOTEON:
+        LOG( INFO ) << fmt::format( "Note On: {}, {}, {}\n",
+            ev->data.note.channel, ev->data.note.note, ev->data.note.velocity );
         result.status = ev->data.note.channel + 0x90;
         result.data1 = ev->data.note.note;
         result.data2 = ev->data.note.velocity;
         break;
     case SND_SEQ_EVENT_NOTEOFF:
+        LOG( INFO ) << fmt::format( "Note Off: {}, {}, {}\n",
+            ev->data.note.channel, ev->data.note.note, ev->data.note.velocity );
         result.status = ev->data.note.channel + 0x80;
         result.data1 = ev->data.note.note;
         result.data2 = ev->data.note.velocity;
@@ -156,40 +159,31 @@ AlsaSeq::event_receive()
         result.data2 = ev->data.control.value;
         break;
     case SND_SEQ_EVENT_PGMCHANGE:
-        LOG( INFO ) << "Program change: "
-            << ev->data.control.channel << ","
-            << ev->data.control.value << "\n";
+        LOG( INFO ) << fmt::format( "Program change: {}, {}\n",
+            ev->data.control.channel, ev->data.control.value );
         break;
     case SND_SEQ_EVENT_CHANPRESS:
-        LOG( INFO ) << "Channel aftertouch: "
-            << ev->data.control.channel << ","
-            << ev->data.control.value << "\n";
+        LOG( INFO ) << fmt::format( "Channel aftertouch: {}, {}\n", 
+            ev->data.control.channel, ev->data.control.value );
         break;
     case SND_SEQ_EVENT_PITCHBEND:
-        LOG( INFO ) << "Pitch bend: "
-            << ev->data.control.channel << ","
-            << ev->data.control.value << "\n";
+        LOG( INFO ) << fmt::format( "Pitch bend: {}, {}\n",
+            ev->data.control.channel, ev->data.control.value );
         break;
     case SND_SEQ_EVENT_CONTROL14:
-        LOG( INFO ) << "Control change: "
-            << ev->data.control.channel << ","
-            << ev->data.control.param << ","
-            << ev->data.control.value << "\n";
+        LOG( INFO ) << fmt::format( "Control change: {}, {}, {}\n",
+            ev->data.control.channel, ev->data.control.param, ev->data.control.value );
         break;
     case SND_SEQ_EVENT_NONREGPARAM:
-        LOG( INFO ) << "Non-reg. parameter: "
-            << ev->data.control.channel << ","
-            << ev->data.control.param << ","
-            << ev->data.control.value << "\n";
+        LOG( INFO ) << fmt::format( "Non-reg. parameter: {}, {}, {}\n",
+            ev->data.control.channel, ev->data.control.param, ev->data.control.value );
         break;
     case SND_SEQ_EVENT_REGPARAM:
-        LOG( INFO ) << "Reg. parameter"
-            << ev->data.control.channel << ","
-            << ev->data.control.param << ","
-            << ev->data.control.value << "\n";
+        LOG( INFO ) << fmt::format( "Reg. parameter {}, {}, {}\n",
+            ev->data.control.channel, ev->data.control.param, ev->data.control.value );
         break;
     case SND_SEQ_EVENT_SONGPOS:
-        LOG( INFO ) << fmt::format( "Song position pointer: {:d}!\n", ev->data.control.value );
+        LOG( INFO ) << "Song position pointer: " << ev->data.control.value << "\n";
         break;
     case SND_SEQ_EVENT_SONGSEL:
         LOG( INFO ) << "Song select: " << ev->data.control.value << "\n";
@@ -276,15 +270,14 @@ AlsaSeq::event_receive()
             << ev->data.addr.port << "\n";
         break;
     case SND_SEQ_EVENT_PORT_SUBSCRIBED:
-        LOG( INFO ) << fmt::format( "Port subscribed: {:d}:{:d}->{:d}:{:d}\n",
+        LOG( INFO ) << fmt::format( "Port subscribed: {:d}:{:d} -> {:d}:{:d}\n",
             ev->data.connect.sender.client, ev->data.connect.sender.port,
             ev->data.connect.dest.client, ev->data.connect.dest.port );
         break;
     case SND_SEQ_EVENT_PORT_UNSUBSCRIBED:
-        LOG( INFO ) << "Port unsubscribed: "
-            << ev->data.connect.sender.client << ":" << ev->data.connect.sender.port
-            << " -> "
-            << ev->data.connect.dest.client << ":" << ev->data.connect.dest.port << "\n";
+        LOG( INFO ) << fmt::format( "Port unsubscribed: {:d}:{:d} -> {:d}:{:d}\n",
+            ev->data.connect.sender.client, ev->data.connect.sender.port,
+            ev->data.connect.dest.client, ev->data.connect.dest.port );
         break;
     case SND_SEQ_EVENT_SYSEX:
         {

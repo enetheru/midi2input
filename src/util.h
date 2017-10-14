@@ -2,18 +2,20 @@
 // Created by enetheru on 9/26/17.
 //
 
-#ifndef MIDI2INPUT_LOG_H
-#define MIDI2INPUT_LOG_H
+#ifndef M2I_UTIL_H
+#define M2I_UTIL_H
 #include <iostream>
 #include <iomanip>
+#include "fmt/format.h"
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
 
-
+//TODO replace this with actual logging facility
 #define INFO "[INFO]"
 #define WARN "[WARN]"
 #define ERROR "[ERROR]"
 #define FATAL "[FATAL]"
+#define NONE ""
 #define LOG( TYPE ) std::cout << TYPE
 
 namespace m2i {
@@ -26,4 +28,4 @@ namespace m2i {
 
 }//namespace m2i
 
-#endif //MIDI2INPUT_LOG_H
+#endif //M2I_UTIL_H

@@ -8,12 +8,13 @@
 #include <string>
 
 //simple midi event structure.
-typedef struct midi_event {
+struct midi_event {
     unsigned char status;
     unsigned char data1;
     unsigned char data2;
-} midi_event;
 
-std::string midi2string( const midi_event &event );
+    std::string str() const;
+private:
+};
 
 #endif //M2I_MIDI_H

@@ -1,14 +1,14 @@
+#include "util.h"
 #include "midi.h"
-
-#include <sstream>
-#include <iomanip>
+#include <ostream>
 
 std::string
-midi2string( const midi_event& event ){
-    std::stringstream string;
-    string << std::hex << std::setfill( '0' ) << std::uppercase
-           << "0x" << std::setw( 2 ) << (int)event.status << ", "
-           << "0x" << std::setw( 2 ) << (int)event.data1 << ", "
-           << std::dec << std::setfill( ' ' ) << std::setw( 3 ) << (int)event.data2;
-    return string.str();
+midi_event::str() const
+{
+    return fmt::format("{:#02x}, {:#02x}, {:3d}", status, data1, data2 );
 }
+
+
+std::ostream& operator<<( std::ostream &os, const midi_event &event ){
+    return os << event.str();
+} 

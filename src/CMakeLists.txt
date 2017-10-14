@@ -1,4 +1,8 @@
-include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
+include_directories(i
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${CMAKE_SOURCE_DIR}/lib/fmt
+    )
+
 
 if( WITH_ALSA )
     set( SOURCES ${SOURCES} alsa.h alsa.cpp )
@@ -24,6 +28,7 @@ add_executable( m2i
         cache_data.cpp
         ${SOURCES} )
 target_link_libraries( m2i
+    fmt
     stdc++fs
     ${LIBS} )
 

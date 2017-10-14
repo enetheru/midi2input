@@ -72,6 +72,13 @@ lua_init_new( lua_State * L)
     lua_setglobal( L, "mousepos" );
 #endif//WITH_XORG
 
+#ifdef WITH_ALSA
+    //TODO connect to port
+#endif//WITH_ALSA
+
+#ifdef WITH_JACK
+    //TODO connect to port
+#endif//WITH_JACK
     return;
 }
 
@@ -251,4 +258,13 @@ lua_detectwindow( lua_State *L )
 }
 #endif//WITHXORG
 
+#ifdef WITH_ALSA
+    /* ==================== ALSA Lua Bindings =========================== */
+//TODO connect to named alsa port
+#endif//WITH_ALSA
+
+#ifdef WITH_JACK
+    /* ==================== Jack Lua Bindings =========================== */
+//TODO connect to jack port
+#endif//WITH_JACK
 }// end namespace m2i

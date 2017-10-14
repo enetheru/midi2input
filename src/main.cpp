@@ -244,10 +244,6 @@ main( int argc, const char **argv )
 
             #ifdef WITH_ALSA
             //reconnect to alsa ports
-            if( m2i::alsa.connect( "*", "out" ) == m2i::ECODE::FAILURE )
-                LOG( ERROR ) << "Unable to connect to port\n";
-            else
-                LOG( INFO ) << "Alsa connect didnt fail\n";
             #endif//WITH_ALSA
         }
 

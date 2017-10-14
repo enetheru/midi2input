@@ -12,3 +12,5 @@ cmake-build-debug/
 *.kdev4
 
 *.kate-swp
+
+lib/

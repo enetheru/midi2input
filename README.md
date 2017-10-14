@@ -6,7 +6,8 @@ Configuration files and scripts are written in Lua
 Requires
 --------
 * lua
-* adishavit argh
+* adishavit/argh
+* libfmt/fmt
 * jack OR alsa
 * [optional] X11 with the XTest extension
 
