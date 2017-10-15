@@ -173,11 +173,13 @@ lua_quit( lua_State *L )
 int
 lua_keypress( lua_State *L )
 {
+    Display *xdp = XOpenDisplay( getenv( "DISPLAY" ) );
     auto keysym = static_cast<KeySym>( luaL_checknumber( L, 1 ) );
-    KeyCode keycode = XKeysymToKeycode( m2i::xdp, keysym );
-    XTestFakeKeyEvent( m2i::xdp, keycode, 1, CurrentTime );
-    XTestFakeKeyEvent( m2i::xdp, keycode, 0, CurrentTime );
+    KeyCode keycode = XKeysymToKeycode( xdp, keysym );
+    XTestFakeKeyEvent( xdp, keycode, 1, CurrentTime );
+    XTestFakeKeyEvent( xdp, keycode, 0, CurrentTime );
     LOG(INFO) << "keypress: " << XKeysymToString( keysym ) << "\n";
+    XCloseDisplay( xdp );
     return 0;
 }
 
@@ -204,10 +206,12 @@ lua_keyup( lua_State *L )
 int
 lua_buttonpress( lua_State *L )
 {
+    Display *xdp = XOpenDisplay( getenv( "DISPLAY" ) ); 
     auto button = static_cast<uint32_t>( luaL_checknumber( L, 1 ) );
-    XTestFakeButtonEvent( m2i::xdp, button, 1, CurrentTime );
-    XTestFakeButtonEvent( m2i::xdp, button, 0, CurrentTime );
+    XTestFakeButtonEvent( xdp, button, 1, CurrentTime );
+    XTestFakeButtonEvent( xdp, button, 0, CurrentTime );
     LOG(INFO) << "buttonpress: " << button << "\n";
+    XCloseDisplay( xdp );
     return 0;
 }
 
