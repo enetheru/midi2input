@@ -28,7 +28,7 @@ logger LOG( int level )
             break;
         case FATAL:
             tag = "[FATAL]";
-            m2i::quit = true;
+            m2i::quit = true;//FIXME i dont really think that a logging facility should have side effects.
             break;
         case NONE:
             tag = "[NONE]";
