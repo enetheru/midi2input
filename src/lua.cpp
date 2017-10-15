@@ -26,10 +26,6 @@ namespace m2i {
     extern JackSeq jack;
     #endif//WITH_JACK
 
-    #ifdef WITH_XORG
-    extern Display *xdp;
-    #endif//WITH_XORG
-
     extern bool quit;
 
 void
@@ -178,17 +174,20 @@ lua_keypress( lua_State *L )
     KeyCode keycode = XKeysymToKeycode( xdp, keysym );
     XTestFakeKeyEvent( xdp, keycode, 1, CurrentTime );
     XTestFakeKeyEvent( xdp, keycode, 0, CurrentTime );
-    LOG(INFO) << "keypress: " << XKeysymToString( keysym ) << "\n";
     XCloseDisplay( xdp );
+
+    LOG(INFO) << "keypress: " << XKeysymToString( keysym ) << "\n";
     return 0;
 }
 
 int
 lua_keydown( lua_State *L )
 {
+    Display *xdp = XOpenDisplay( getenv( "DISPLAY" ) );
     auto keysym = static_cast<KeySym>( luaL_checknumber( L, 1 ) );
-    KeyCode keycode = XKeysymToKeycode( m2i::xdp, keysym );
-    XTestFakeKeyEvent( m2i::xdp, keycode, 1, CurrentTime );
+    XTestFakeKeyEvent( xdp, XKeysymToKeycode( xdp, keysym ), 1, CurrentTime );
+    XCloseDisplay( xdp );
+
     LOG(INFO) << "keydown: " << XKeysymToString( keysym ) << "\n";
     return 0;
 }
@@ -196,9 +195,11 @@ lua_keydown( lua_State *L )
 int
 lua_keyup( lua_State *L )
 {
+    Display *xdp = XOpenDisplay( getenv( "DISPLAY" ) );
     auto keysym = static_cast<KeySym>( luaL_checknumber( L, 1 ) );
-    KeyCode keycode = XKeysymToKeycode( m2i::xdp, keysym );
-    XTestFakeKeyEvent( m2i::xdp, keycode, 0, CurrentTime );
+    XTestFakeKeyEvent( xdp, XKeysymToKeycode( xdp, keysym ), 0, CurrentTime );
+    XCloseDisplay( xdp );
+
     LOG(INFO) << "keyup: " << XKeysymToString( keysym ) << "\n";
     return 0;
 }
@@ -210,16 +211,20 @@ lua_buttonpress( lua_State *L )
     auto button = static_cast<uint32_t>( luaL_checknumber( L, 1 ) );
     XTestFakeButtonEvent( xdp, button, 1, CurrentTime );
     XTestFakeButtonEvent( xdp, button, 0, CurrentTime );
-    LOG(INFO) << "buttonpress: " << button << "\n";
     XCloseDisplay( xdp );
+
+    LOG(INFO) << "buttonpress: " << button << "\n";
     return 0;
 }
 
 int
 lua_buttondown( lua_State *L )
 {
+    Display *xdp = XOpenDisplay( getenv( "DISPLAY" ) );
     auto button = static_cast<uint32_t>( luaL_checknumber( L, 1 ) );
-    XTestFakeButtonEvent( m2i::xdp, button, 1, CurrentTime );
+    XTestFakeButtonEvent( xdp, button, 1, CurrentTime );
+    XCloseDisplay( xdp );
+
     LOG(INFO) << "buttondown: " << button << "\n";
     return 0;
 }
@@ -227,8 +232,11 @@ lua_buttondown( lua_State *L )
 int
 lua_buttonup( lua_State *L )
 {
+    Display *xdp = XOpenDisplay( getenv( "DISPLAY" ) );
     auto button = static_cast<uint32_t>( luaL_checknumber( L, 1 ) );
-    XTestFakeButtonEvent( m2i::xdp, button, 0, CurrentTime );
+    XTestFakeButtonEvent( xdp, button, 0, CurrentTime );
+    XCloseDisplay( xdp );
+
     LOG(INFO) << "buttonup: " << button << "\n";
     return 0;
 }
@@ -236,28 +244,38 @@ lua_buttonup( lua_State *L )
 int
 lua_mousemove( lua_State *L )
 {
+    Display *xdp = XOpenDisplay( getenv( "DISPLAY" ) );
     auto x = static_cast<int32_t>( luaL_checknumber( L, 1 ) );
     auto y = static_cast<int32_t>( luaL_checknumber( L, 2 ) );
-    XTestFakeRelativeMotionEvent( m2i::xdp, x, y, CurrentTime );
-    LOG(INFO) << "mousemove: " << x << "," << y << "\n";
+    XTestFakeRelativeMotionEvent( xdp, x, y, CurrentTime );
+    XCloseDisplay( xdp );
+
+    LOG(INFO) << fmt::format( "mousemove: {},{}\n", x, y );
     return 0;
 }
 
 int
 lua_mousepos( lua_State *L )
 {
+    Display *xdp = XOpenDisplay( getenv( "DISPLAY" ) );
     auto x = static_cast<int32_t>( luaL_checknumber( L, 1 ) );
     auto y = static_cast<int32_t>( luaL_checknumber( L, 2 ) );;
-    XTestFakeMotionEvent( m2i::xdp, -1, x, y, CurrentTime );
-    LOG(INFO) << "mousewarp: " << x << "," << y << "\n";
+    XTestFakeMotionEvent( xdp, -1, x, y, CurrentTime );
+    XCloseDisplay( xdp );
+
+    LOG(INFO) << fmt::format( "mousewarp: {},{}\n", x, y );
     return 0;
 }
 
 int
 lua_detectwindow( lua_State *L )
 {
-    std::string windowname = m2i::XDetectWindow( m2i::xdp );
-    if( windowname.empty() )return 0;
+    Display *xdp = XOpenDisplay( getenv( "DISPLAY" ) );
+    std::string windowname = m2i::XDetectWindow( xdp );
+    XCloseDisplay( xdp );
+
+    if( windowname.empty() )
+        return 0;
     lua_pushstring( L ,  windowname.c_str() ); 
     lua_setglobal( L, "WM_CLASS" ); 
     return 0;

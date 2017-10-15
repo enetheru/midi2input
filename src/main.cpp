@@ -61,10 +61,6 @@ namespace m2i {
     #ifdef WITH_JACK
     JackSeq jack;
     #endif//WITH_XORG
-
-    #ifdef WITH_XORG
-    Display *xdp = nullptr;
-    #endif//WITH_XORG
 }
 
 const char *helptext =
@@ -196,10 +192,12 @@ main( int argc, const char **argv )
     /* ============================= X11 ================================ */
     #ifdef WITH_XORG
     LOG( INFO ) << "Getting X11 Display\n";
-    if(! (m2i::xdp = XOpenDisplay( getenv( "DISPLAY" ) )) ){
+    Display *xdp;
+    if(! (xdp = XOpenDisplay( getenv( "DISPLAY" ) )) ){
         LOG( FATAL ) << "Unable to open X display\n";
         exit( -1 );
     }
+    XCloseDisplay( xdp );
     XSetErrorHandler( m2i::XErrorCatcher );
     #endif
 
