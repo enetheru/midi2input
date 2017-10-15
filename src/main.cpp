@@ -204,8 +204,7 @@ main( int argc, const char **argv )
     /* =========================== Main Loop ============================ */
     LOG( INFO ) << "Main: Entering sleep, waiting for events\n";
     lua_getglobal( L, "pre_loop" );
-    lua_pcall( L, 0, 0, 0 );
-    lua_pop( L, 1);
+    if( lua_pcall( L, 0, 0, 0 ) != 0 )lua_pop( L, 1);
     std::chrono::system_clock::time_point loop_last = std::chrono::system_clock::now();
     std::chrono::system_clock::time_point watch_last = std::chrono::system_clock::now();
     while(! m2i::quit )
