@@ -1,6 +1,4 @@
 --[[ Imported c++ Functions ]]--
---initialise()
---midi_recv( status, data1, data2 )
 --midi_send( { status, data1, data2 } )
 --keypress( XK_keycode )
 --keydown( XK_keycode )
@@ -13,8 +11,12 @@
 --exec( 'command' )
 --
 --[[ Imported Global Variables ]]--
---wm_class
-autoconnect = true
+--WM_CLASS
+--
+--[[ Functions you want to define yourself]]--
+--midi_recv( status, data1, data2 )
+--pre_loop()
+--loop()
 
 --[[ helper functions]]--
 --[[=================]]--
@@ -40,7 +42,12 @@ function LSB( event )
 end
 
 function reset_state( state )
-    --loop through the midi state map and set all the lights to their default
+    --TODO loop through the midi state map and set all the lights to their default
+end
+
+-- because i always give the event to functions i needed a wrapper for keypress
+function kpress( event, key )
+    keypress( key )
 end
 
 
@@ -518,6 +525,7 @@ controller.state.midi[0x96] = {
 --[[ Key Maps ]]--
 default = {}
 
+-- toggle lights
 function default.toggle( event )
     local control = controller.state.midi[event[1]][event[2]]
     if( control.value == 0x00 )
@@ -528,8 +536,19 @@ function default.toggle( event )
 end
 
 function unassigned()
-    print("This event is unassigned")
+    --print("This event is unassigned")
 end
+
+-- use deck a as scroll wheel
+function default.jogdial_turn( event )
+    if event[3] < 64 then
+        buttonpress( 4 )
+    end
+    if event[3] > 64 then
+        buttonpress( 5 )
+    end
+end
+
 
 default.map = {}
 --deckA
@@ -568,7 +587,7 @@ default.map[0xB0] = {
     [0x13] = { ['*'] = { unassigned     } }, --         auto loop turn
     [0x20] = { ['*'] = { unassigned     } }, --         tempo LSB
     [0x21] = { ['*'] = { unassigned     } }, --         jog wheel
-    [0x22] = { ['*'] = { unassigned     } }, --         scratch
+    [0x22] = { ['*'] = { default.jogdial_turn     } }, --         scratch
     [0x25] = { ['*'] = { unassigned     } }, -- [shift] tempo LSB
     [0x26] = { ['*'] = { unassigned     } }, -- [shift] jog wheel
     [0x27] = { ['*'] = { unassigned     } }, -- [shift] scratch
@@ -645,6 +664,7 @@ default.map[0x92] = {
     [0x61] = { [127] = { unassigned     } }, -- [shift] hotcue3
     [0x62] = { [127] = { unassigned     } }, -- [shift] hotcue4
     [0x67] = { [127] = { unassigned     } }, -- [shift] touch
+    [0x72] = { [127] = { default.toggle } }, -- deck C toggle
 }
 default.map[0xB2] = {
     [0x00] = { ['*'] = { MSB            } }, --         tempo MSB
@@ -687,6 +707,7 @@ default.map[0x93] = {
     [0x61] = { [127] = { unassigned     } }, -- [shift] hotcue3
     [0x62] = { [127] = { unassigned     } }, -- [shift] hotcue4
     [0x67] = { [127] = { unassigned     } }, -- [shift] touch
+    [0x72] = { [127] = { default.toggle } }, -- deck D toggle
 }
 default.map[0xB3] = {
     [0x00] = { ['*'] = { MSB            } }, --         tempo MSB
@@ -901,26 +922,68 @@ default.map[0xB6] = {
 }
 
 --[[ application specific maps ]]--
-function func( user_data )
-    print( "I am a functioni: ", user_data )
+--[[===========================]]--
+
+--[[[ Lightworks ]]--
+lightworks = {}
+--the WM_CLASS for lightworrks isnt actually 'lightworks', its 'nvcardvt'
+--so we'll make it an alias
+ntcardvt = lightworks
+
+function lightworks.autoloop_turn( event )
+    if event[3] > 64 then
+        keypress( XK_a )
+    end
+    if event[3] < 64 then
+        keypress( XK_s )
+    end
 end
 
-lightworks = { map = {} }
-lightworks.map[0x91] = {}
-lightworks.map[0x91][0x00] = {}
-lightworks.map[0x91][0x00][0x00] = {func, "user data" }
+function lightworks.scratch_turn( event )
+    if event[3] > 64 then
+        keypress( XK_Right )
+    end
+    if event[3] < 64 then
+        keypress( XK_Left )
+    end
+end
+
+lightworks.map = {}
+lightworks.map[0x91] = {
+    [0x0B] = { [127] = { kpress, XK_space } },
+    [0x0C] = { [127] = { kpress, XK_i     } },
+}
+lightworks.map[0xB1] = {
+    [0x13] = { ['*'] = { lightworks.autoloop_turn     } },
+    [0x22] = { ['*'] = { lightworks.scratch_turn      } },
+}
+
+--[[ ffplay ]]--
+ffplay = {}
+
+function ffplay.scratch_turn( event )
+    if event[3] > 64 then
+        keypress( XK_Right )
+    end
+    if event[3] < 64 then
+        keypress( XK_Left )
+    end
+end
+
+ffplay.map = {}
+ffplay.map[0x91] = {
+    [0x0B] = { [127] = { kpress, XK_space } },
+}
+ffplay.map[0xB1] = {
+    [0x22] = { ['*'] = { ffplay.scratch_turn } },
+}
 
 --[[ Missing assigments from previous version ]]--
 -- * dbus message sending to mediaplayer advertisement, honestly it was shit
 --   house anyway because i would experiment with my mediaplayer too much
--- * deckD and deckC lights, i think this will be as easy as assigning toggle
---   to them
--- * lightworks mapping - jogdial, play/pause, i dunno... lol
 -- * disabling controls when mixx is playing, either way or..
 -- * vlc controls
--- * ffplay controls
 -- * mplayer controls
--- * generic scrolling for right wheel
 -- * generic alsa volume controls
 --[[ Brainstorming things for future]]--
 -- * each application having a default state so that when switching between i
@@ -928,53 +991,21 @@ lightworks.map[0x91][0x00][0x00] = {func, "user data" }
 --   using dbus to query the state and make the deck show whats up. so that
 --   would mean polling functions, or dbus subscriptions or some such.
 
-
-
-function initialise()
+--[[ control functions ]]--
+--[[===================]]--
+function pre_loop()
     print( "nothing to do" )
 end
-
 
 function loop()
     detectwindow();
     return 0;
 end
 
-function trigger( app, event )
-    if not app then return -1 end
-    if not event then return -1 end
-
-    local channel = event[1]
-    local control = event[2]
-    local value   = event[3]
-
-    if app.map[channel] and app.map[channel][control]
-    then
-        local control = app.map[channel][control]
-        -- we have the control, now look for the value or wildcard
-        if control[value] then
-            action = control[value]
-        elseif control['*'] then
-            action = control['*']
-        else
-            return
-        end
-
-        --we have the action, so run it with its optional paremeter
-        if action[2] then
-            action[1]( event, action[2] )
-            return
-        else
-            action[1]( event )
-            return
-        end
-    end
-
-end
 --[[ receive and react ]]--
 function midi_recv( channel, control, value )
     local event = {channel, control, value}
-    local app = _G[wm_class]
+    local app = _G[ WM_CLASS ]
     if not app then app = default end
 
     local current = app.map
