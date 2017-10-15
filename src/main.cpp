@@ -136,12 +136,13 @@ main( int argc, const char **argv )
                 else if( var == "loop_freq" ) m2i::loop_freq = std::chrono::milliseconds( lua_tointeger( L, -1 ) );
                 else if( var == "watch_freq" ) m2i::watch_freq = std::chrono::milliseconds( lua_tointeger( L, -1 ) );
 
-                lua_pop(L, 1);
+                lua_pop( L, 1 );
             }
         }
         else {
             LOG( ERROR ) << "No 'config' table found in lua file\n";
         }
+        lua_pop( L, 1 ); //lua_getglobal "config"
     }
 
     /* ============================= cmdl =============================== */
@@ -204,6 +205,9 @@ main( int argc, const char **argv )
 
     /* =========================== Main Loop ============================ */
     LOG( INFO ) << "Main: Entering sleep, waiting for events\n";
+    lua_getglobal( L, "pre_loop" );
+    lua_pcall( L, 0, 0, 0 );
+    lua_pop( L, 1);
     std::chrono::system_clock::time_point loop_last = std::chrono::system_clock::now();
     std::chrono::system_clock::time_point watch_last = std::chrono::system_clock::now();
     while(! m2i::quit )
@@ -250,6 +254,8 @@ main( int argc, const char **argv )
 
             #ifdef WITH_XORG
             #endif//WITH_XORG
+            int luastacksize;
+            if( (luastacksize = lua_gettop( L )) ) LOG( INFO ) << "Lua Stack Size: " <<  luastacksize << "\n";
         }
 
         // run the loop lua function at loop_freq

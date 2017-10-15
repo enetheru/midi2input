@@ -13,6 +13,7 @@ namespace fs = std::experimental::filesystem;
 #include "util.h"
 #include "midi.h"
 
+//TODO redefine print in terms of my logging class
 namespace m2i {
     void lua_init_new( lua_State *L );
 
