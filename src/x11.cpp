@@ -50,7 +50,8 @@ XDetectWindow( Display* xdp )
     Window w;
     int revert_to;
     XGetInputFocus( xdp, &w, &revert_to );
-    if( w == None || w == w_current ) return "None";
+    if( w == None ) return "None";
+    if( w == w_current ) return std::string();
     else w_current = w;
 
     while( true ){
@@ -82,7 +83,7 @@ XDetectWindow( Display* xdp )
                 return retval;
             }
             if( actual_format_return == None )
-                LOG( INFO ) << "property: WM_CLASS not present\n";
+                LOG( WARN ) << "property: WM_CLASS not present\n";
         }
         else{
             LOG( ERROR ) << "XGetWindowProperty did not return Success\n";

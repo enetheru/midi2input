@@ -59,6 +59,9 @@ function initialise()
     print( "[LUA] nothing to initialise" )
 end
 
+function loop()
+    detectwindow()
+end
 
 --[[ Input Event Handler ]]--
 function midi_recv( status, data1, data2 )

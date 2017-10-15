@@ -70,6 +70,9 @@ lua_init_new( lua_State * L)
 
     lua_pushcfunction( L, lua_mousepos );
     lua_setglobal( L, "mousepos" );
+
+    lua_pushcfunction( L, lua_detectwindow );
+    lua_setglobal( L, "detectwindow" );
 #endif//WITH_XORG
 
 #ifdef WITH_ALSA
@@ -250,8 +253,7 @@ int
 lua_detectwindow( lua_State *L )
 {
     std::string windowname = m2i::XDetectWindow( m2i::xdp );
-    LOG(INFO) << "detectwindow: " << windowname << "\n";
-
+    if( windowname.empty() )return 0;
     lua_pushstring( L ,  windowname.c_str() ); 
     lua_setglobal( L, "WM_CLASS" ); 
     return 0;

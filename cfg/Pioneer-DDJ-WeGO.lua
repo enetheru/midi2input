@@ -934,6 +934,12 @@ function initialise()
     print( "nothing to do" )
 end
 
+
+function loop()
+    detectwindow();
+    return 0;
+end
+
 function trigger( app, event )
     if not app then return -1 end
     if not event then return -1 end

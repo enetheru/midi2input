@@ -44,7 +44,7 @@ namespace m2i {
     bool use_jack = false;
     bool use_xorg = true;
     bool reconnect = true;
-    bool loop_enabled = false;
+    bool loop_enabled = true;
     std::chrono::milliseconds main_freq( 25 );
     std::chrono::milliseconds loop_freq( 100 );
     std::chrono::milliseconds watch_freq( 3000 );
@@ -247,6 +247,9 @@ main( int argc, const char **argv )
             #ifdef WITH_ALSA
             //reconnect to alsa ports
             #endif//WITH_ALSA
+
+            #ifdef WITH_XORG
+            #endif//WITH_XORG
         }
 
         // run the loop lua function at loop_freq
@@ -254,7 +257,10 @@ main( int argc, const char **argv )
         if( m2i::loop_enabled && loop_wait > m2i::loop_freq ){
             loop_last = std::chrono::system_clock::now();
             lua_getglobal( L, "loop" );
-            if( lua_pcall( L, 1, 0, 0 ) != 0 ) m2i::loop_enabled = false;
+            if( lua_pcall( L, 0, 0, 0 ) != 0 ){
+                LOG( ERROR ) << "loop function call failed, disabling\n"; 
+                m2i::loop_enabled = false;
+            }
         }
 
         //limit mainloop to m2i::main_freq
