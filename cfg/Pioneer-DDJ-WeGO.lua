@@ -952,6 +952,7 @@ lightworks.map = {}
 lightworks.map[0x91] = {
     [0x0B] = { [127] = { kpress, XK_space } },
     [0x0C] = { [127] = { kpress, XK_i     } },
+    [0x2E] = { [127] = { kpress, XK_x     } },
 }
 lightworks.map[0xB1] = {
     [0x13] = { ['*'] = { lightworks.autoloop_turn     } },
