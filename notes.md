@@ -101,3 +101,15 @@ Configuration
 firstly cmd line options
 secondly XDG_CONFIG_HOME/m2i/config
 separation between m2i behaviour and action and response.
+
+system tray
+===========
+kind of thinking of things i want to have added to the system tray
+* menu's for connecting to ports
+* help dialog
+* configuration dialog
+* temporarily disable/enable
+* quit
+* bubbles as demonstrated from the qt example for things like auto connection events
+* changing icon for when no midi ports are connected
+* changing icon or bubbles for when frequency threshold is reached

@@ -8,8 +8,10 @@ Requires
 * lua
 * adishavit/argh
 * libfmt/fmt
-* jack OR alsa
-* [optional] X11 with the XTest extension
+* compile time optional ALSA
+* Compile time optional Jack
+* Compile time optional Xlib with the XTest extension
+* Compile time optional Qt5
 
 Features
 --------
@@ -19,6 +21,7 @@ Features
 * sending keyboard and mouse events from scripts
 * executing commands from scripts
 * per application control by switching on WM_CLASS attribute
+* Qt5 based system tray icon
 
 Why?
 ====
