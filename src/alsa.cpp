@@ -44,9 +44,11 @@ void
 AlsaSeq::fina()
 {
     valid_ = false;
-    snd_seq_delete_simple_port( seq, iport_id );
-    snd_seq_delete_simple_port( seq, oport_id );
-    snd_seq_close( seq );
+    if( seq ){
+        snd_seq_delete_simple_port( seq, iport_id );
+        snd_seq_delete_simple_port( seq, oport_id );
+        snd_seq_close( seq );
+    }
 
     client_id = -1;
     iport_id = -1;
