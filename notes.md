@@ -1,6 +1,18 @@
 Notes
 =====
 
+The three things that are keeping me from setting and forgetting this project are
+* auto reloading the script
+* reconnecting to my alsa ports after disconnecting/reconnecting my usb device
+* successfully quitting via system tray application
+
+In a perfectly ideal world i would simply start the service using systemd and
+expose a dbus type interface. thats not an idea world, instead the method of
+construction is relative to the scale of how many users you are designing forgetting
+* single user niche product, ok as an application - where I exist. - effects individuals
+* generic backend distributed over a wide range of humans - where i want to exist - effects a group of individuals
+* globl scale multiple distribution methods - always the goal - effects groups of groups
+
 Compile-time Options
 --------------------
 -DWITH_XORG - enabled xorg related functionality like window class detection and input functions.
