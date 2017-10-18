@@ -37,7 +37,7 @@ public:
 
 logger LOG( int );
 
-fs::path getPath( const fs::path &path );
+fs::path getPath( fs::path path );
 
 }//namespace m2i
 

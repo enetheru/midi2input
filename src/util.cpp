@@ -40,25 +40,24 @@ logger LOG( int level )
 }
 
 fs::path
-getPath( const fs::path &path )
+getPath( fs::path path )
 {
-    if( fs::exists( path ) && fs::is_regular_file( path ) )
-        return fs::absolute( path );
-
-    // if the path doesnt exist, and it is absolute, stop searching
-    if( path.is_absolute() ) return fs::path();
-
-    //otherwise search for a relate path in the config directory
-    fs::path temp;
-    if( getenv( "XDG_CONFIG_HOME" ) )
-        temp = std::string( getenv( "XDG_CONFIG_HOME") ) + "/m2i/" + path.string();
-    else
-        temp = std::string( getenv( "HOME") ) + "/.config/m2i/" + path.string();
-
-    if( fs::exists( temp ) && fs::is_regular_file( temp ) ){
-        return fs::absolute( temp );
+    //file doesnt exist but the path is relative then it might exist in .config
+    if( not fs::exists( path ) and path.is_relative() ){
+        if( getenv( "XDG_CONFIG_HOME" ) )
+            path = std::string( getenv( "XDG_CONFIG_HOME") ) + "/m2i/" + path.string();
+        else
+            path = std::string( getenv( "HOME") ) + "/.config/m2i/" + path.string();
     }
-    return fs::path();
+
+    //possible it could be a symlink
+    if( fs::exists( path ) and fs::is_symlink( path ) )
+        path = fs::read_symlink( path );
+    //FIXME this only gives one deference, might want more
+
+    if( !fs::exists( path ) )return fs::path();//file simply doesnt exist
+
+    return path;
 }
 
 }//namespace m2i
