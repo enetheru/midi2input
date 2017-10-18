@@ -29,6 +29,8 @@ add_executable( m2i
         lua.h
         cache_data.h
         cache_data.cpp
+        inotify.h
+        inotify.cpp
         ${SOURCES} )
 target_link_libraries( m2i
     fmt
