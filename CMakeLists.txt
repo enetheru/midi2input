@@ -29,6 +29,10 @@ if( NOT DEFINED WITH_XORG )
     set( WITH_XORG false CACHE BOOL "whether to build with XORG support support" FORCE )
 endif()
 
+if( NOT DEFINED WITH_QT )
+    set( WITH_QT false CACHE BOOL "QT system tray support" FORCE )
+endif()
+
 # messages
 message( "Configuration:" )
 message( "\tCMAKE_BUILD_TYPE=" ${CMAKE_BUILD_TYPE} )
@@ -37,10 +41,14 @@ message( "\tCHECK_DOCS=" ${CHECK_DOCS} )
 message( "\tWITH_ALSA=" ${WITH_ALSA} )
 message( "\tWITH_JACK=" ${WITH_JACK} )
 message( "\tWITH_XORG=" ${WITH_XORG} )
+message( "\tWITH_QT=" ${WITH_QT} )
 
 if( NOT ${WITH_ALSA} AND NOT ${WITH_JACK} )
     message( SEND_ERROR "Either -DWITH_ALSA=ON or -DWITH_JACK=ON needs to be specified.") 
 endif()
+
+# TODO configure a header file to add the preprocessor flags rather than using
+# add_definitions here in cmake.add_custom_command
 
 # Compiler
 # --------
@@ -71,6 +79,13 @@ if( ${WITH_XORG} )
     include_directories( ${X11_INCLUDE_DIRS} ${XTST_INCLUDE_DIRS} )
     set( LIBS ${LIBS} ${XTST_LIBRARIES} ${X11_LIBRARIES} )
     add_definitions( -DWITH_XORG )
+endif()
+
+if( ${WITH_QT} )
+    find_package( Qt5 COMPONENTS Core Widgets REQUIRED )
+    set( LIBS ${LIBS} Qt5::Widgets )
+    set(CMAKE_AUTOMOC ON)
+    add_definitions( -DWITH_QT )
 endif()
 
 pkg_check_modules( LUA lua52 )

@@ -31,6 +31,13 @@ extern "C" {
     #include "alsa.h"
 #endif//WITH_ALSA
 
+#ifdef WITH_QT
+    #include <QApplication>
+    #include <QSystemTrayIcon>
+    #include <QMessageBox>
+    #include "trayicon.h"
+#endif//WITH_QT
+
 #ifdef WITH_XORG
     #include "x11.h"
 #endif//WITH_XORG
@@ -86,7 +93,7 @@ void intHandler( int dummy ){
 using namespace m2i;
 
 int
-main( int argc, const char **argv )
+main( int argc, char **argv )
 {
     //handle ctrl+c to exit the main loop.
     signal(SIGINT, intHandler);
@@ -201,6 +208,18 @@ main( int argc, const char **argv )
     XSetErrorHandler( m2i::XErrorCatcher );
     #endif
 
+    /* ======================== QT System Tray ========================== */
+    #ifdef WITH_QT
+    QApplication app(argc, argv);
+    if (!QSystemTrayIcon::isSystemTrayAvailable()) {
+        LOG( ERROR ) << "system tray unavailable\n";
+        exit( -1);
+    }
+
+    m2iTrayIcon myIcon;
+    QApplication::setQuitOnLastWindowClosed(false);
+
+    #endif//WITH_QT
     /* =========================== Main Loop ============================ */
     LOG( INFO ) << "Main: Entering sleep, waiting for events\n";
     lua_getglobal( L, "pre_loop" );
@@ -210,6 +229,11 @@ main( int argc, const char **argv )
     while(! m2i::quit )
     {
         auto main_start = std::chrono::system_clock::now();
+
+        //this is the way it must be done if i want it to be completely optional
+        #ifdef WITH_QT
+        QCoreApplication::processEvents();
+        #endif
 
         #ifdef WITH_ALSA
         if( m2i::alsa.valid ){
@@ -253,6 +277,7 @@ main( int argc, const char **argv )
             #endif//WITH_XORG
             int luastacksize;
             if( (luastacksize = lua_gettop( L )) ) LOG( INFO ) << "Lua Stack Size: " <<  luastacksize << "\n";
+
         }
 
         // run the loop lua function at loop_freq

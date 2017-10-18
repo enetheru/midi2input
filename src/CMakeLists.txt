@@ -3,7 +3,6 @@ include_directories(i
     ${CMAKE_SOURCE_DIR}/lib/fmt
     )
 
-
 if( WITH_ALSA )
     set( SOURCES ${SOURCES} alsa.h alsa.cpp )
 endif()
@@ -16,6 +15,10 @@ if( WITH_XORG )
     set( SOURCES ${SOURCES} x11.h x11.cpp )
 endif()
 
+if( WITH_QT )
+    set( SOURCES ${SOURCES} trayicon.h trayicon.cpp )
+endif()
+
 add_executable( m2i
         main.cpp
         util.h
@@ -26,6 +29,8 @@ add_executable( m2i
         lua.h
         cache_data.h
         cache_data.cpp
+        inotify.h
+        inotify.cpp
         ${SOURCES} )
 target_link_libraries( m2i
     fmt
