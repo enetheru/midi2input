@@ -2,6 +2,7 @@
 #include <QSystemTrayIcon>
 #include <QCoreApplication>
 #include "trayicon.h"
+#include "util.h"
 
 namespace m2i {
     extern bool quit;
@@ -25,11 +26,16 @@ m2iTrayIcon::setVisible( bool visible )
 }
 
 void
+m2iTrayIcon::quit(){
+    m2i::quit = true;
+}
+
+void
 m2iTrayIcon::createActions()
 {
     quitAction = new QAction(tr("&Quit"), this);
     // FIXME instead of qt quit, i just need it to end the event loop.
-    connect(quitAction, &QAction::triggered, qApp, &QCoreApplication::quit);
+    connect(quitAction, &QAction::triggered, this, &m2iTrayIcon::quit );
 }
 
 void

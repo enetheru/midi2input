@@ -18,6 +18,9 @@ public:
 
     void setVisible(bool visible) override;
 
+private slots:
+    void quit();
+
 private:
     void createActions();
     void createTrayIcon();
