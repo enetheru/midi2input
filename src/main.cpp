@@ -171,6 +171,8 @@ main( int argc, char **argv )
         LOG(INFO) << helptext << "\n";
         exit( 0 );
     }
+    if( cmdl[{"-v", "--verbose"}] )m2i::loglevel = 5;
+    if( cmdl[{"-q", "--quiet"  }] )m2i::loglevel = 1;
     if( cmdl({"-c", "--config" }) )
         m2i::config = m2i::getPath( cmdl({"-c", "--config"}).str() );
     else
@@ -181,8 +183,6 @@ main( int argc, char **argv )
     loadConfig( m2i::L, m2i::config );
 
     //command line overrides
-    if( cmdl[{"-v", "--verbose"}] )m2i::loglevel = 5;
-    if( cmdl[{"-q", "--quiet"  }] )m2i::loglevel = 1;
     if( cmdl[{"-a", "--alsa"   }] )m2i::use_alsa = true;
     if( cmdl[{"--no-alsa"      }] )m2i::use_alsa = false;
     if( cmdl[{"-j", "--jack"   }] )m2i::use_jack = true;
