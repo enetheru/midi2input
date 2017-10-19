@@ -3,8 +3,10 @@
 
 using namespace m2i;
 
+namespace snd {
+
 void
-AlsaSeq::init()
+Seq::init()
 {
     LOG( INFO ) << "Initialising ALSA\n";
 
@@ -41,7 +43,7 @@ AlsaSeq::init()
 }
 
 void
-AlsaSeq::fina()
+Seq::fina()
 {
     valid_ = false;
     if( seq ){
@@ -56,9 +58,8 @@ AlsaSeq::fina()
     seq = nullptr;
 }
 
-
 int
-AlsaSeq::connect( const std::string &client_name, const std::string &port_name )
+Seq::connect( const std::string &client_name, const std::string &port_name )
 {
     int connections = 0;
     //client info
@@ -73,14 +74,13 @@ AlsaSeq::connect( const std::string &client_name, const std::string &port_name )
     while( snd_seq_query_next_client( seq, cinfo ) >= 0 ){
         //refuse to self connect
         if( client_id == snd_seq_client_info_get_client( cinfo ) ){
-            LOG( INFO ) << "client: refusing to self connect\n";
             continue;
         }
         if( client_name == "*" ){
-            LOG( INFO ) << "client: wildcard match: " << snd_seq_client_info_get_name( cinfo ) << "\n";
+            LOG( INFO ) << "client wildcard match: " << snd_seq_client_info_get_name( cinfo ) << "\n";
         }
         else if( client_name == snd_seq_client_info_get_name( cinfo ) ){
-            LOG( INFO ) << "client: name match: " << snd_seq_client_info_get_name( cinfo ) << "n";
+            LOG( INFO ) << "client name match: " << snd_seq_client_info_get_name( cinfo ) << "\n";
         }
         else continue;
 
@@ -89,19 +89,19 @@ AlsaSeq::connect( const std::string &client_name, const std::string &port_name )
         snd_seq_port_info_set_port( pinfo, -1 );
         while( snd_seq_query_next_port( seq, pinfo ) >= 0 ){
             if( port_name == "*" )
-                LOG( INFO ) << "port: wildcard match: " << snd_seq_port_info_get_name( pinfo ) << "\n";
+                LOG( INFO ) << "port wildcard match: " << snd_seq_port_info_get_name( pinfo ) << "\n";
             else if( port_name == snd_seq_port_info_get_name( pinfo ) )
-                LOG( INFO ) << "port: name match: " << snd_seq_port_info_get_name( pinfo ) << "\n";
+                LOG( INFO ) << "port name match: " << snd_seq_port_info_get_name( pinfo ) << "\n";
             else continue;
 
             auto capabilities = snd_seq_port_info_get_capability(pinfo);
             if( capabilities & (SND_SEQ_PORT_CAP_READ | SND_SEQ_PORT_CAP_SUBS_READ) ){
-                LOG( INFO ) << "port: connect from: " << snd_seq_port_info_get_name( pinfo ) << "\n";
+                LOG( INFO ) << "port connect from: " << snd_seq_port_info_get_name( pinfo ) << "\n";
                 snd_seq_connect_from( seq, iport_id, client, snd_seq_port_info_get_port( pinfo ) );
                 connections++;
             }
             if( capabilities & (SND_SEQ_PORT_CAP_WRITE | SND_SEQ_PORT_CAP_SUBS_WRITE) ){
-                LOG( INFO ) << "port: connect to: " << snd_seq_port_info_get_name( pinfo ) << "\n";
+                LOG( INFO ) << "port connect to: " << snd_seq_port_info_get_name( pinfo ) << "\n";
                 snd_seq_connect_to( seq, oport_id, client, snd_seq_port_info_get_port( pinfo ) );
                 connections++;
             }
@@ -111,7 +111,7 @@ AlsaSeq::connect( const std::string &client_name, const std::string &port_name )
 }
 
 void
-AlsaSeq::event_send( const midi_event &event )
+Seq::event_send( const midi_event &event )
 {
     snd_seq_event_t ev;
     snd_seq_ev_clear( &ev );
@@ -127,17 +127,18 @@ AlsaSeq::event_send( const midi_event &event )
 }
 
 int
-AlsaSeq::event_pending(){
+Seq::event_pending(){
     return snd_seq_event_input_pending( seq, 1 );
 }
 
 midi_event
-AlsaSeq::event_receive()
+Seq::event_receive()
 {
     midi_event result = { 0, 0, 0 };
     snd_seq_event_t *ev = nullptr;
     if( snd_seq_event_input( seq, &ev ) < 0)
         return result;
+    
 
     switch( ev->type ){
     case SND_SEQ_EVENT_NOTEON:
@@ -277,9 +278,28 @@ AlsaSeq::event_receive()
             << ev->data.addr.port << "\n";
         break;
     case SND_SEQ_EVENT_PORT_SUBSCRIBED:
-        LOG( INFO ) << fmt::format( "Port subscribed: {:d}:{:d} -> {:d}:{:d}\n",
-            ev->data.connect.sender.client, ev->data.connect.sender.port,
-            ev->data.connect.dest.client, ev->data.connect.dest.port );
+        {
+            snd_seq_client_info_t *cinfo;
+            snd_seq_client_info_alloca( &cinfo );
+            snd_seq_port_info_t *pinfo;
+            snd_seq_port_info_alloca( &pinfo );
+
+            snd_seq_get_any_client_info( seq,
+                ev->data.connect.sender.client ,
+                cinfo );
+            snd_seq_get_any_port_info( seq,
+                ev->data.connect.sender.client,
+                ev->data.connect.sender.port,
+                pinfo );
+
+            LOG( INFO ) << fmt::format( "Port Subscription from: '{}':'{}'\n",
+                snd_seq_client_info_get_name( cinfo ),
+                snd_seq_port_info_get_name( pinfo )
+            ); 
+            LOG( INFO ) << fmt::format( "Port Subscribed: {:d}:{:d} -> {:d}:{:d}\n",
+                ev->data.connect.sender.client, ev->data.connect.sender.port,
+                ev->data.connect.dest.client, ev->data.connect.dest.port );
+        }
         break;
     case SND_SEQ_EVENT_PORT_UNSUBSCRIBED:
         LOG( INFO ) << fmt::format( "Port unsubscribed: {:d}:{:d} -> {:d}:{:d}\n",
@@ -301,6 +321,8 @@ AlsaSeq::event_receive()
     return result;
 }
 
-AlsaSeq::~AlsaSeq() {
+Seq::~Seq() {
     fina();
 }
+
+}//end namespace snd

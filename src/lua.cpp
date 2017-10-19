@@ -20,7 +20,7 @@
 //FIXME ZOMG this is so ugly.
 namespace m2i {
     #ifdef WITH_ALSA
-    extern AlsaSeq alsa;
+    extern snd::Seq alsa;
     #endif//WITH_ALSA
 
     #ifdef WITH_JACK

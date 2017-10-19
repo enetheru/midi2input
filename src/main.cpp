@@ -43,14 +43,14 @@ extern "C" {
     #include "x11.h"
 #endif//WITH_XORG
 
-// FIXME cleanup namespacing across the project, everything i create should be
-// in the m2i namespace;
-// FIXME maybe turn everything into a class, and pass the object through the
-// function calls
-
+/* FIXME cleanup namespacing across the project, everything i create should be
+ * in the m2i namespace maybe turn everything into a class, and pass the object
+ * through the function calls
+ * eg.
 class mainObj {
     //blah
 };
+*/
 
 namespace m2i {
     const char *helptext =
@@ -85,7 +85,7 @@ namespace m2i {
     bool quit = false;
 
     #ifdef WITH_ALSA
-    AlsaSeq alsa;
+    snd::Seq alsa;
     #endif//WITH_ALSA
 
     #ifdef WITH_JACK

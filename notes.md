@@ -2,9 +2,9 @@ Notes
 =====
 
 The three things that are keeping me from setting and forgetting this project are
-* auto reloading the script
-* reconnecting to my alsa ports after disconnecting/reconnecting my usb device
-* successfully quitting via system tray application
+* [DONE]reconnecting to my alsa ports after disconnecting/reconnecting my usb device
+* [DONE]successfully quitting via system tray application
+* [DONE]auto reloading the script
 
 In a perfectly ideal world i would simply start the service using systemd and
 expose a dbus type interface. thats not an idea world, instead the method of
