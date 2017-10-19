@@ -39,6 +39,7 @@ private:
     int lua_exec( lua_State *L );
     int lua_quit( lua_State *L );
 
+#ifdef WITH_XORG
     // X11 function binding
     int lua_keypress( lua_State *L );
     int lua_keydown( lua_State *L );
@@ -49,14 +50,17 @@ private:
     int lua_mousemove( lua_State *L );
     int lua_mousepos( lua_State *L );
     int lua_detectwindow( lua_State *L );
+#endif//WITH_XORG
+
+#ifdef WITH_ALSA
+    // ALSA function binding
+    int lua_alsaconnect( lua_State *L );
+#endif//WITH_ALSA
 
     // Jack function binding
     // for now its unexpceted that i will have anything here, controlling the midi
     // subsystems individually doesnt seem relevant at this stage
 
-    // ALSA function binding
-    // for now its unexpceted that i will have anything here, controlling the midi
-    // subsystems individually doesnt seem relevant at this stage
 
 }//end namespace m2i
 #endif//M2I_LUA_H

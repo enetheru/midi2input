@@ -76,7 +76,8 @@ lua_init_new()
 #endif//WITH_XORG
 
 #ifdef WITH_ALSA
-    //TODO connect to port
+    lua_pushcfunction( L, lua_alsaconnect );
+    lua_setglobal( L, "alsaconnect" );
 #endif//WITH_ALSA
 
 #ifdef WITH_JACK
@@ -288,7 +289,17 @@ lua_detectwindow( lua_State *L )
 
 #ifdef WITH_ALSA
     /* ==================== ALSA Lua Bindings =========================== */
-//TODO connect to named alsa port
+int
+lua_alsaconnect( lua_State *L )
+{
+    /* the idea with this function is that it takes two named ports, or port id's
+     * and connects them together, so the function takes two arguments, client
+     * and port */
+    std::string client = luaL_checkstring(L, 1);
+    std::string port = luaL_checkstring(L, 2);
+    m2i::alsa.connect( client, port );
+    return 0;
+}
 #endif//WITH_ALSA
 
 #ifdef WITH_JACK
