@@ -13,7 +13,6 @@ namespace fs = std::experimental::filesystem;
 
 namespace m2i {
 
-//FIXME I dont like this anonymous enum
 enum { //log level
     INFO = 4,
     WARN = 3,

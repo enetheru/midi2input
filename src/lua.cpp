@@ -2,6 +2,7 @@
 #include "midi.h"
 #include "util.h"
 
+
 #ifdef WITH_ALSA
 #include "alsa.h"
 #endif//WITH_ALSA
@@ -28,9 +29,12 @@ namespace m2i {
 
     extern bool quit;
 
-void
-lua_init_new( lua_State * L)
+lua_State *
+lua_init_new()
 {
+    lua_State *L = luaL_newstate();
+    luaL_openlibs( L );
+
     // push main functions to lua
     lua_pushcfunction( L, lua_midisend );
     lua_setglobal( L, "midi_send" );
@@ -78,18 +82,18 @@ lua_init_new( lua_State * L)
 #ifdef WITH_JACK
     //TODO connect to port
 #endif//WITH_JACK
-    return;
+    return L;
 }
 
 int
-lua_loadscript( lua_State *L, const fs::path &script )
+lua_loadscript( lua_State *L, const fs::path &path )
 {
-    fs::path path = getPath( script );
     if( path.empty() ) return -1;
+    if( !L ){ LOG( ERROR ) << "lua isnt initialised\n"; return -1; } 
 
-    LOG( INFO ) << "Loading config: " << path << "\n";
+    LOG( INFO ) << "Loading script: " << path << "\n";
     if( luaL_loadfile( L, path.c_str() ) || lua_pcall( L, 0, 0, 0 ) ){
-        LOG( ERROR ) << "failure loading config file: " << lua_tostring( L, -1 ) << "\n";
+        LOG( ERROR ) << "failure loading script file: " << lua_tostring( L, -1 ) << "\n";
         return -1;
     }
     return 0;

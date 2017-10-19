@@ -20,6 +20,7 @@ extern "C" {
 #include "util.h"
 #include "cache_data.h"
 #include "midi.h"
+#include "inotify.h"
 
 #include "lua.h"
 
@@ -42,35 +43,17 @@ extern "C" {
     #include "x11.h"
 #endif//WITH_XORG
 
+// FIXME cleanup namespacing across the project, everything i create should be
+// in the m2i namespace;
+// FIXME maybe turn everything into a class, and pass the object through the
+// function calls
+
+class mainObj {
+    //blah
+};
+
 namespace m2i {
-    //configuration
-    int loglevel = 2;
-    bool verbose = false;
-    bool quiet = false;
-    bool use_alsa = true;
-    bool use_jack = false;
-    bool use_xorg = true;
-    bool reconnect = true;
-    bool loop_enabled = true;
-    std::chrono::milliseconds main_freq( 25 );
-    std::chrono::milliseconds loop_freq( 100 );
-    std::chrono::milliseconds watch_freq( 3000 );
-    fs::path config( "config.lua" );
-    fs::path script( "script.lua" );
-
-    //program state
-    lua_State *L = nullptr;
-    bool quit = false;
-    #ifdef WITH_ALSA
-    AlsaSeq alsa;
-    #endif//WITH_ALSA
-
-    #ifdef WITH_JACK
-    JackSeq jack;
-    #endif//WITH_XORG
-}
-
-const char *helptext =
+    const char *helptext =
 "USAGE: ./m2i [options]\n"
 "OPTIONS:\n"
 "   -h  --help                  Print usage and exit\n"
@@ -82,6 +65,34 @@ const char *helptext =
 //decided that unless it seems paramount, then further configuration should go
 //into the config file
 
+    /* ====================== Global Options ============================ */
+    // Yuck i know haha.. oh well.
+    int loglevel = 5;
+    bool use_alsa = true;
+    bool use_jack = false;
+    bool use_xorg = true;
+    bool reconnect = true;
+    bool loop_enabled = true;
+    std::chrono::milliseconds main_freq( 10 );
+    std::chrono::milliseconds loop_freq( 100 );
+    std::chrono::milliseconds watch_freq( 1000 );
+    fs::path config = "config.lua";
+    fs::path script = "script.lua";
+
+    //program state
+    lua_State *L = nullptr;
+    Notifier notifier;
+    bool quit = false;
+
+    #ifdef WITH_ALSA
+    AlsaSeq alsa;
+    #endif//WITH_ALSA
+
+    #ifdef WITH_JACK
+    JackSeq jack;
+    #endif//WITH_XORG
+
+
 //signal interrupt handler for ctrl+c
 void intHandler( int dummy ){
     (void)dummy;
@@ -89,6 +100,59 @@ void intHandler( int dummy ){
 }
 
 //TODO jack error handler here
+
+void
+loadConfig( lua_State *L, const fs::path &path ){
+     // Load configuraton lua script
+    if( m2i::lua_loadscript( L, path ) < 0 ){
+        LOG( ERROR ) << "unable to load config: " << path << "\n";
+        return;
+    }
+
+    //pull configuration from config
+    lua_getglobal( L, "config" );
+    if( !lua_istable(L, -1 ) ){
+        LOG( ERROR ) << "No 'config' table found in lua file\n";
+        lua_pop( L, 1 );
+        return;
+    }
+
+    cacheSet( "config", path.string() );
+
+    lua_pushnil( L );
+    while( lua_next( L, -2 ) != 0 ){
+        std::string var( lua_tostring( L, -2 ) );
+             if( var == "script"       )m2i::script = lua_tostring( L, -1 ) ;
+        else if( var == "loglevel"     )m2i::loglevel = lua_tointeger( L, -1 );
+        else if( var == "use_alsa"     )m2i::use_alsa = lua_toboolean( L, -1 );
+        else if( var == "use_jack"     )m2i::use_jack = lua_toboolean( L, -1 );
+        else if( var == "reconnect"    )m2i::reconnect = lua_toboolean( L, -1 );
+        else if( var == "loop_enabled" )m2i::loop_enabled = lua_toboolean( L, -1 );
+        else if( var == "main_freq"    )m2i::main_freq = std::chrono::milliseconds( lua_tointeger( L, -1 ) );
+        else if( var == "loop_freq"    )m2i::loop_freq = std::chrono::milliseconds( lua_tointeger( L, -1 ) );
+        else if( var == "watch_freq"   )m2i::watch_freq = std::chrono::milliseconds( lua_tointeger( L, -1 ) );
+        lua_pop( L, 1 );
+    }
+    lua_pop( L, 1 ); //lua_getglobal "config"
+    return;
+}
+
+void restartLua()
+{
+    LOG( INFO ) << "restarting lua\n";
+    //blow away the lua state
+    if( !L )lua_close( m2i::L );
+    L = nullptr;
+    //FIXME unset inotify watches on old files;
+
+    //start from scratch
+    m2i::L = m2i::lua_init_new();
+    if( m2i::lua_loadscript( m2i::L, m2i::script ) < 0 ){
+        LOG( ERROR ) << "Unable to find script file:" << m2i::script << "\n";
+    }
+}
+
+}//end namespace m2i
 
 using namespace m2i;
 
@@ -98,82 +162,47 @@ main( int argc, char **argv )
     //handle ctrl+c to exit the main loop.
     signal(SIGINT, intHandler);
 
+    /* ================================================================== */
+    //add key/value pairs
     argh::parser cmdl( { "-c", "--config", "-s", "--script" } );
     cmdl.parse( argc, argv, argh::parser::PREFER_PARAM_FOR_UNREG_OPTION );
 
-    if( cmdl[{"-h", "--help"}] ){
+    if( cmdl[{"-h", "--help"   }] ){
         LOG(INFO) << helptext << "\n";
         exit( 0 );
     }
+    if( cmdl({"-c", "--config" }) )
+        m2i::config = m2i::getPath( cmdl({"-c", "--config"}).str() );
+    else
+        m2i::config = m2i::getPath( "config.lua" );
 
-    //load lua environment first
-    /* ============================== Lua =============================== */
-    lua_State *L = luaL_newstate();
-    m2i::L = L;
-    luaL_openlibs( L );
-    m2i::lua_init_new( L );
+    /* ================================================================== */
+    m2i::L = m2i::lua_init_new();
+    loadConfig( m2i::L, m2i::config );
 
-    // Load configuraton lua script
-    cmdl({"-c", "--config"}) >> m2i::config;
-    if( m2i::lua_loadscript( L, m2i::config ) < 0 ){
-        LOG( ERROR ) << "unable to load config: " << m2i::config << "\n";
-        LOG( WARN ) << "using default configuration\n";
-    } else {
-        cacheSet( "config", m2i::config );
+    //command line overrides
+    if( cmdl[{"-v", "--verbose"}] )m2i::loglevel = 5;
+    if( cmdl[{"-q", "--quiet"  }] )m2i::loglevel = 1;
+    if( cmdl[{"-a", "--alsa"   }] )m2i::use_alsa = true;
+    if( cmdl[{"--no-alsa"      }] )m2i::use_alsa = false;
+    if( cmdl[{"-j", "--jack"   }] )m2i::use_jack = true;
+    if( cmdl[{"--no-jack"      }] )m2i::use_jack = false;
+    if( cmdl({"-s", "--script" }) )m2i::script = cmdl({"-s", "--script"}).str();
+    m2i::script = m2i::getPath( m2i::script );
 
-        //pull configuration from config.lua
-        lua_getglobal( L, "config" );
-        if( lua_istable(L, -1 ) ){
-            lua_pushnil(L);
-
-            while( lua_next( L, -2 ) != 0 ){
-                std::string var( lua_tostring( L, -2 ) );
-                     if( var == "script"   ) m2i::script   = lua_tostring( L, -1 );
-                else if( var == "verbose"  ) m2i::verbose  = lua_toboolean( L, -1 );
-                else if( var == "quiet"    ) m2i::quiet    = lua_toboolean( L, -1 );
-                else if( var == "use_alsa" ) m2i::use_alsa = lua_toboolean( L, -1 );
-                else if( var == "use_jack" ) m2i::use_jack = lua_toboolean( L, -1 );
-                else if( var == "reconnect" ) m2i::reconnect = lua_toboolean( L, -1 );
-                else if( var == "loop_enabled" ) m2i::loop_enabled = lua_toboolean( L, -1 );
-                else if( var == "main_freq" ) m2i::main_freq = std::chrono::milliseconds( lua_tointeger( L, -1 ) );
-                else if( var == "loop_freq" ) m2i::loop_freq = std::chrono::milliseconds( lua_tointeger( L, -1 ) );
-                else if( var == "watch_freq" ) m2i::watch_freq = std::chrono::milliseconds( lua_tointeger( L, -1 ) );
-
-                lua_pop( L, 1 );
-            }
-        }
-        else {
-            LOG( ERROR ) << "No 'config' table found in lua file\n";
-        }
-        lua_pop( L, 1 ); //lua_getglobal "config"
-    }
-
-    /* ============================= cmdl =============================== */
-    //cmdl overrides
-    if( cmdl[{ "-v", "--verbose" }] )
-        m2i::loglevel = 5;
-
-    if( cmdl[{ "-q", "--quiet" }] )
-        m2i::loglevel = 1;
-
-    if( cmdl[{ "-a", "--alsa" }] )
-        m2i::use_alsa = true;
-
-    if( cmdl[{ "-j", "--jack" }] )
-        m2i::use_jack = true;
-
-    if( !cmdl({"-s", "--script"}).str().empty() )
-        cmdl({"-s", "--script"}) >> m2i::script;
-    if( m2i::lua_loadscript( L, m2i::script ) < 0 ){
-        LOG( ERROR ) << "Unable to find script file:" << m2i::script << "\n";
-    } else {
-        cacheSet( "script", m2i::script );
-    }
-
-    //one final check before continuing
+    //check that we at least use one midi backend, otherwise there is kinda no point
     if( !m2i::use_alsa && !m2i::use_jack ){
         LOG( ERROR ) << "neither jack nor alsa has been specified\n";
         exit(-1);
+    }
+
+    /* ================================================================== */
+    //load script
+    if( m2i::lua_loadscript( m2i::L, m2i::script ) < 0 ){
+        LOG( ERROR ) << "Unable to find script file:" << m2i::script << "\n";
+    } else {
+        cacheSet( "script", m2i::script );
+        m2i::notifier.watchPath( { m2i::script, restartLua } );
     }
 
     /* ============================== ALSA ============================== */
@@ -255,6 +284,8 @@ main( int argc, char **argv )
         auto watch_wait = std::chrono::system_clock::now() - watch_last;
         if( watch_wait > m2i::watch_freq ){
             watch_last = std::chrono::system_clock::now();
+
+            notifier.check();
 
             #ifdef WITH_JACK
             if( m2i::use_jack && m2i::reconnect && !m2i::jack.valid ){

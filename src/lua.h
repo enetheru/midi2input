@@ -16,7 +16,20 @@ namespace fs = std::experimental::filesystem;
 //TODO hijack the lua print function and redefine it in terms of my logging class
 
 namespace m2i {
-    void lua_init_new( lua_State *L );
+/* maybe use a class like below for easier lua management
+class Lua {
+public:
+    Lua(){ init(); }
+    ~Lua(){ fina(); }
+    void init(){ L = luaL_newstate(); }
+    void fina(){ lua_close( L ); }
+    lua_state *operator()(){ return L; } 
+private:
+    lua_State *L;
+};
+ */
+
+    lua_State *lua_init_new();
 
     int lua_loadscript( lua_State *L, const fs::path &script );
     int lua_midirecv( lua_State *L, const midi_event &event );

@@ -36,7 +36,6 @@ Notifier::~Notifier(){
         LOG( m2i::ERROR ) << "close\n";
         return;
     }
-    LOG( m2i::INFO ) << "Listening for events stopped.\n";
     return;
 }
 

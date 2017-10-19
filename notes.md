@@ -114,6 +114,20 @@ firstly cmd line options
 secondly XDG_CONFIG_HOME/m2i/config
 separation between m2i behaviour and action and response.
 
+there is a design choice i am having to make in regards to reloading configuration
+
+on the one hand, command line options should reign supreme for loading the state
+of the application. so in this way reloading the config either needs to be aware
+of the cmd line, or dissallow it because it cant tell what was overridden, plus
+you might want to override the initial values anyway, so i've come to a compromise
+i think is sane.
+
+configuration and cmd line options only specify the initial state of the application
+it will not be reloaded, nor referenced further than the very first setup.
+
+the script can be reloaded and the state changed in the script, but not from
+configuration.
+
 system tray
 ===========
 kind of thinking of things i want to have added to the system tray
