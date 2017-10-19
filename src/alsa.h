@@ -10,7 +10,7 @@ namespace snd {
 
 class Seq {
 public:
-    Seq() = default;
+    Seq();
     void init();
     void fina();
 
