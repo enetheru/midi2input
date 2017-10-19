@@ -144,12 +144,17 @@ void restartLua()
     if( !L )lua_close( m2i::L );
     L = nullptr;
     //FIXME unset inotify watches on old files;
+    m2i::loop_enabled = true;
 
     //start from scratch
     m2i::L = m2i::lua_init_new();
     if( m2i::lua_loadscript( m2i::L, m2i::script ) < 0 ){
         LOG( ERROR ) << "Unable to find script file:" << m2i::script << "\n";
+        return;
     }
+
+    lua_getglobal( L, "script_init" );
+    if( lua_pcall( L, 0, 0, 0 ) != 0 )lua_pop( L, 1);
 }
 
 }//end namespace m2i
@@ -203,6 +208,9 @@ main( int argc, char **argv )
     } else {
         cacheSet( "script", m2i::script );
         m2i::notifier.watchPath( { m2i::script, restartLua } );
+
+        lua_getglobal( L, "script_init" );
+        if( lua_pcall( L, 0, 0, 0 ) != 0 )lua_pop( L, 1);
     }
 
     /* ============================== ALSA ============================== */
@@ -251,8 +259,6 @@ main( int argc, char **argv )
     #endif//WITH_QT
     /* =========================== Main Loop ============================ */
     LOG( INFO ) << "Main: Entering sleep, waiting for events\n";
-    lua_getglobal( L, "pre_loop" );
-    if( lua_pcall( L, 0, 0, 0 ) != 0 )lua_pop( L, 1);
     std::chrono::system_clock::time_point loop_last = std::chrono::system_clock::now();
     std::chrono::system_clock::time_point watch_last = std::chrono::system_clock::now();
     while(! m2i::quit )
