@@ -139,3 +139,10 @@ kind of thinking of things i want to have added to the system tray
 * bubbles as demonstrated from the qt example for things like auto connection events
 * changing icon for when no midi ports are connected
 * changing icon or bubbles for when frequency threshold is reached
+
+packaging
+=========
+missing things
+* basic configuration script
+* proper man pages
+* desktop shortcut

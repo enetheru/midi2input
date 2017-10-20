@@ -59,6 +59,7 @@ private:
 
     // Jack function binding
     // for now its unexpceted that i will have anything here, controlling the midi
+    //TODO int lua_jackconnect( lua_State *L );
     // subsystems individually doesnt seem relevant at this stage
 
 

@@ -34,7 +34,6 @@ void
 m2iTrayIcon::createActions()
 {
     quitAction = new QAction(tr("&Quit"), this);
-    // FIXME instead of qt quit, i just need it to end the event loop.
     connect(quitAction, &QAction::triggered, this, &m2iTrayIcon::quit );
 }
 
