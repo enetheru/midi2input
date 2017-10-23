@@ -20,7 +20,7 @@
 //FIXME ZOMG this is so ugly.
 namespace m2i {
     #ifdef WITH_ALSA
-    extern snd::Seq alsa;
+    extern snd::Seq seq;
     #endif//WITH_ALSA
 
     #ifdef WITH_JACK
@@ -133,7 +133,7 @@ lua_midisend( lua_State *L )
     lua_pop( L, 1 );
 
     #ifdef WITH_ALSA
-    if( m2i::alsa.valid )m2i::alsa.event_send( event );
+    if( m2i::seq )m2i::seq.event_send( event );
     #endif
 
     #ifdef WITH_JACK
@@ -297,7 +297,7 @@ lua_alsaconnect( lua_State *L )
      * and port */
     std::string client = luaL_checkstring(L, 1);
     std::string port = luaL_checkstring(L, 2);
-    m2i::alsa.connect( client, port );
+    m2i::seq.connect( client, port );
     return 0;
 }
 #endif//WITH_ALSA

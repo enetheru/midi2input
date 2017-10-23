@@ -8,11 +8,18 @@
 
 namespace snd {
 
+/* If i take the opinion that declaring an object doesnt initialise it, and that
+ * explicit initialisation is required, which is the case for all the standard
+ * types, then the constructor doesnt do anything interesting. but the
+ * destructor will cleanup. This means that the Seq object can be allocated, but
+ * left in an uninitialised state, at which point taking action on it would be
+ * undefined, the same as normal types.
+ */
 class Seq {
 public:
-    Seq();
-    void init();
-    void fina();
+    Seq() = default;
+    int open();
+    void close();
 
     int connect( const std::string &client_name, const std::string &port_name );
 
@@ -20,11 +27,10 @@ public:
     int event_pending();
     void event_send( const midi_event &event );
 
-    const bool &valid = valid_;
+    explicit operator bool() const { return seq; }
 
     ~Seq();
 private:
-    bool valid_ = false;
     int iport_id = -1;
     int oport_id = -1;
     int client_id = -1;

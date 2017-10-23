@@ -5,19 +5,17 @@ using namespace m2i;
 
 namespace snd {
 
-Seq::Seq(){
+int
+Seq::open()
+{
     if( snd_seq_open( &seq, "default", SND_SEQ_OPEN_DUPLEX, SND_SEQ_NONBLOCK ) < 0 )
-        return;
+        return -1;
     client_id = snd_seq_client_id( seq ); 
     snd_seq_set_client_name( seq, "midi2input_alsa" );
-}
 
-void
-Seq::init()
-{
     if( !seq ){
         LOG( ERROR ) << "Alsa sequencer not initialised\n";
-        return;
+        return -1;
     }
 
     iport_id = snd_seq_create_simple_port(
@@ -28,7 +26,7 @@ Seq::init()
     );
     if( iport_id < 0 ){
         LOG( FATAL ) << "ALSA: Problem creating input midi port\n";
-        return;
+        return -1;
     }
 
     oport_id = snd_seq_create_simple_port(
@@ -39,21 +37,23 @@ Seq::init()
     );
     if( oport_id < 0 ){
         LOG( FATAL ) << "ALSA: Problem creating output midi port\n";
-        return;
+        return -1;
     }
-    valid_ = true;
+    return client_id;
 }
 
 void
-Seq::fina()
+Seq::close()
 {
-    valid_ = false;
     if( seq ){
         snd_seq_delete_simple_port( seq, iport_id );
         snd_seq_delete_simple_port( seq, oport_id );
+        snd_seq_close( seq );
     }
     iport_id = -1;
     oport_id = -1;
+    client_id = -1;
+    seq = nullptr;
 }
 
 int
@@ -320,12 +320,7 @@ Seq::event_receive()
 }
 
 Seq::~Seq() {
-    fina();
-    if( seq ){
-        snd_seq_close( seq );
-    }
-    client_id = -1;
-    seq = nullptr;
+    close();
 }
 
 }//end namespace snd
