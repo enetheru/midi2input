@@ -994,12 +994,14 @@ ffplay.map[0xB1] = {
 
 --[[ control functions ]]--
 --[[===================]]--
-function pre_loop()
-    print( "nothing to do" )
+function script_init()
+    print( "beans nothing to do" )
+    loopenable()
 end
 
 function loop()
     detectwindow();
+    alsaconnect( "PIONEER DDJ-WeGO", "*" );
     return 0;
 end
 

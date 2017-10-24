@@ -53,7 +53,7 @@ getPath( fs::path path )
     //possible it could be a symlink
     if( fs::exists( path ) and fs::is_symlink( path ) )
         path = fs::read_symlink( path );
-    //FIXME this only gives one deference, might want more
+    //Note: this only gives one deference, might want more
 
     if( !fs::exists( path ) )return fs::path();//file simply doesnt exist
 

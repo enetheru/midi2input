@@ -42,15 +42,6 @@ extern "C" {
     #include "x11.h"
 #endif//WITH_XORG
 
-/* FIXME cleanup namespacing across the project, everything i create should be
- * in the m2i namespace maybe turn everything into a class, and pass the object
- * through the function calls
- * eg.
-class mainObj {
-    //blah
-};
-*/
-
 namespace m2i {
     const char *helptext =
 "USAGE: ./m2i [options]\n"
@@ -143,10 +134,6 @@ restartLua()
     //blow away the lua state
     if( m2i::L )lua_close( m2i::L );
     m2i::L = nullptr;
-
-    //FIXME unset inotify watches on old files;
-    //FIXME re-enable looping which should be apart of the script itself.
-    m2i::loop_enabled = true;
 
     //start from scratch
     m2i::L = m2i::lua_init_new();

@@ -17,7 +17,6 @@
 
 #include <string>
 
-//FIXME ZOMG this is so ugly.
 namespace m2i {
     #ifdef WITH_ALSA
     extern snd::Seq seq;
@@ -28,6 +27,7 @@ namespace m2i {
     #endif//WITH_JACK
 
     extern bool quit;
+    extern bool loop_enabled;
 
 lua_State *
 lua_init_new()
@@ -45,6 +45,9 @@ lua_init_new()
     lua_pushcfunction( L, lua_quit );
     lua_setglobal( L, "quit" );
 
+    lua_pushcfunction( L, lua_loopenable );
+    lua_setglobal( L, "loopenable" );
+    
 #ifdef WITH_XORG
     // push x11 functions to lua
     lua_pushcfunction( L, lua_keypress );
@@ -166,6 +169,14 @@ lua_quit( lua_State *L )
 {
     (void)L; //shutup unused variable;
     m2i::quit = true;
+    return 0;
+}
+
+int
+lua_loopenable( lua_State *L )
+{
+    (void)L; //shutup unused variable;
+    m2i::loop_enabled = true;
     return 0;
 }
 
