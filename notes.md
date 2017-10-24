@@ -1,33 +1,6 @@
 Notes
 =====
 
-The three things that are keeping me from setting and forgetting this project are
-* [DONE]reconnecting to my alsa ports after disconnecting/reconnecting my usb device
-* [DONE]successfully quitting via system tray application
-* [DONE]auto reloading the script
-
-In a perfectly ideal world i would simply start the service using systemd and
-expose a dbus type interface. thats not an idea world, instead the method of
-construction is relative to the scale of how many users you are designing forgetting
-* single user niche product, ok as an application - where I exist. - effects individuals
-* generic backend distributed over a wide range of humans - where i want to exist - effects a group of individuals
-* globl scale multiple distribution methods - always the goal - effects groups of groups
-
-Compile-time Options
---------------------
--DWITH_XORG - enabled xorg related functionality like window class detection and input functions.
--DWITH_JACK - enables jack midi backend
--DWITH_ALSA - enables alsa midi backend
-
-Run-time Options
-----------------------
-having a cmd line options for 
-* -a --alsa = enable alsa backend
-* -j --jack = enable jack backend
-* -q --quiet = supress almost all output, setting logging level to 1
-* -v --verbose = more stdout, sets logging level to 5
-* -c --config = specify the configuration file to use eg. '-c $HOME/config.lua'
-
 TODO lua functions
 ==================
 * jack_connect( direction, named port )
@@ -38,9 +11,6 @@ TODO lua functions
 
 Future Features
 ================
-* system tray
-* alsa midi
-* jack midi
 * native dbus
 * avahi connection host
 * connection dialog
@@ -51,8 +21,11 @@ Future Features
 * support for OSC(open sound control)
 * support for regular input devices
 * systemd service
-* inotify support
 * multiple config with override if possible.
+* [DONE]inotify support
+* [DONE]system tray
+* [DONE]alsa midi
+* [DONE]jack midi
 
 things i would like to see is to actually turn a keyboard into a midi
 controller not just map the keys, but use an alternative driver to talk to the
@@ -61,10 +34,8 @@ touchscreen or mouse etc.
 
 System Tray
 -----------
-using the qt framework, the system tray would make a visible indicator for the
-service, and provide manipulation options, initially it will be built into the
-application because its easier. but eventually it should be split out and then
-use dbus to controll the service
+using the qt framework, the system tray makes a visible indicator for the service, and provide manipulation options, initially it will be built into the application because its easier. but eventually it should be split out and then use dbus to controll the service
+
 * visible indicator of the application running
 * control of things like
     * connected ports
@@ -72,41 +43,8 @@ use dbus to controll the service
     * reload configuration
     * quit
 
-But why? I guess the primary requirement I have is that m2i stays alive
-even even after an alsa or jack failure, and will reconnect automatically. that
-way i can just have it sit in the background on startup. what happens now?
-
-alsa backend is kinda always there, so it just stays alive
-jack backend will fail to load if there is no jack server, but the application
-will continue to run.
-if the jack server quits then there is a jack failure during running but it
-doesnt quit either. so at some point i will need to check for jack validity and
-re-initialise the jack thingo.
-
-lets consider the reconnection options
-there exists a couple of different points at which reconnection is valid
-* on application startup
-* on jack or alsa restart
-* on both application and subsystem restart
-
-if i'm keeping a cache of what ports are connected then there needs to be a
-distinction between whether a port is disconnected on purpose, or whether it
-was disconnected through a failure.
-
-if there is a failure of both application and subsystem then on startup the
-application needs to know when to purge attempted connections from its list.
-
-lets enumerate
-**jack fails** - jack ports are not removed from cache and reconnection is attempted when it is detected that jack comes back online
-**alsa fails** - as above
-**m2i fails** - cache is retained for reconnection on startup
-**manual disconnection** - cache is clobbered with new list
-
-if there is a 3rd party application connected that goes away and comes back, i want that to be kept in the cache too
-
-marking ports as reconnect or ignore in configuration
-
-simply reacting to connection attempts might be a good start.
+The primary requirement I have is that m2i stays alive
+even even after an alsa or jack failure, and will reconnect automatically. that way i can just have it sit in the background on startup, when I connect my device it makes its connection by itself.
 
 Configuration
 =============
@@ -116,17 +54,11 @@ separation between m2i behaviour and action and response.
 
 there is a design choice i am having to make in regards to reloading configuration
 
-on the one hand, command line options should reign supreme for loading the state
-of the application. so in this way reloading the config either needs to be aware
-of the cmd line, or dissallow it because it cant tell what was overridden, plus
-you might want to override the initial values anyway, so i've come to a compromise
-i think is sane.
+on the one hand, command line options should reign supreme for loading the state of the application. so in this way reloading the config either needs to be aware of the cmd line, or dissallow it because it cant tell what was overridden, plus you might want to override the initial values anyway, so i've come to a compromise i think is sane.
 
-configuration and cmd line options only specify the initial state of the application
-it will not be reloaded, nor referenced further than the very first setup.
+configuration and cmd line options only specify the initial state of the application it will not be reloaded, nor referenced further than the very first setup.
 
-the script can be reloaded and the state changed in the script, but not from
-configuration.
+the script can be reloaded and the state changed in the script, but not from configuration.
 
 system tray
 ===========

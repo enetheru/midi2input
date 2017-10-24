@@ -5,13 +5,17 @@ Configuration files and scripts are written in Lua
 
 Requires
 --------
+* Linux
 * lua
 * adishavit/argh
 * libfmt/fmt
-* compile time optional ALSA
-* Compile time optional Jack
-* Compile time optional Xlib with the XTest extension
-* Compile time optional Qt5
+
+Compile-time Options
+--------------------
+-DWITH_XORG - enabled xorg related functionality like window class detection and input functions.
+-DWITH_JACK - enables jack midi backend
+-DWITH_ALSA - enables alsa midi backend
+-DWITH_QT   - enables system tray icon
 
 Features
 --------
@@ -22,13 +26,12 @@ Features
 * executing commands from scripts
 * per application control by switching on WM_CLASS attribute
 * Qt5 based system tray icon
+* detection and reloading of changed script file
+* reconnect to device after unplug/plug
 
 Why?
 ====
-Because I had a midi controller, and I thought it was a shame that I could not
-control my pc using it. I did a little research online and it didn't seem that
-there was an existing solution that fit my needs, indeed I didn't find a solution
-at all that was FLOSS.
+Because I had a midi controller, and I thought it was a shame that I could not control my pc using it. I did a little research online and it didn't seem that there was an existing solution that fit my needs, indeed I didn't find a solution at all that was FLOSS.
 
 | Intro Vid |
 | --------- |
@@ -47,9 +50,8 @@ OPTIONS:
 
 examples
 ========
-* using my controller play/pause, jogwheel, volume, tempo etc to dbus-send to 
-  currently running media player
-* using the jobwheel and buttons to have a custom controller for video editing
-  software
+* using my controller play/pause, jogwheel, volume, tempo etc to dbus-send to currently running media player
+* using the jobwheel and buttons to have a custom controller for video editing software
 * A sound and video board and controlling cameras for video streaming
 * jogwheel as mouse scroll
+* shop demo for turning on and off lights
