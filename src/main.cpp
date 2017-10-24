@@ -204,7 +204,7 @@ main( int argc, char **argv )
     if( m2i::lua_loadscript( m2i::L, m2i::script ) < 0 ){
         LOG( m2i::ERROR ) << "Unable to find script file:" << m2i::script << "\n";
     } else {
-        m2i::notifier.watchPath( { m2i::script, restartLua } );
+        m2i::notifier.watchPath( {0, m2i::script, restartLua } );
 
         lua_getglobal( m2i::L, "script_init" );
         if( lua_pcall( m2i::L, 0, 0, 0 ) != 0 )lua_pop( m2i::L, 1);
