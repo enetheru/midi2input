@@ -12,10 +12,10 @@ Requires
 
 Compile-time Options
 --------------------
--DWITH_XORG - enabled xorg related functionality like window class detection and input functions.
--DWITH_JACK - enables jack midi backend
--DWITH_ALSA - enables alsa midi backend
--DWITH_QT   - enables system tray icon
+* -DWITH_XORG - enabled xorg related functionality like window class detection and input functions.
+* -DWITH_JACK - enables jack midi backend
+* -DWITH_ALSA - enables alsa midi backend
+* -DWITH_QT   - enables system tray icon
 
 Features
 --------
