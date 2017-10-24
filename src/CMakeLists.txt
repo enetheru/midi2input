@@ -27,8 +27,6 @@ add_executable( m2i
         midi.cpp
         lua.cpp
         lua.h
-        cache_data.h
-        cache_data.cpp
         inotify.h
         inotify.cpp
         ${SOURCES} )

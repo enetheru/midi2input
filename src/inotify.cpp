@@ -143,7 +143,6 @@ Notifier::handleEvents(){
        decrease performance. Hence, the buffer used for reading from
        the inotify file descriptor should have the same alignment as
        struct inotify_event. */
-
     char buf[ 4096 ] __attribute__ ((aligned(__alignof__(struct inotify_event))));
     const struct inotify_event *event;
     ssize_t len;
@@ -174,6 +173,7 @@ Notifier::handleEvents(){
             for( auto wpair : watchers[ event->wd ] ){
                 if( wpair.first.filename() == event->name ){
                     LOG( m2i::INFO ) << event->name << " has been modified\n";
+                    // so run the associated function.
                     wpair.second();
                     return;
                 } 

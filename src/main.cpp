@@ -18,7 +18,6 @@ extern "C" {
 //local includes
 #include "main.h"
 #include "util.h"
-#include "cache_data.h"
 #include "midi.h"
 #include "inotify.h"
 
@@ -92,32 +91,32 @@ namespace m2i {
     JackSeq jack;
     #endif//WITH_XORG
 
+}//end namespace m2i
 
 //signal interrupt handler for ctrl+c
-void intHandler( int dummy ){
+static void
+intHandler( int dummy ){
     (void)dummy;
     m2i::quit = true;
 }
 
 //TODO jack error handler here
 
-void
+static void
 loadConfig( lua_State *L, const fs::path &path ){
      // Load configuraton lua script
     if( m2i::lua_loadscript( L, path ) < 0 ){
-        LOG( ERROR ) << "unable to load config: " << path << "\n";
+        LOG( m2i::ERROR ) << "unable to load config: " << path << "\n";
         return;
     }
 
     //pull configuration from config
     lua_getglobal( L, "config" );
     if( !lua_istable(L, -1 ) ){
-        LOG( ERROR ) << "No 'config' table found in lua file\n";
+        LOG( m2i::ERROR ) << "No 'config' table found in lua file\n";
         lua_pop( L, 1 );
         return;
     }
-
-    cacheSet( "config", path.string() );
 
     lua_pushnil( L );
     while( lua_next( L, -2 ) != 0 ){
@@ -137,29 +136,28 @@ loadConfig( lua_State *L, const fs::path &path ){
     return;
 }
 
-void restartLua()
+static void
+restartLua()
 {
-    LOG( INFO ) << "restarting lua\n";
+    LOG( m2i::INFO ) << "restarting lua\n";
     //blow away the lua state
-    if( !L )lua_close( m2i::L );
-    L = nullptr;
+    if( m2i::L )lua_close( m2i::L );
+    m2i::L = nullptr;
+
     //FIXME unset inotify watches on old files;
+    //FIXME re-enable looping which should be apart of the script itself.
     m2i::loop_enabled = true;
 
     //start from scratch
     m2i::L = m2i::lua_init_new();
     if( m2i::lua_loadscript( m2i::L, m2i::script ) < 0 ){
-        LOG( ERROR ) << "Unable to find script file:" << m2i::script << "\n";
+        LOG( m2i::ERROR ) << "Unable to find script file:" << m2i::script << "\n";
         return;
     }
 
-    lua_getglobal( L, "script_init" );
-    if( lua_pcall( L, 0, 0, 0 ) != 0 )lua_pop( L, 1);
+    lua_getglobal( m2i::L, "script_init" );
+    if( lua_pcall( m2i::L, 0, 0, 0 ) != 0 )lua_pop( m2i::L, 1);
 }
-
-}//end namespace m2i
-
-using namespace m2i;
 
 int
 main( int argc, char **argv )
@@ -173,7 +171,7 @@ main( int argc, char **argv )
     cmdl.parse( argc, argv, argh::parser::PREFER_PARAM_FOR_UNREG_OPTION );
 
     if( cmdl[{"-h", "--help"   }] ){
-        LOG(INFO) << helptext << "\n";
+        LOG(m2i::INFO) << m2i::helptext << "\n";
         exit( 0 );
     }
     if( cmdl[{"-v", "--verbose"}] )m2i::loglevel = 5;
@@ -197,20 +195,19 @@ main( int argc, char **argv )
 
     //check that we at least use one midi backend, otherwise there is kinda no point
     if( !m2i::use_alsa && !m2i::use_jack ){
-        LOG( ERROR ) << "neither jack nor alsa has been specified\n";
+        LOG( m2i::ERROR ) << "neither jack nor alsa has been specified\n";
         exit(-1);
     }
 
     /* ================================================================== */
     //load script
     if( m2i::lua_loadscript( m2i::L, m2i::script ) < 0 ){
-        LOG( ERROR ) << "Unable to find script file:" << m2i::script << "\n";
+        LOG( m2i::ERROR ) << "Unable to find script file:" << m2i::script << "\n";
     } else {
-        cacheSet( "script", m2i::script );
         m2i::notifier.watchPath( { m2i::script, restartLua } );
 
-        lua_getglobal( L, "script_init" );
-        if( lua_pcall( L, 0, 0, 0 ) != 0 )lua_pop( L, 1);
+        lua_getglobal( m2i::L, "script_init" );
+        if( lua_pcall( m2i::L, 0, 0, 0 ) != 0 )lua_pop( m2i::L, 1);
     }
 
     /* ============================== ALSA ============================== */
@@ -218,7 +215,7 @@ main( int argc, char **argv )
     #ifdef WITH_ALSA
         m2i::seq.open();
     #else
-        LOG( ERROR ) << "Not compiled with ALSA midi backend\n";
+        LOG( m2i::ERROR ) << "Not compiled with ALSA midi backend\n";
         exit(-1);
     #endif
     }
@@ -235,10 +232,10 @@ main( int argc, char **argv )
 
     /* ============================= X11 ================================ */
     #ifdef WITH_XORG
-    LOG( INFO ) << "Getting X11 Display\n";
+    LOG( m2i::INFO ) << "Getting X11 Display\n";
     Display *xdp;
     if(! (xdp = XOpenDisplay( getenv( "DISPLAY" ) )) ){
-        LOG( FATAL ) << "Unable to open X display\n";
+        LOG( m2i::FATAL ) << "Unable to open X display\n";
         exit( -1 );
     }
     XCloseDisplay( xdp );
@@ -249,7 +246,7 @@ main( int argc, char **argv )
     #ifdef WITH_QT
     QApplication app(argc, argv);
     if (!QSystemTrayIcon::isSystemTrayAvailable()) {
-        LOG( ERROR ) << "system tray unavailable\n";
+        LOG( m2i::ERROR ) << "system tray unavailable\n";
         exit( -1);
     }
 
@@ -258,7 +255,7 @@ main( int argc, char **argv )
 
     #endif//WITH_QT
     /* =========================== Main Loop ============================ */
-    LOG( INFO ) << "Main: Entering sleep, waiting for events\n";
+    LOG( m2i::INFO ) << "Main: Entering sleep, waiting for events\n";
     std::chrono::system_clock::time_point loop_last = std::chrono::system_clock::now();
     std::chrono::system_clock::time_point watch_last = std::chrono::system_clock::now();
     while(! m2i::quit )
@@ -291,29 +288,22 @@ main( int argc, char **argv )
         if( watch_wait > m2i::watch_freq ){
             watch_last = std::chrono::system_clock::now();
 
-            notifier.check();
+            //notifier checks for modified files and runs the functions that
+            //have been associated with them.
+            m2i::notifier.check();
 
             #ifdef WITH_JACK
             if( m2i::use_jack && m2i::reconnect && !m2i::jack.valid ){
                 // FIXME I'm not really happy with the re-initialisation of jack
-                LOG( ERROR ) << "Jack not valid attempting to re\n";
+                LOG( m2i::ERROR ) << "Jack not valid attempting to re\n";
                 //attempt to re-instantiate jack connection
                 m2i::jack.fina();
                 m2i::jack.init();
-                //TODO reconnect to previously connected ports.
             }
             #endif//WITH_JACK
-            //TODO inotify to monitor and reload configuration
-            //TODO update cache for connected ports
 
-            #ifdef WITH_ALSA
-            //reconnect to alsa ports
-            #endif//WITH_ALSA
-
-            #ifdef WITH_XORG
-            #endif//WITH_XORG
             int luastacksize;
-            if( (luastacksize = lua_gettop( L )) ) LOG( INFO ) << "Lua Stack Size: " <<  luastacksize << "\n";
+            if( (luastacksize = lua_gettop( m2i::L )) ) LOG( m2i::INFO ) << "Lua Stack Size: " <<  luastacksize << "\n";
 
         }
 
@@ -321,9 +311,9 @@ main( int argc, char **argv )
         auto loop_wait = std::chrono::system_clock::now() - loop_last;
         if( m2i::loop_enabled && loop_wait > m2i::loop_freq ){
             loop_last = std::chrono::system_clock::now();
-            lua_getglobal( L, "loop" );
-            if( lua_pcall( L, 0, 0, 0 ) != 0 ){
-                LOG( ERROR ) << "loop function call failed, disabling\n"; 
+            lua_getglobal( m2i::L, "loop" );
+            if( lua_pcall( m2i::L, 0, 0, 0 ) != 0 ){
+                LOG( m2i::ERROR ) << "loop function call failed, disabling\n"; 
                 m2i::loop_enabled = false;
             }
         }
@@ -332,12 +322,12 @@ main( int argc, char **argv )
         auto main_end = std::chrono::system_clock::now();
         std::chrono::duration< double > main_time = main_end - main_start;
         if( main_time > m2i::main_freq )
-            LOG( WARN ) << "processing time( " << std::setprecision(2) << main_time.count() * 1000 << "ms ) is longer than timer resolution\n";
+            LOG( m2i::WARN ) << "processing time( " << std::setprecision(2) << main_time.count() * 1000 << "ms ) is longer than timer resolution\n";
         else
             std::this_thread::sleep_for( m2i::main_freq - main_time );
     }
 
-    lua_close( L );
+    lua_close( m2i::L );
     exit( 0 );
 }
 
