@@ -35,7 +35,7 @@ Because I had a midi controller, and I thought it was a shame that I could not c
 
 | Intro Vid |
 | --------- |
-| [![Intro Vid](https://img.youtube.com/vi/wr1AqlDXnYI/0.jpg)](http://www.youtube.com/watch?v=wr1AqlDXnYI) | 
+| [![Intro Vid](https://img.youtube.com/vi/wr1AqlDXnYI/0.jpg)](http://www.youtube.com/watch?v=wr1AqlDXnYI) |
 
 ```
 USAGE: ./m2i [options]
@@ -55,3 +55,15 @@ examples
 * A sound and video board and controlling cameras for video streaming
 * jogwheel as mouse scroll
 * shop demo for turning on and off lights
+
+Configuration
+=============
+Configuration is reserved for the initial state of m2i, its values are pulled
+directly by the c code and cannot be changed from the script file, as such
+reloading the lua environment by modifying the script will have no effect on
+these values. any script based configuration should be added to a script_init()
+function.
+
+priority:
+1. cmd line options
+2. $XDG_CONFIG_HOME/m2i/config.lua
