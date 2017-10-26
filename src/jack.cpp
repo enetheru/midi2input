@@ -6,20 +6,24 @@ using namespace m2i;
 void
 JackSeq::init()
 {
-    LOG( INFO ) << "Initialising Jack\n";
+    LOG( JACK ) << "Initialising\n";
+
+    jack_set_error_function( JackSeq::error_callback );
+    jack_set_info_function( JackSeq::info_callback );
+
     client = jack_client_open( "midi2input_jack", JackNoStartServer, nullptr );
     if(! client ){
-        LOG( ERROR ) << "unable to open client on jack server\n";
+        LOG( JACK ) << "unable to open client on server\n";
         return;
     }
 
-    LOG( INFO ) << "Jack: registering ports\n";
+    LOG( JACK ) << "registering ports\n";
     input_port = jack_port_register( client, "in", JACK_DEFAULT_MIDI_TYPE, JackPortIsInput, 0 );
     output_port = jack_port_register( client, "out", JACK_DEFAULT_MIDI_TYPE, JackPortIsOutput, 0 );
 
-    LOG( INFO ) << "Jack: Activating client\n";
+    LOG( JACK ) << "Activating client\n";
     if( jack_activate( client ) ){
-        LOG( ERROR ) << "cannot activate client\n";
+        LOG( JACK ) << "cannot activate client\n";
         return;
     }
     valid_ = true;
@@ -42,7 +46,7 @@ JackSeq::event_send( const midi_event &event )
     //controller fail.
     void *port_buf = jack_port_get_buffer( output_port, 0 );
     if(! port_buf ){
-        LOG( WARN ) << "Cannot send events with no connected ports\n";
+        LOG( JACK ) << "Cannot send events with no connected ports\n";
         return;
     }
     jack_midi_clear_buffer( port_buf );
@@ -54,7 +58,7 @@ JackSeq::event_send( const midi_event &event )
     mdata[2] = event.data2;
     jack_midi_event_write( port_buf, 0, mdata, 3 );
 
-    LOG( INFO ) << "jack-midi-send: " << event.str() << "\n";
+    LOG( JACK ) << "midi-send: " << event.str() << "\n";
     return;
 }
 
@@ -75,7 +79,7 @@ JackSeq::event_receive()
     jack_midi_event_t event;
     jack_midi_event_get( &event, port_buf, 0 );
     auto event_count = jack_midi_get_event_count( port_buf );
-    LOG( INFO ) << "Event Count: " << event_count << "\n";
+    LOG( JACK ) << "Event Count: " << event_count << "\n";
 
     midi_event result;
     if( event_count < 1 ) return result;
@@ -83,10 +87,21 @@ JackSeq::event_receive()
     result.data1 = event.buffer[1];
     result.data2 = event.buffer[2];
 
-    LOG( INFO ) << "jack-midi-recv: " << result.str() << "\n";
+    LOG( JACK ) << "midi-recv: " << result.str() << "\n";
     return result ;
 }
 
 JackSeq::~JackSeq(){
     fina();
+}
+
+void
+JackSeq::error_callback( const char *msg )
+{
+    LOG( JACK ) << "Error: " << msg << "\n";
+}
+void
+JackSeq::info_callback( const char *msg )
+{
+    LOG( JACK ) << "Info: " << msg << "\n";
 }

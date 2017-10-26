@@ -26,6 +26,9 @@ private:
     jack_port_t *input_port = nullptr;
     jack_port_t *output_port = nullptr;
 
+    static void error_callback( const char * );
+    static void info_callback( const char *  );
+
 
 };
 

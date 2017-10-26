@@ -57,7 +57,7 @@ namespace m2i {
 
     /* ====================== Global Options ============================ */
     // Yuck i know haha.. oh well.
-    int loglevel = 5;
+    int loglevel = 100;
     bool use_alsa = true;
     bool use_jack = false;
     bool use_xorg = true;
@@ -90,8 +90,6 @@ intHandler( int dummy ){
     (void)dummy;
     m2i::quit = true;
 }
-
-//TODO jack error handler here
 
 static void
 loadConfig( lua_State *L, const fs::path &path ){
@@ -161,7 +159,7 @@ main( int argc, char **argv )
         LOG(m2i::INFO) << m2i::helptext << "\n";
         exit( 0 );
     }
-    if( cmdl[{"-v", "--verbose"}] )m2i::loglevel = 5;
+    if( cmdl[{"-v", "--verbose"}] )m2i::loglevel = 100;
     if( cmdl[{"-q", "--quiet"  }] )m2i::loglevel = 1;
     if( cmdl({"-c", "--config" }) )
         m2i::config = m2i::getPath( cmdl({"-c", "--config"}).str() );

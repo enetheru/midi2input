@@ -14,6 +14,8 @@ namespace fs = std::experimental::filesystem;
 namespace m2i {
 
 enum { //log level
+    JACK = 6,
+    ALSA = 5,
     LUA = 4,
     INFO = 3,
     WARN = 2,

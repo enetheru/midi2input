@@ -17,6 +17,12 @@ logger LOG( int level )
 
     std::string tag;
     switch( level ){
+        case JACK:
+            tag = "[Jack]";
+            break;
+        case ALSA:
+            tag = "[ALSA]";
+            break;
         case LUA:
             tag = "[LUA]";
             break;
