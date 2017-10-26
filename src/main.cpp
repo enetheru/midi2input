@@ -222,7 +222,7 @@ main( int argc, char **argv )
     LOG( m2i::INFO ) << "Getting X11 Display\n";
     Display *xdp;
     if(! (xdp = XOpenDisplay( getenv( "DISPLAY" ) )) ){
-        LOG( m2i::FATAL ) << "Unable to open X display\n";
+        LOG( m2i::ERROR ) << "Unable to open X display\n";
         exit( -1 );
     }
     XCloseDisplay( xdp );

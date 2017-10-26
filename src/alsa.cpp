@@ -25,7 +25,7 @@ Seq::open()
         SND_SEQ_PORT_TYPE_MIDI_GENERIC | SND_SEQ_PORT_TYPE_APPLICATION
     );
     if( iport_id < 0 ){
-        LOG( FATAL ) << "ALSA: Problem creating input midi port\n";
+        LOG( ERROR ) << "ALSA: Problem creating input midi port\n";
         return -1;
     }
 
@@ -36,7 +36,7 @@ Seq::open()
         SND_SEQ_PORT_TYPE_MIDI_GENERIC | SND_SEQ_PORT_TYPE_APPLICATION
     );
     if( oport_id < 0 ){
-        LOG( FATAL ) << "ALSA: Problem creating output midi port\n";
+        LOG( ERROR ) << "ALSA: Problem creating output midi port\n";
         return -1;
     }
     return client_id;

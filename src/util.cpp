@@ -17,6 +17,9 @@ logger LOG( int level )
 
     std::string tag;
     switch( level ){
+        case LUA:
+            tag = "[LUA]";
+            break;
         case INFO:
             tag = "[INFO]";
             break;
@@ -25,10 +28,6 @@ logger LOG( int level )
             break;
         case ERROR:
             tag = "[ERROR]";
-            break;
-        case FATAL:
-            tag = "[FATAL]";
-            m2i::quit = true;//FIXME i dont really think that a logging facility should have side effects.
             break;
         case NONE:
             tag = "[NONE]";

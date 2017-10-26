@@ -14,10 +14,10 @@ namespace fs = std::experimental::filesystem;
 namespace m2i {
 
 enum { //log level
-    INFO = 4,
-    WARN = 3,
-    ERROR = 2,
-    FATAL = 1,
+    LUA = 4,
+    INFO = 3,
+    WARN = 2,
+    ERROR = 1,
     NONE = 0,
 };
 

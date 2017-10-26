@@ -29,64 +29,56 @@ namespace m2i {
     extern bool quit;
     extern bool loop_enabled;
 
+static const struct luaL_Reg funcs [] = {
+  {"print",        lua_print},
+  {"midi_send",    lua_midisend},
+  {"exec",         lua_exec},
+  {"quit",         lua_quit},
+  {"loop_enabled", lua_loopenable},
+#ifdef WITH_XORG
+  {"keypress",     lua_keypress},
+  {"keydown",      lua_keydown},
+  {"keyup",        lua_keyup},
+  {"buttonpress",  lua_buttonpress},
+  {"buttondown",   lua_buttondown},
+  {"buttonup",     lua_buttonup},
+  {"mousemove",    lua_mousemove},
+  {"mousepos",     lua_mousepos},
+  {"detectwindow", lua_detectwindow},
+#endif//WITH_XORG
+#ifdef WITH_ALSA
+  {"alsaconnect",  lua_alsaconnect},
+#endif//WITH_ALSA
+#ifdef WITH_JACK
+  {"jackconnect",  lua_jackconnect},
+#endif//WITH_JACK
+  {NULL, NULL} /* end of array */
+};
+
 lua_State *
 lua_init_new()
 {
     lua_State *L = luaL_newstate();
     luaL_openlibs( L );
 
-    // push main functions to lua
-    lua_pushcfunction( L, lua_midisend );
-    lua_setglobal( L, "midi_send" );
+    //register out functions with lua
+    lua_getglobal(L, "_G");
+    luaL_setfuncs(L, funcs, 0);
+    lua_pop(L, 1);
 
-    lua_pushcfunction( L, lua_exec );
-    lua_setglobal( L, "exec" );
-
-    lua_pushcfunction( L, lua_quit );
-    lua_setglobal( L, "quit" );
-
-    lua_pushcfunction( L, lua_loopenable );
-    lua_setglobal( L, "loopenable" );
-    
-#ifdef WITH_XORG
-    // push x11 functions to lua
-    lua_pushcfunction( L, lua_keypress );
-    lua_setglobal( L, "keypress" );
-
-    lua_pushcfunction( L, lua_keydown );
-    lua_setglobal( L, "keydown" );
-
-    lua_pushcfunction( L, lua_keyup );
-    lua_setglobal( L, "keyup" );
-
-    lua_pushcfunction( L, lua_buttonpress );
-    lua_setglobal( L, "buttonpress" );
-
-    lua_pushcfunction( L, lua_buttondown );
-    lua_setglobal( L, "buttondown" );
-
-    lua_pushcfunction( L, lua_buttonup );
-    lua_setglobal( L, "buttonup" );
-
-    lua_pushcfunction( L, lua_mousemove );
-    lua_setglobal( L, "mousemove" );
-
-    lua_pushcfunction( L, lua_mousepos );
-    lua_setglobal( L, "mousepos" );
-
-    lua_pushcfunction( L, lua_detectwindow );
-    lua_setglobal( L, "detectwindow" );
-#endif//WITH_XORG
-
-#ifdef WITH_ALSA
-    lua_pushcfunction( L, lua_alsaconnect );
-    lua_setglobal( L, "alsaconnect" );
-#endif//WITH_ALSA
-
-#ifdef WITH_JACK
-    //TODO connect to port
-#endif//WITH_JACK
     return L;
+}
+
+int
+lua_print( lua_State* L ){
+    std::stringstream output;
+
+    int args = lua_gettop( L );
+    for( int i = 1; i <= args; ++i ){
+        output << lua_tostring(L, i);
+    }
+    LOG( LUA ) <<  output.str() << "\n";
+    return 0;
 }
 
 int
@@ -315,6 +307,12 @@ lua_alsaconnect( lua_State *L )
 
 #ifdef WITH_JACK
     /* ==================== Jack Lua Bindings =========================== */
-//TODO connect to jack port
+int
+lua_jackconnect( lua_State *L )
+{
+    //TODO connect to jack port
+    LOG( WARN ) << "This function is not implemented yet\n";
+    return 0;
+}
 #endif//WITH_JACK
 }// end namespace m2i
