@@ -4,7 +4,7 @@ if( BUILD_DOCS )
     configure_file( midi2input.1.in midi2input.1 )
 
     add_custom_target( docs ALL
-        DEPENDS midi2input midi2input.1.gz changelog.gz README.md)
+        DEPENDS m2i midi2input.1.gz changelog.gz README.md)
 
 	if( CHECK_DOCS )
 		add_custom_target( check_docs ALL

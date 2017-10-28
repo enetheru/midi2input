@@ -3,19 +3,19 @@ include_directories(i
     ${CMAKE_SOURCE_DIR}/lib/fmt
     )
 
-if( WITH_ALSA )
+if( ${ALSA_FOUND} )
     set( SOURCES ${SOURCES} alsa.h alsa.cpp )
 endif()
 
-if( WITH_JACK )
+if( ${JACK_FOUND} )
     set( SOURCES ${SOURCES} jack.h jack.cpp )
 endif()
 
-if( WITH_XORG )
+if( ${X11_FOUND} )
     set( SOURCES ${SOURCES} x11.h x11.cpp )
 endif()
 
-if( WITH_QT )
+if( ${Qt5_FOUND} )
     set( SOURCES ${SOURCES} trayicon.h trayicon.cpp )
 endif()
 
@@ -40,8 +40,8 @@ set_target_properties( m2i PROPERTIES
 
 if( BUILD_DOCS )
     add_custom_command( TARGET m2i POST_BUILD
-        COMMAND ${CMAKE_CURRENT_BINARY_DIR}/m2i -h > ${CMAKE_BINARY_DIR}/doc/help.txt
-        COMMENT "midi2input -h > ${CMAKE_BINARY_DIR}/doc/help.txt" )
+        COMMAND ${PROJECT_BINARY_DIR}/m2i -h > ${CMAKE_BINARY_DIR}/doc/help.txt
+        COMMENT "m2i -h > ${CMAKE_BINARY_DIR}/doc/help.txt" )
 endif()
 
 install( TARGETS m2i DESTINATION bin )
