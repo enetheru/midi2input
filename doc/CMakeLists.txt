@@ -1,10 +1,10 @@
 include( docs.cmake )
 
 if( BUILD_DOCS )
-    configure_file( midi2input.1.in midi2input.1 )
+    configure_file( m2i.1.in m2i.1 )
 
     add_custom_target( docs ALL
-        DEPENDS m2i midi2input.1.gz changelog.gz README.md)
+        DEPENDS m2i m2i.1.gz changelog.gz README.md)
 
 	if( CHECK_DOCS )
 		add_custom_target( check_docs ALL
@@ -14,15 +14,15 @@ if( BUILD_DOCS )
 
 #./debian/copyright
     install( FILES ${CMAKE_SOURCE_DIR}/LICENCE.md
-        DESTINATION share/doc/midi2input
+        DESTINATION share/doc/m2i
         COMPONENT applications
         RENAME copyright )
 
 # Man Page
-    add_custom_command( OUTPUT midi2input.1.gz
-        COMMAND gzip -9 midi2input.1 )
+    add_custom_command( OUTPUT m2i.1.gz
+        COMMAND gzip -9 m2i.1 )
 
-    install( FILES ${CMAKE_CURRENT_BINARY_DIR}/midi2input.1.gz
+    install( FILES ${CMAKE_CURRENT_BINARY_DIR}/m2i.1.gz
         DESTINATION share/man/man1/
         COMPONENT applications )
 
@@ -43,7 +43,7 @@ if( BUILD_DOCS )
         COMMAND gzip -9 changelog )
 
     install( FILES ${CMAKE_CURRENT_BINARY_DIR}/changelog.gz
-        DESTINATION share/doc/midi2input
+        DESTINATION share/doc/m2i
         COMPONENT applications )
 
 endif()
