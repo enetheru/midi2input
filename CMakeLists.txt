@@ -52,8 +52,8 @@ if( ${Qt5Core_FOUND} AND ${Qt5Widgets_FOUND}  )
 endif()
 
 find_package( Lua REQUIRED )
-include_directories( ${Lua_INCLUDE_DIRS} )
-set( LIBS ${LIBS} ${Lua_LIBRARIES} )
+include_directories( ${LUA_INCLUDE_DIRS} )
+set( LIBS ${LIBS} ${LUA_LIBRARIES} )
 
 # messages
 message( "-- Configuration:" )
