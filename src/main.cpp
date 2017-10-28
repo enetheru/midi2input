@@ -156,7 +156,7 @@ main( int argc, char **argv )
     cmdl.parse( argc, argv, argh::parser::PREFER_PARAM_FOR_UNREG_OPTION );
 
     if( cmdl[{"-h", "--help"   }] ){
-        LOG(m2i::INFO) << m2i::helptext << "\n";
+        LOG(m2i::NONE) << m2i::helptext << "\n";
         exit( 0 );
     }
     if( cmdl[{"-v", "--verbose"}] )m2i::loglevel = 100;
@@ -210,7 +210,7 @@ main( int argc, char **argv )
     #ifdef WITH_JACK
         m2i::jack.init();
     #else
-        LOG( ERROR ) << "Not compiled with Jack midi backend\n";
+        LOG( m2i::ERROR ) << "Not compiled with Jack midi backend\n";
         exit(-1);
     #endif
     }
