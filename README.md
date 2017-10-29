@@ -6,16 +6,28 @@ Configuration files and scripts are written in Lua
 Requires
 --------
 * Linux
-* lua
-* adishavit/argh
-* libfmt/fmt
+* lua 5.2
+* adishavit/argh - command line processor
+* libfmt/fmt - simple formatting
 
-Compile-time Options
---------------------
-* -DWITH_XORG - enabled xorg related functionality like window class detection and input functions.
-* -DWITH_JACK - enables jack midi backend
-* -DWITH_ALSA - enables alsa midi backend
-* -DWITH_QT   - enables system tray icon
+Optional dependencies
+---------------------
+* alsa-lib - for ALSA midi sequensor
+* libx11 & libxtst - for x11 keybord and mouse input and window WM_CLASS detection
+* qt5-base - for system tray icon
+* jack or jack2 - for Jack midi sequensor
+
+BUild Instructions
+------------------
+* sudo pacman -S git cmake lua52
+    * sudo pacman -S [Optional Depdencies]
+* git clone https://gitlab.com/enetheru/midi2input.git
+* cd midi2input
+* git submodule update --init --recursive
+* mkdir build
+* cd build
+* cmake ../midi2input/
+* make && make install
 
 Features
 --------

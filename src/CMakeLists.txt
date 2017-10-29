@@ -11,7 +11,7 @@ if( ${JACK_FOUND} )
     set( SOURCES ${SOURCES} jack.h jack.cpp )
 endif()
 
-if( ${X11_FOUND} )
+if( ${WITH_X11} )
     set( SOURCES ${SOURCES} x11.h x11.cpp )
 endif()
 

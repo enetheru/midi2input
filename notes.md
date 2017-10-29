@@ -69,6 +69,18 @@ Packaging
     * gzip
     * source
 
+now that i have a virtual machine up and running what are the requirements for
+the script?
+
+* sudo pacman -S git cmake lua52 alsa-lib libxtst libx11 qt5-base lua52 jack (or jack2)
+* git clone https://gitlab.com/enetheru/midi2input.git
+* cd midi2input
+* git submodule update --init --recursive
+* mkdir build
+* cd build
+* cmake ../midi2input/
+* make && make install
+
 Project
 -------
 * Tests
