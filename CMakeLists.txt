@@ -38,7 +38,7 @@ endif()
 
 find_package( X11 )
 pkg_check_modules( XTST xtst )
-if( ${X11_FOUND} AND (DEFINED XTST_FOUND) )
+if( ${X11_FOUND} AND "${XTST_FOUND}" )
     set( WITH_X11 YES )
     include_directories( ${X11_INCLUDE_DIRS} ${XTST_INCLUDE_DIRS} )
     set( LIBS ${LIBS} ${XTST_LIBRARIES} ${X11_LIBRARIES} )
@@ -65,7 +65,7 @@ message( "--   WITH_JACK=" ${JACK_FOUND} )
 message( "--   WITH_X11=" ${WITH_X11} )
 message( "--   WITH_QT=" ${Qt5_FOUND} )
 
-if( NOT ( ${ALSA_FOUND} OR (DEFINED JACK_FOUND) ) )
+if( NOT ( ${ALSA_FOUND} OR "${JACK_FOUND}" ) )
     message( SEND_ERROR "Either ALSA or Jack needs to be available.") 
 endif()
 

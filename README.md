@@ -9,15 +9,14 @@ Requires
 * lua 5.2
 * adishavit/argh - command line processor
 * libfmt/fmt - simple formatting
+* either alsa-lib or jack/jack2 - for midi sequensor input
 
 Optional dependencies
 ---------------------
-* alsa-lib - for ALSA midi sequensor
 * libx11 & libxtst - for x11 keybord and mouse input and window WM_CLASS detection
 * qt5-base - for system tray icon
-* jack or jack2 - for Jack midi sequensor
 
-BUild Instructions
+Build Instructions
 ------------------
 * sudo pacman -S git cmake lua52
     * sudo pacman -S [Optional Depdencies]
