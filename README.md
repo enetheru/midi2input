@@ -1,6 +1,6 @@
-m2i
+![m2i](https://gitlab.com/enetheru/midi2input/raw/master/res/icons/m2i-black.png "m2i")
 =======
-This program takes midi events and translates them to input events.
+m2i(short for midi 2 input) takes midi events and translates them to keyboard and mouse input events.
 Configuration files and scripts are written in Lua
 
 Requires
@@ -14,7 +14,7 @@ Requires
 Optional dependencies
 ---------------------
 * libx11 & libxtst - for x11 keybord and mouse input and window WM_CLASS detection
-* qt5-base - for system tray icon
+* qt5-base & xdg-utils - for system tray icon and desktop entries
 
 Build Instructions
 ------------------
