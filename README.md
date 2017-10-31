@@ -3,23 +3,23 @@
 m2i(short for midi 2 input) takes midi events and translates them to keyboard and mouse input events.
 Configuration files and scripts are written in Lua
 
-Requires
+m2i Uses
 --------
 * Linux
-* lua 5.2
 * adishavit/argh - command line processor
 * libfmt/fmt - simple formatting
-* either alsa-lib or jack/jack2 - for midi sequensor input
-
-Optional dependencies
----------------------
+* lua 5.2 - the script engine
 * libx11 & libxtst - for x11 keybord and mouse input and window WM_CLASS detection
-* qt5-base & xdg-utils - for system tray icon and desktop entries
+* either alsa-lib or jack/jack2 - for midi sequensor input
+* qt5-base - for system tray icon
+* openimageio - for icon mangling at build time
 
 Build Instructions
-------------------
-* sudo pacman -S git cmake lua52
-    * sudo pacman -S [Optional Depdencies]
+==================
+* install dependencies:
+    * build time: git cmake openimageio
+    * required: lua-5.2, alsa-lib, libx11, libxtst
+    * Optional: jack | jack2, qt5-core
 * git clone https://gitlab.com/enetheru/midi2input.git
 * cd midi2input
 * git submodule update --init --recursive
@@ -28,8 +28,15 @@ Build Instructions
 * cmake ../midi2input/
 * make && make install
 
+Arch
+----
+* mkdir m2i
+* curl https://gitlab.com/enetheru/midi2input/raw/master/pkg/PKGBUILD > m2i/PKGBUILD
+* cd m2i
+* makepkg -si
+
 Features
---------
+========
 * lua script reactions to midi events
 * sending of midi events
 * routing via alsa or jack using standard tools
