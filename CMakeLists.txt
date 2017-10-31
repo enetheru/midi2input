@@ -50,6 +50,7 @@ if( ${Qt5Core_FOUND} AND ${Qt5Widgets_FOUND}  )
     set( LIBS ${LIBS} Qt5::Widgets )
     set(CMAKE_AUTOMOC ON)
     add_definitions( -DWITH_QT )
+    add_subdirectory( res/icons )
 endif()
 
 find_package( Lua 5.2 EXACT REQUIRED )
@@ -78,22 +79,6 @@ add_subdirectory( src )
 
 if( ${BUILD_DOCS} )
     add_subdirectory( doc )
-endif()
-
-# Additional Install Directives
-# =============================
-if( ${Qt5_FOUND} )
-    find_program( XDG_ICON_RESOURCE xdg-icon-resource )
-    if(EXISTS ${XDG_ICON_RESOURCE} )
-        install( CODE "execute_process(
-            COMMAND ${XDG_ICON_RESOURCE} install --size 48 ${PROJECT_SOURCE_DIR}/res/icons/m2i-black.png
-            COMMAND ${XDG_ICON_RESOURCE} install --size 48 ${PROJECT_SOURCE_DIR}/res/icons/m2i-dark.png
-            COMMAND ${XDG_ICON_RESOURCE} install --size 48 ${PROJECT_SOURCE_DIR}/res/icons/m2i-light.png
-            COMMAND ${XDG_ICON_RESOURCE} install --size 48 ${PROJECT_SOURCE_DIR}/res/icons/m2i-white.png
-            )"  )
-    else()
-        message( SEND_ERROR "unable to find 'xdg-icon-resource' executable" )
-    endif()
 endif()
 
 # CPack
