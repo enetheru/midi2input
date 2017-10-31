@@ -82,7 +82,18 @@ endif()
 
 # Additional Install Directives
 # =============================
-install( CODE "execute_process(COMMAND xdg-icon-resource install --size 48 --novendor ${PROJECT_SOURCE_DIR}/res/icons/48/m2i.png )" )
+if( ${Qt5_FOUND} )
+    find_program( XDG_ICON_RESOURCE xdg-icon-resource )
+    if( "${XDG_ICON_RESOURCE}" )
+        message( ${XDG_ICON_RESOURCE} )
+        install( CODE "execute_process(
+            COMMAND ${XDG_ICON_RESOURCE} install --size 48 ${PROJECT_SOURCE_DIR}/res/icons/m2i-black.png
+            COMMAND ${XDG_ICON_RESOURCE} install --size 48 ${PROJECT_SOURCE_DIR}/res/icons/m2i-dark.png
+            COMMAND ${XDG_ICON_RESOURCE} install --size 48 ${PROJECT_SOURCE_DIR}/res/icons/m2i-light.png
+            COMMAND ${XDG_ICON_RESOURCE} install --size 48 ${PROJECT_SOURCE_DIR}/res/icons/m2i-white.png
+            )"  )
+    endif()
+endif()
 
 # CPack
 # =====
