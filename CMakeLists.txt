@@ -84,7 +84,7 @@ endif()
 # =============================
 if( ${Qt5_FOUND} )
     find_program( XDG_ICON_RESOURCE xdg-icon-resource )
-    if( ${XDG_ICON_RESOURCE} )
+    if(EXISTS ${XDG_ICON_RESOURCE} )
         install( CODE "execute_process(
             COMMAND ${XDG_ICON_RESOURCE} install --size 48 ${PROJECT_SOURCE_DIR}/res/icons/m2i-black.png
             COMMAND ${XDG_ICON_RESOURCE} install --size 48 ${PROJECT_SOURCE_DIR}/res/icons/m2i-dark.png
