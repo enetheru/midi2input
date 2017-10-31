@@ -59,6 +59,7 @@ set( LIBS ${LIBS} ${LUA_LIBRARIES} )
 # messages
 message( "-- Configuration:" )
 message( "--   CMAKE_BUILD_TYPE=" ${CMAKE_BUILD_TYPE} )
+message( "--   CMAKE_INSTALL_PREFIX=" ${CMAKE_INSTALL_PREFIX} )
 message( "--   BUILD_DOCS=" ${BUILD_DOCS} )
 message( "--   WITH_ALSA=" ${ALSA_FOUND} )
 message( "--   WITH_JACK=" ${JACK_FOUND} )
@@ -78,6 +79,10 @@ add_subdirectory( src )
 if( ${BUILD_DOCS} )
     add_subdirectory( doc )
 endif()
+
+# Additional Install Directives
+# =============================
+install( CODE "execute_process(COMMAND xdg-icon-resource install --size 48 --novendor ${PROJECT_SOURCE_DIR}/res/icons/48/m2i.png )" )
 
 # CPack
 # =====

@@ -47,5 +47,5 @@ m2iTrayIcon::createTrayIcon()
     trayIcon->setContextMenu(trayIconMenu);
 
     QIcon::setThemeName( "gnome" );
-    trayIcon->setIcon( QIcon::fromTheme("emblem-new") );//FIXME needs better icon
+    trayIcon->setIcon( QIcon::fromTheme("m2i") );
 }

@@ -78,7 +78,7 @@ the script?
 * git submodule update --init --recursive
 * mkdir build
 * cd build
-* cmake ../midi2input/
+* cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr . && make install
 * make && make install
 
 Project
@@ -86,3 +86,17 @@ Project
 * Tests
 * CI/CD
 * Fuzzing
+
+Icons
+-----
+preferably in svg but inkscape crashes on editing text atm :(
+* default, neutral icon
+* light
+* dark
+* disabled
+* Info
+* Warning/Error
+
+command to install the icons is
+sudo xdg-icon-resource install --size 48 --novendor m2i.png
+sudo xdg-icon-resource install --size 48 m2i-<whatever>.png
