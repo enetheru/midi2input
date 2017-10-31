@@ -46,6 +46,6 @@ m2iTrayIcon::createTrayIcon()
     trayIcon = new QSystemTrayIcon(this);
     trayIcon->setContextMenu(trayIconMenu);
 
-    QIcon::setThemeName( "gnome" );
+    QIcon::setThemeName( "hicolor" );
     trayIcon->setIcon( QIcon::fromTheme("m2i-light") );
 }
