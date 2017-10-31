@@ -45,7 +45,7 @@ if( ${X11_FOUND} AND "${XTST_FOUND}" )
     add_definitions( -DWITH_XORG )
 endif()
 
-find_package( Qt5 COMPONENTS Core Widgets )
+find_package( Qt5 QUIET COMPONENTS Core Widgets )
 if( ${Qt5Core_FOUND} AND ${Qt5Widgets_FOUND}  )
     set( LIBS ${LIBS} Qt5::Widgets )
     set(CMAKE_AUTOMOC ON)
@@ -85,7 +85,6 @@ endif()
 if( ${Qt5_FOUND} )
     find_program( XDG_ICON_RESOURCE xdg-icon-resource )
     if( "${XDG_ICON_RESOURCE}" )
-        message( ${XDG_ICON_RESOURCE} )
         install( CODE "execute_process(
             COMMAND ${XDG_ICON_RESOURCE} install --size 48 ${PROJECT_SOURCE_DIR}/res/icons/m2i-black.png
             COMMAND ${XDG_ICON_RESOURCE} install --size 48 ${PROJECT_SOURCE_DIR}/res/icons/m2i-dark.png
