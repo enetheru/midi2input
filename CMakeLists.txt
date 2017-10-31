@@ -22,7 +22,11 @@ add_definitions("-Wall -Wextra -Wshadow -Wnon-virtual-dtor -pedantic")
 # ============
 find_package( PkgConfig REQUIRED )
 
-find_package( ALSA )
+find_package( Lua 5.2 EXACT REQUIRED )
+include_directories( ${LUA_INCLUDE_DIRS} )
+set( LIBS ${LIBS} ${LUA_LIBRARIES} )
+
+find_package( ALSA REQUIRED )
 if( ${ALSA_FOUND} )
     include_directories( ${ALSA_INCLUDE_DIRS} )
     set( LIBS ${LIBS} ${ALSA_LIBRARIES} )
@@ -52,10 +56,6 @@ if( ${Qt5Core_FOUND} AND ${Qt5Widgets_FOUND}  )
     add_definitions( -DWITH_QT )
     add_subdirectory( res/icons )
 endif()
-
-find_package( Lua 5.2 EXACT REQUIRED )
-include_directories( ${LUA_INCLUDE_DIRS} )
-set( LIBS ${LIBS} ${LUA_LIBRARIES} )
 
 # messages
 message( "-- Configuration:" )

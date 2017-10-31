@@ -101,3 +101,16 @@ preferably in svg but inkscape crashes on editing text atm :(
 command to install the icons is
 sudo xdg-icon-resource install --size 48 --novendor m2i.png
 sudo xdg-icon-resource install --size 48 m2i-<whatever>.png
+
+that command is for users only, because it cannot have an install prefix. might b something that can be suggested to make it a better fit for installing and deleting icons.
+
+anyway, the XDG spec says that the XDG_DATA_DIR is /usr/local/share:/usr/share if it isnt alreayd specified. but  installing software takes an installation prefix.. so what i am going to use is
+XDG_DATA_DIR = CMAKE_INSTALL_PREFIX+/share
+and the icons are specified inside an icons/ directory with a default theme of hicolour/ being explicitly stated.
+
+so its entirely consistent to go
+XDG_DATA_DIR=CMAKE_INSTALL_PREFIX/share
+ICON_INSTALL_PREFIX=XDG_DATA_DIR/icons/hicolor
+and within that the sizes and categories of 48x48/apps etc etc.
+
+in that regard i feel confident that i will be conforming to the majority of distributions

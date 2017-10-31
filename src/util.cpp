@@ -36,7 +36,7 @@ logger LOG( int level )
             tag = "[ERROR]";
             break;
         case NONE:
-            tag = "[NONE]";
+            tag = "";
             break;
         default:
             break;
