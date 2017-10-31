@@ -1,0 +1,51 @@
+# Maintainer: Samuel Nicholas <nicholas.samuel@gmail.com>
+pkgname='m2i-git'
+pkgver=r185.8b75ba9
+pkgrel=1
+pkgdesc="turn midi events into mouse and keyboard events"
+arch=( any )
+url=""
+license=('LGPLv3')
+groups=()
+depends=( 'lua52' 'alsa-lib' 'libx11' 'libxtst' 'qt5-base' 'xdg-utils' )
+makedepends=( 'git' 'cmake' )
+provides=("${pkgname}")
+conflicts=("${pkgname}")
+replaces=()
+backup=()
+options=()
+install=
+source=('git+https://gitlab.com/enetheru/midi2input.git')
+noextract=()
+md5sums=('SKIP')
+
+# Please refer to the 'USING VCS SOURCES' section of the PKGBUILD man page for
+# a description of each element in the source array.
+
+pkgver() {
+	cd "$srcdir/midi2input"
+#   printf "%s" "$(git describe --long | sed 's/\([^-]*-\)g/r\1/;s/-/./g')"
+    printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+prepare() {
+	cd "$srcdir/midi2input"
+    git submodule update --init
+}
+
+build() {
+	cd "$srcdir/midi2input"
+	cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr .
+	make
+}
+
+check() {
+#	cd "$srcdir/midi2input"
+#	make -k check
+    echo skipping
+}
+
+package() {
+	cd "$srcdir/midi2input"
+	make DESTDIR="$pkgdir/" install
+}
