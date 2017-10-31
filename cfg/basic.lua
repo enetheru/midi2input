@@ -55,8 +55,8 @@ end
 
 --[[ initialisation function ]]--
 -- run immeditely after the application launches and connects to the device
-function initialise()
-    print( "[LUA] nothing to initialise" )
+function script_init()
+    print( "nothing to initialise" )
 end
 
 function loop()

@@ -72,6 +72,7 @@ if( NOT ( ${ALSA_FOUND} OR "${JACK_FOUND}" ) )
 endif()
 
 include_directories( ${PROJECT_SOURCE_DIR}/include )
+
 # sub directories
 # ===============
 add_subdirectory( lib/fmt EXCLUDE_FROM_ALL )
@@ -80,6 +81,11 @@ add_subdirectory( src )
 if( ${BUILD_DOCS} )
     add_subdirectory( doc )
 endif()
+
+# additional installation directives
+# ==================================
+install( FILES cfg/config.lua cfg/basic.lua cfg/Pioneer-DDJ-WeGO.lua
+    DESTINATION share/m2i )
 
 # CPack
 # =====

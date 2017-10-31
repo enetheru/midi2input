@@ -1,7 +1,7 @@
 config = {
     verbose = false,
     quiet = false,
-    script = 'script.lua'
+    script = 'basic.lua',
     use_alsa = true,
     use_jack = false,
     reconnect = true,
