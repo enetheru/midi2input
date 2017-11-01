@@ -1,4 +1,4 @@
-cmake_minimum_required( VERSION 2.8 )
+cmake_minimum_required( VERSION 3.9 )
 
 project( m2i )
 
@@ -12,48 +12,22 @@ if( NOT DEFINED BUILD_DOCS )
     set( BUILD_DOCS YES CACHE BOOL "Whether or not to build the documentation" FORCE )
 endif()
 
-# Compiler
-# --------
-set (CMAKE_CXX_STANDARD 11)
-# FIXME this should be part of configuring build types.
-add_definitions("-Wall -Wextra -Wshadow -Wnon-virtual-dtor -pedantic")
-
 # dependencies
 # ============
-find_package( PkgConfig REQUIRED )
-
 find_package( Lua 5.2 EXACT REQUIRED )
-include_directories( ${LUA_INCLUDE_DIRS} )
-set( LIBS ${LIBS} ${LUA_LIBRARIES} )
-
 find_package( ALSA REQUIRED )
-if( ${ALSA_FOUND} )
-    include_directories( ${ALSA_INCLUDE_DIRS} )
-    set( LIBS ${LIBS} ${ALSA_LIBRARIES} )
-    add_definitions( -DWITH_ALSA )
-endif()
-
-pkg_check_modules( JACK jack )
-if( ${JACK_FOUND} )
-    include_directories( ${JACK_INCLUDE_DIRS} )
-    set( LIBS ${LIBS} ${JACK_LIBRARIES} )
-    add_definitions( -DWITH_JACK )
-endif()
-
 find_package( X11 )
+find_package( Qt5 QUIET COMPONENTS Core Widgets )
+find_package( PkgConfig REQUIRED )
 pkg_check_modules( XTST xtst )
+pkg_check_modules( JACK jack )
+
 if( ${X11_FOUND} AND "${XTST_FOUND}" )
     set( WITH_X11 YES )
-    include_directories( ${X11_INCLUDE_DIRS} ${XTST_INCLUDE_DIRS} )
-    set( LIBS ${LIBS} ${XTST_LIBRARIES} ${X11_LIBRARIES} )
-    add_definitions( -DWITH_XORG )
 endif()
 
-find_package( Qt5 QUIET COMPONENTS Core Widgets )
 if( ${Qt5Core_FOUND} AND ${Qt5Widgets_FOUND}  )
-    set( LIBS ${LIBS} Qt5::Widgets )
     set(CMAKE_AUTOMOC ON)
-    add_definitions( -DWITH_QT )
     add_subdirectory( res/icons )
 endif()
 
@@ -70,8 +44,6 @@ message( "--   WITH_QT=" ${Qt5_FOUND} )
 if( NOT ( ${ALSA_FOUND} OR "${JACK_FOUND}" ) )
     message( SEND_ERROR "Either ALSA or Jack needs to be available.") 
 endif()
-
-include_directories( ${PROJECT_SOURCE_DIR}/include )
 
 # sub directories
 # ===============

@@ -1,39 +1,53 @@
-include_directories(
+add_executable( m2i
+    main.h    main.cpp
+    util.h    util.cpp
+    midi.h    midi.cpp
+    lua.h     lua.cpp
+    inotify.h inotify.cpp )
+
+target_include_directories( m2i PRIVATE
+    ${LUA_INCLUDE_DIRS}
     ${CMAKE_CURRENT_BINARY_DIR}
-    ${CMAKE_SOURCE_DIR}/lib/fmt
-    )
+    ${PROJECT_SOURCE_DIR}/include )
+
+target_link_libraries( m2i PRIVATE
+    fmt
+    stdc++fs
+    ${LUA_LIBRARIES} )
 
 if( ${ALSA_FOUND} )
-    set( SOURCES ${SOURCES} alsa.h alsa.cpp )
+    target_sources( m2i PRIVATE alsa.h alsa.cpp )
+    target_include_directories( m2i PRIVATE ${ALSA_INCLUDE_DIRS} )
+    target_link_libraries( m2i PRIVATE ${ALSA_LIBRARIES} )
+    add_definitions( -DWITH_ALSA )
 endif()
 
 if( ${JACK_FOUND} )
-    set( SOURCES ${SOURCES} jack.h jack.cpp )
+    target_sources( m2i PRIVATE jack.h jack.cpp )
+    target_include_directories( m2i PRIVATE ${JACK_INCLUDE_DIRS} )
+    target_link_libraries( m2i PRIVATE ${JACK_LIBRARIES} )
+    add_definitions( -DWITH_JACK )
 endif()
 
 if( ${WITH_X11} )
-    set( SOURCES ${SOURCES} x11.h x11.cpp )
+    target_sources( m2i PRIVATE x11.h x11.cpp )
+    target_include_directories( m2i PRIVATE ${X11_INCLUDE_DIRS} ${XTST_INCLUDE_DIRS} )
+    target_link_libraries( m2i PRIVATE ${XTST_LIBRARIES} ${X11_LIBRARIES} )
+    add_definitions( -DWITH_XORG )
 endif()
 
-if( ${Qt5_FOUND} )
-    set( SOURCES ${SOURCES} trayicon.h trayicon.cpp )
+if( ${Qt5Core_FOUND} AND ${Qt5Widgets_FOUND}  )
+    target_sources( m2i PRIVATE trayicon.h trayicon.cpp )
+    target_link_libraries( m2i PUBLIC Qt5::Widgets )
+    add_definitions( -DWITH_QT )
 endif()
 
-add_executable( m2i
-        main.cpp
-        util.h
-        util.cpp
-        midi.h
-        midi.cpp
-        lua.cpp
-        lua.h
-        inotify.h
-        inotify.cpp
-        ${SOURCES} )
-target_link_libraries( m2i
-    fmt
-    stdc++fs
-    ${LIBS} )
+target_compile_options(  m2i PRIVATE -Wall -Wextra -Wshadow -Wnon-virtual-dtor -pedantic )
+
+target_compile_features( m2i PRIVATE
+    cxx_range_for
+    cxx_nullptr
+    cxx_auto_type )
 
 set_target_properties( m2i PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR} )
