@@ -85,9 +85,9 @@ endif()
 # additional installation directives
 # ==================================
 install( FILES cfg/config.lua cfg/basic.lua cfg/Pioneer-DDJ-WeGO.lua
-    DESTINATION share/m2i )
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/share/m2i )
 install( FILES res/applications/m2i.desktop
-    DESTINATION share/applications )
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/share/applications )
 
 # CPack
 # =====
