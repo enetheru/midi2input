@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=m2i
+GenericName=Midi Script Interface
+Comment=Translate midi events into mouse and mouse events
+Type=Application
+Categories=Utility;Midi;Accessibility;TrayIcon
+Exec=/usr/bin/m2i
+Icon=m2i-light -q
+Terminal=false
