@@ -8,7 +8,7 @@ Brainstorm Future Features
 * connection dialog
 * quick event mapping tool
 * network midi receive
-* phone application
+* mobile app
 * proper support of midi
 * support for OSC(open sound control)
 * support for regular input devices
@@ -59,28 +59,15 @@ QT System Tray
 
 Packaging
 ---------
-* basic configuration and script
+* [DONE]basic configuration and script
 * proper man pages
-* desktop shortcut
+* [DONE]desktop shortcut
 * packages
     * rpm
-    * arch
-    * deb
-    * gzip
-    * source
-
-now that i have a virtual machine up and running what are the requirements for
-the script?
-
-* sudo pacman -S git cmake lua52 alsa-lib libxtst libx11 qt5-base lua52 jack
-  (or jack2) xdg-utils
-* git clone https://gitlab.com/enetheru/midi2input.git
-* cd midi2input
-* git submodule update --init --recursive
-* mkdir build
-* cd build
-* cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr . && make install
-* make && make install
+    * gzip - requires release
+    * [DONE]source - from git README has instructions
+    * [DONE]arch
+    * [DONE]deb
 
 Project
 -------
@@ -91,26 +78,9 @@ Project
 Icons
 -----
 preferably in svg but inkscape crashes on editing text atm :(
-* default, neutral icon
-* light
-* dark
 * disabled
 * Info
 * Warning/Error
-
-command to install the icons is
-sudo xdg-icon-resource install --size 48 --novendor m2i.png
-sudo xdg-icon-resource install --size 48 m2i-<whatever>.png
-
-that command is for users only, because it cannot have an install prefix. might b something that can be suggested to make it a better fit for installing and deleting icons.
-
-anyway, the XDG spec says that the XDG_DATA_DIR is /usr/local/share:/usr/share if it isnt alreayd specified. but  installing software takes an installation prefix.. so what i am going to use is
-XDG_DATA_DIR = CMAKE_INSTALL_PREFIX+/share
-and the icons are specified inside an icons/ directory with a default theme of hicolour/ being explicitly stated.
-
-so its entirely consistent to go
-XDG_DATA_DIR=CMAKE_INSTALL_PREFIX/share
-ICON_INSTALL_PREFIX=XDG_DATA_DIR/icons/hicolor
-and within that the sizes and categories of 48x48/apps etc etc.
-
-in that regard i feel confident that i will be conforming to the majority of distributions
+* [DONE]default, neutral icon
+* [DONE]light
+* [DONE]dark
