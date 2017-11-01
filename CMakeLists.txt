@@ -87,7 +87,7 @@ endif()
 install( FILES cfg/config.lua cfg/basic.lua cfg/Pioneer-DDJ-WeGO.lua
     DESTINATION share/m2i )
 install( FILES res/applications/m2i.desktop
-    DESTINATION /share/applications )
+    DESTINATION share/applications )
 
 # CPack
 # =====
