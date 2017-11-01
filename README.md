@@ -12,12 +12,11 @@ m2i Uses
 * libx11 & libxtst - for x11 keybord and mouse input and window WM_CLASS detection
 * either alsa-lib or jack/jack2 - for midi sequensor input
 * qt5-base - for system tray icon
-* openimageio - for icon mangling at build time
 
 Build Instructions
 ==================
 * install dependencies:
-    * build time: git cmake openimageio
+    * build time: git cmake openimageio gtk-update-icon-cache
     * required: lua-5.2, alsa-lib, libx11, libxtst
     * Optional: jack | jack2, qt5-core
 * git clone https://gitlab.com/enetheru/midi2input.git
@@ -27,6 +26,7 @@ Build Instructions
 * cd build
 * cmake ../midi2input/
 * make && make install
+* gtk-update-icon-cache -q -t -f usr/share/icons/hicolor
 
 Arch
 ----
