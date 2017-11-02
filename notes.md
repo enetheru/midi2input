@@ -28,6 +28,7 @@ C++
 ----
 * better main loop
 * multi-threaded main loop
+* scheduler that can have loops and timed events registered with associated c or lua functions.
 
 Lua
 ----
@@ -37,6 +38,8 @@ Lua
 * [DONE] enable and disable loop
 * [DONE] alsaconnect( clientname, portname )
 * [DONE] loop function for things like flashing lights, timed effects etc.
+* change signature of midi_recv to give a table with midi data
+* rename all registered functions to have a consistent naming scheme
 
 ALSA
 ----
@@ -45,6 +48,9 @@ ALSA
 Jack
 ----
 * carla patchbay interface
+* connect lua interface
+* remove from watch loop
+* triggers on disconnect
 
 QT System Tray
 -----------
