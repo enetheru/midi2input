@@ -1,7 +1,6 @@
 ![m2i](https://gitlab.com/enetheru/midi2input/raw/master/res/icons/m2i-black.png "m2i")
 =======
-m2i(short for midi 2 input) takes midi events and translates them to keyboard and mouse input events.
-Configuration files and scripts are written in Lua
+m2i(midi to input) is a small service like applicatin that runs scripted actions in response to to midi events. Actions can be mouse, keyboard events, commands and more midi events. m2i can receive midi events from either the ALSA and or Jack midi sequenser.
 
 m2i Uses
 --------
@@ -55,17 +54,6 @@ Because I had a midi controller, and I thought it was a shame that I could not c
 | --------- |
 | [![Intro Vid](https://img.youtube.com/vi/wr1AqlDXnYI/0.jpg)](http://www.youtube.com/watch?v=wr1AqlDXnYI) |
 
-```
-USAGE: ./m2i [options]
-OPTIONS:
-   -h  --help                  Print usage and exit
-   -v  --verbose               Output more information
-   -c  --config <config.lua>   Specify config file
-   -s  --script <script.lua>   Specify script file
-   -a  --alsa                  Use ALSA midi backend
-   -j  --jack                  Use Jack midi backend
-```
-
 examples
 ========
 * using my controller play/pause, jogwheel, volume, tempo etc to dbus-send to currently running media player
@@ -74,76 +62,209 @@ examples
 * jogwheel as mouse scroll
 * shop demo for turning on and off lights
 
-Configuration
-=============
-default: $XDG_CONFIG_HOME/m2i/config.lua
 
-The location can be specified on the command line with the -c flag.
+Excerpt from man-page
+=====================
 
-It sets up the initial behaviour of the m2i program.
+OPTIONS
+-------
 
+**-h, --help** 
+:   print help text and exit
+
+**-v, --verbose** 
+:   output more information
+
+**-q, --quiet** 
+:   output less information
+
+**-c, --config** 
+:   specify the configuration script to use
+
+**-s, --script** 
+:   specify the script to use
+
+**-a, --alsa** 
+:   enable alsa midi sequensor
+
+**-j, --jack** 
+:   enable jack midi sequensor
+
+FILES
+-----
+m2i uses a config file and a script file. examples are available in
+/usr/local/share/m2i [ ]{#lbAG}
+
+### \$XDG\_CONFIG\_HOME/m2i/config.lua
+
+Specifies the default configuration, command line options override these
+values if given. These values are not guaranteed for the lifetime of the
+program, as they are only loaded once on startup, and will dissapear if
+a call to reload is received from script file monitoring.
+
+eg.
 ```
-config = {
-    verbose = false,
-    quiet = false,
-    script = 'basic.lua',
-    use_alsa = true,
-    use_jack = false,
-    reconnect = true,
-    loop_enable = true,
-    main_freq = 25,
-    loop_freq = 250,
-    watch_freq = 2500,
-}
+    config = {
+        key = value,
+        ...
+    }
 ```
-* *verbose* - increase verbosity.
-* *quiet* - decrease verbosity.
-* *script* - filename and path of script to use. if path is relative will look in current directory first, then $XDG_CONFIG_HOME/m2i/ and can be overridden with cmd line options.
-* *use_alsa* - enable alsa sequensor subsystem.
-* *use_jack* - enable jack sequensor subsystem.
-* *reconnect* - currently only used for jack reconnection after disconnect but it doesnt work properly at the moment. and will go away in the future with better lua handling.
-* *loop_enabled* - is true by default, but will set itself to false if the loop function fails.
-* *main_freq* - in milliseconds; minimum frequency of the main loop. I believe there is a better way to do this, but I havent figured it out yet.
-* *loop_freq* - in milliseconds; how often to run loop() function in the script.lua. I want this to go away in favour of being able to register looping, timed, etc functions into a scheduler.
-* *watch_freq* - in milliseconds; how often to check for filesystem changes to script.lua so as to reload. also how often to check for jack disconnection. Again I want this to go away in favour of a scheduler.
 
-Script
-======
-default: $XDG_CONFIG_HOME/m2i/script.lua
+**verbose, bool** 
+:   more information sent to stdout
 
-The location can be specified on the command line with the -s flag.
+**quiet, bool** 
+:   less information send to stdout
 
-look in /usr/share/m2i/ for examples
+**script, string** 
+:   path of the script file to load, if relative will look in current directory, and then \$XDG\_CONFIG\_HOME/m2i
 
-m2i watches the file for changes and reloads the lua environment and script, allowing you to make changes and not have to reload manually.
+**use\_alsa, bool** 
+:   enable the alsa sequensor backend
 
-The only user defined function that is required in the script.lua is midi_recv( ... ), this function is called for every lua event that is received by m2i and is where you react to events. In the future I believe i may want more functions like this for connect/disconnect of ports. quit etc..
+**use\_jack, bool** 
+:   enable the jack sequensor backend
 
-User Defined functions:
-* script_init()
-* loop()
-* midi_recv( status, data1, data2 )
+**reconnect, bool** 
+:   will attempt to reconnect to jack during the watch loop cycle. this option will be removed when a better solution is implemented.
 
-Registered c functions:
-* print( 'string' ... )
-* midi_send( { status, data1, data2 } )
-* loop_enabled()
-* exec( 'command' )
-* quit()
+**loop\_enable, bool** 
+:   enables evaluation of the loop() function implemented in the script.lua, and will be removed once a decent scheduler is implemented.
 
-X11 c functions:
-* keypress( XK_keycode )
-* keydown( XK_keycode )
-* keyup( XK_keycode )
-* buttonpress( n )
-* buttondown( n )
-* buttonup( n )
-* mousemove( x, y )
-* mousepos( x, y )
+**main\_freq, int** 
+:   frequency in milliseconds of the main loop.
 
-Alsa and Jack c functions:
-* alsaconnect( 'client', 'port' )
-* jackconnect( 'client', 'port' )
+**loop\_freq, int** 
+:   frequency in milliseconds of the loop() function implemented in the script.lua
 
-Global Variables:
-* WM_CLASS
+**watch\_freq, int** 
+:   frequency in milliseconds of the file monitoring and jack reconnection checks.
+
+[ ]{#lbAH}
+
+### \$XDG\_CONFIG\_HOME/m2i/script.lua
+
+The location can be specified on the command line with the -s flag. or
+in the config.lua as written above
+
+a minimal example:
+```
+    function script_init()
+        print( "nothing to init" )
+    end
+    function midi_recv( status, data1, data2 )
+        print( status, data1, data2 )
+    end
+```
+Look in /usr/local/share/m2i/ for more examples
+
+The script is watched using inotify and when changed the lua environment
+is reset and the script reloaded. This allows you to make changes and
+not have to reload m2i manually.
+
+### User defined lua functions:
+
+These are the functions that the main application expect to find in your
+script, and will call them as needed.
+
+The only user defined function that is required in the script.lua is
+midi_recv( ... ), this function is called for every lua event that is
+received by m2i and is where you react to events. In the future I
+believe i may want more functions like this for connect/disconnect of
+ports. quit etc.
+
+**script\_init()** 
+:   runs once immediately after loading the script.
+
+**loop()** 
+:   runs at a frequency of loop\_freq as specified in the config.lua
+
+**midi\_recv( status, data1, data2 )** 
+:   Is the only actually required function that all events processed
+    through.
+
+### m2i lua functions:
+
+m2i provides
+
+**print( 'string' ... )** 
+:   an overload of the lua print functionality to tie it to the main
+    application.
+
+**midi\_send( { status, data1, data2 } )** 
+:   sends midi events to the output port, useful for turning on and off
+    controller lights
+
+**loop\_enabled()** 
+:   enables the loop() function
+
+**exec( 'command' )** 
+:   runs an arbitrary command with whatever privilages the command was
+    run with, probably a bad idea really, but so long as its just a user
+    application this is quite useful.
+
+**quit()** 
+:   causes the main loop to exit, ending the application
+
+### X11 functions:
+
+these are functions which relate the X11 windowing system, for keyboard
+and mouse input, and also for window detection
+
+**keypress( XK\_keycode )** 
+:   equivalent to a keydown+keyup event
+
+**keydown( XK\_keycode )** 
+
+:   
+
+**keyup( XK\_keycode )** 
+
+:   
+
+**buttonpress( n )** 
+
+:   
+
+**buttondown( n )** 
+
+:   
+
+**buttonup( n )** 
+
+:   
+
+**mousemove( x, y )** 
+
+:   
+
+**mousepos( x, y )** 
+
+:   
+
+### Alsa and Jack functions:
+
+additional commands for alsa and jack subsystems
+
+**alsaconnect( 'client', 'port' )** 
+
+:   
+
+**jackconnect( 'client', 'port' )** 
+
+:   
+
+### Global variables:
+
+globals
+
+**WM\_CLASS** 
+:   is provided for differentiating between applications at the moment, a more robust solution would be preferable but this works well enough for now.
+
+AUTHOR
+------
+Samuel Nicholas &lt;nicholas.samuel@gmail.com&gt;
+
+SEE ALSO
+--------
+lua(1), jackd(1), &lt;X11/keysymdef.h&gt;

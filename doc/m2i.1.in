@@ -1,10 +1,184 @@
-.TH ${DOC_TITLE} 1
-
+.TH ${DOC_TITLE} 1 ${DOC_DATE} "" "${DOC_NAME} Reference"
 .SH NAME
-${DOC_TITLE} \- ${DOC_DESCRIPTION_SHORT}
+${DOC_NAME} \- ${DOC_DESCRIPTION_SHORT}
+.
 .SH SYNOPSIS
-.B ${DOC_TITLE}
+.B ${DOC_NAME}
+[OPTIONS]
+.
 .SH DESCRIPTION
 ${DOC_DESCRIPTION}
+.SH OPTIONS
+.TP
+.B -h, --help
+print help text and exit
+.TP
+.B -v, --verbose
+output more information
+.TP
+.B -q, --quiet
+output less information
+.TP
+.B -c, --config
+specify the configuration script to use
+.TP
+.B -s, --script
+specify the script to use
+.TP
+.B -a, --alsa
+enable alsa midi sequensor
+.TP
+.B -j, --jack
+enable jack midi sequensor
+.
+.SH FILES
+${DOC_NAME} uses a config file and a script file. examples are available in ${CMAKE_INSTALL_PREFIX}/share/m2i
+.SS $XDG_CONFIG_HOME/m2i/config.lua
+Specifies the default configuration, command line options override these values if given.
+These values are not guaranteed for the lifetime of the program, as they are only loaded once on startup, and will dissapear if a call to reload is received from script file monitoring.
+.sp
+eg.
+.nf
+.RS 4
+config = {
+    key = value,
+    ...
+}
+.RE
+.fi
+.TP
+.B verbose, bool
+more information sent to stdout
+.TP
+.B quiet, bool
+less information send to stdout
+.TP
+.B script, string
+path of the script file to load, if relative will look in current directory, and then $XDG_CONFIG_HOME/m2i
+.TP
+.B use_alsa, bool
+enable the alsa sequensor backend
+.TP
+.B use_jack, bool
+enable the jack sequensor backend
+.TP
+.B reconnect, bool
+will attempt to reconnect to jack during the watch loop cycle. this option will be removed when a better solution is implemented.
+.TP
+.B loop_enable, bool
+enables evaluation of the loop() function implemented in the script.lua, and will be removed once a decent scheduler is implemented.
+.TP
+.B main_freq, int
+frequency in milliseconds of the main loop.
+.TP
+.B loop_freq, int
+frequency in milliseconds of the loop() function implemented in the script.lua
+.TP
+.B watch_freq, int
+frequency in milliseconds of the file monitoring and jack reconnection checks.
+.SS $XDG_CONFIG_HOME/m2i/script.lua
+The location can be specified on the command line with the -s flag. or in the config.lua as written above
+.PP
+a minimal example:
+.nf
+.RS 4
+function script_init()
+    print( "nothing to init" )
+end
+
+function midi_recv( status, data1, data2 )
+    print( status, data1, data2 )
+end
+.RE
+.fi
+.PP
+Look in ${CMAKE_INSTALL_PREFIX}/share/m2i/ for more examples
+.PP
+The script is watched using inotify and when changed the lua environment is
+reset and the script reloaded. This allows you to make changes and not have to
+reload m2i manually.
+.PP
+.SS User defined lua functions:
+.br
+These are the functions that the main application expect to find in your
+script, and will call them as needed.
+.PP
+The only user defined function that is required in the script.lua is
+midi_recv( ... ), this function is called for every lua event that is received
+by m2i and is where you react to events. In the future I believe i may want
+more functions like this for connect/disconnect of ports. quit etc.
+.TP
+.B script_init()
+runs once immediately after loading the script.
+.TP
+.B loop()
+runs at a frequency of loop_freq as specified in the config.lua
+.TP
+.B midi_recv( status, data1, data2 )
+Is the only actually required function that all events processed through.
+.PP
+.SS ${DOC_NAME} lua functions:
+.br
+${DOC_NAME} provides
+.TP
+.B print( 'string' ... )
+an overload of the lua print functionality to tie it to the main application.
+.TP
+.B midi_send( { status, data1, data2 } )
+sends midi events to the output port, useful for turning on and off controller
+lights
+.TP
+.B loop_enabled()
+enables the loop() function
+.TP
+.B exec( 'command' )
+runs an arbitrary command with whatever privilages the command was run with,
+probably a bad idea really, but so long as its just a user application this is
+quite useful.
+.TP
+.B quit()
+causes the main loop to exit, ending the application
+.PP
+.SS X11 functions:
+.br
+these are functions which relate the X11 windowing system, for keyboard and
+mouse input, and also for window detection
+.TP
+.B keypress( XK_keycode )
+equivalent to a keydown+keyup event
+.TP
+.B keydown( XK_keycode )
+.TP
+.B keyup( XK_keycode )
+.TP
+.B buttonpress( n )
+.TP
+.B buttondown( n )
+.TP
+.B buttonup( n )
+.TP
+.B mousemove( x, y )
+.TP
+.B mousepos( x, y )
+.PP
+.SS Alsa and Jack functions:
+.br
+additional commands for alsa and jack subsystems
+.TP
+.B alsaconnect( 'client', 'port' )
+.TP
+.B jackconnect( 'client', 'port' )
+.RE
+.PP
+.SS Global variables:
+.br
+globals
+.TP
+.B WM_CLASS
+is provided for differentiating between applications at the moment, a more
+robust solution would be preferable but this works well enough for now.
+.
 .SH AUTHOR
 ${DOC_AUTHORS}
+.SH SEE ALSO
+lua(1), jackd(1), <X11/keysymdef.h>

@@ -48,6 +48,7 @@ namespace m2i {
 "OPTIONS:\n"
 "   -h  --help                  Print usage and exit\n"
 "   -v  --verbose               Output more information\n"
+"   -q  --quiet                 Output less information\n"
 "   -c  --config <config.lua>   Specify config file\n"
 "   -s  --script <script.lua>   Specify script file\n"
 "   -a  --alsa                  Use ALSA midi backend\n"
