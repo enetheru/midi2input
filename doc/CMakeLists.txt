@@ -4,13 +4,7 @@ if( BUILD_DOCS )
     configure_file( m2i.1.in m2i.1 )
 
     add_custom_target( docs ALL
-        DEPENDS m2i m2i.1.gz changelog.gz README.md)
-
-	if( CHECK_DOCS )
-		add_custom_target( check_docs ALL
-			diff -q ${CMAKE_CURRENT_BINARY_DIR}/README.md ${CMAKE_SOURCE_DIR}/README.md
-			DEPENDS docs )
-	endif()
+        DEPENDS m2i m2i.1.gz changelog.gz )
 
 #./debian/copyright
     install( FILES ${CMAKE_SOURCE_DIR}/LICENCE.md
