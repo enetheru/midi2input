@@ -20,17 +20,6 @@ if( BUILD_DOCS )
         DESTINATION share/man/man1/
         COMPONENT applications )
 
-# README
-    # configire README.md from standard strings
-    configure_file( README.in.md README.in2.md )
-
-    # concatenate application help message into README.md
-    add_custom_command( OUTPUT README.md
-        COMMAND cat ${CMAKE_CURRENT_BINARY_DIR}/README.in2.md >> README.md
-        COMMAND /bin/echo -e \\\\n\\\\x60\\\\x60\\\\x60 >> README.md
-        COMMAND cat ${CMAKE_CURRENT_BINARY_DIR}/help.txt >> README.md
-        COMMAND /bin/echo -e \\\\x60\\\\x60\\\\x60 >> README.md )
-
 #./debian/changelog.gz
     add_custom_command( OUTPUT changelog.gz
         COMMAND cp ${CMAKE_SOURCE_DIR}/CHANGELOG.md ${CMAKE_CURRENT_BINARY_DIR}/changelog
