@@ -16,3 +16,9 @@ cmake-build-debug/
 include/
 
 pkg/
+
+*.srctrlprj
+
+*.srctrlbm
+
+*.srctrldb
