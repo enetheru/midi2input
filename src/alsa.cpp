@@ -189,6 +189,10 @@ Seq::event_receive()
     case SND_SEQ_EVENT_PITCHBEND:
         LOG( ALSA ) << fmt::format( "Pitch bend: {}, {}\n",
             ev->data.control.channel, ev->data.control.value );
+        result.status = ev->data.control.channel + 0xE0;
+        //FIXME this really sucks i'm throwing away so much detail it breaks my heart.
+        //also its just shitty shitty code
+        result.data2 = (ev->data.control.value  + 8192) / 64;
         break;
     case SND_SEQ_EVENT_CONTROL14:
         LOG( ALSA ) << fmt::format( "Control change: {}, {}, {}\n",
