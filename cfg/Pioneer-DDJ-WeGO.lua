@@ -46,10 +46,57 @@ function reset_state( state )
 end
 
 -- because i always give the event to functions i needed a wrapper for keypress
-function kpress( event, key )
-    keypress( key )
+function kpress( event, keys )
+    if( type( keys ) == "number" ) then
+        print("single key event")
+        keypress( keys )
+        return
+    end
+    --FIXME needs one shot combo shortcut implementation 
+    if( type( keys ) == "table" ) then
+        print( "multi key event" )
+        kdown( event, keys )
+        -- FIXME need to reverse the list here
+        kup( event, keys )
+        return
+    end
+    print( "Unhandled type: " .. type( key ) )
 end
 
+
+function kdown( event, keys )
+    print( "kdown function" )
+    if( type( keys ) == "number" ) then
+        print("single key event")
+        keydown( keys )
+        return
+    end
+    if( type( keys ) == "table" ) then
+        print( "multi key event" )
+        for i,key in pairs(keys) do
+             keydown( key )
+        end
+        return
+    end
+    print( "Unhandled type: " .. type( key ) )
+end
+
+function kup( event, keys )
+    print( "kup function" )
+    if( type( keys ) == "number" ) then
+        print("single key event")
+        keyup( keys )
+        return
+    end
+    if( type( keys ) == "table" ) then
+        print( "multi key event" )
+        for i,key in pairs(keys) do
+            keyup( key )
+        end
+        return
+    end
+    print( "Unhandled type: " .. type( key ) )
+end
 
 --[[ keystrokes defined by X11\kesymdef.h]]--
 XK_BackSpace                   = 0xff08  --/* Back space, back char */
@@ -549,17 +596,28 @@ function default.jogdial_turn( event )
     end
 end
 
+function default.clementine_np( event )
+    if( event[3] > 65 ) then
+        exec( "clementine -r" )
+    else
+        exec( "clementine -f" )
+    end
+end
+
+function default.clementine_playpause( event )
+    exec( "clementine -t" )
+end
 
 default.map = {}
 --deckA
 default.map[0x90] = {
-    [0x0B] = { [127] = { default.toggle } }, --         play
+    [0x0B] = { [127] = { default.clementine_playpause } }, --         play
     [0x0C] = { [127] = { default.toggle } }, --         cue
     [0x14] = { [127] = { unassigned     } }, --         autoloop
-    [0x2E] = { [127] = { default.toggle } }, --         hotcue1
-    [0x2F] = { [127] = { default.toggle } }, --         hotcue2
-    [0x30] = { [127] = { default.toggle } }, --         hotcue3
-    [0x31] = { [127] = { default.toggle } }, --         hotcue4
+    [0x2E] = { [127] = { kpress, XK_1   } }, --         hotcue1
+    [0x2F] = { [127] = { kpress, XK_2   } }, --         hotcue2
+    [0x30] = { [127] = { kpress, XK_3   } }, --         hotcue3
+    [0x31] = { [127] = { kpress, XK_4   } }, --         hotcue4
     [0x36] = { [127] = { unassigned     } }, --         touch
     [0x3C] = { [127] = { default.toggle } }, --         sampler1
     [0x3D] = { [127] = { unassigned     } }, -- [shift] sampler1
@@ -584,7 +642,7 @@ default.map[0x90] = {
 default.map[0xB0] = {
     [0x00] = { ['*'] = { MSB            } }, --         tempo MSB
     [0x05] = { ['*'] = { MSB            } }, -- [shift] tempo MSB
-    [0x13] = { ['*'] = { unassigned     } }, --         auto loop turn
+    [0x13] = { ['*'] = { default.clementine_np     } }, --         auto loop turn
     [0x20] = { ['*'] = { unassigned     } }, --         tempo LSB
     [0x21] = { ['*'] = { unassigned     } }, --         jog wheel
     [0x22] = { ['*'] = { default.jogdial_turn     } }, --         scratch
@@ -723,11 +781,17 @@ default.map[0xB3] = {
 }
 --ctrl & fx for deckAC {
 default.map[0x94] = {
-    [0x42] = { [127] = { default.toggle } }, --         deckA ctrlA
-    [0x43] = { [127] = { default.toggle } }, --         deckA fx1
-    [0x44] = { [127] = { default.toggle } }, --         deckA fx2
-    [0x45] = { [127] = { default.toggle } }, --         deckA fx3
-    [0x46] = { [127] = { default.toggle } }, --         deckA ctrlB
+    [0x42] = { --deckA ctrlA
+        [127] = { kdown, { XK_Control_L, XK_A } },
+        [  0] = { kup,   { XK_A, XK_Control_L } },
+    },
+    [0x43] = { [127] = { kpress, XK_F1  } }, --         deckA fx1
+    [0x44] = { [127] = { kpress, XK_F2  } }, --         deckA fx2
+    [0x45] = { [127] = { kpress, XK_F3  } }, --         deckA fx3
+    [0x46] = {--         deckA ctrlB
+        [127] = { kdown, { XK_Control_L, XK_B } },
+        [  0] = { kup,   { XK_B, XK_Control_L } },
+    }, 
     [0x47] = { [127] = { default.toggle } }, --         deckC ctrlA
     [0x48] = { [127] = { default.toggle } }, --         deckC fx1
     [0x49] = { [127] = { default.toggle } }, --         deckC fx2
@@ -977,6 +1041,30 @@ ffplay.map[0x91] = {
 }
 ffplay.map[0xB1] = {
     [0x22] = { ['*'] = { ffplay.scratch_turn } },
+}
+
+--[[ kdenlive ]]--
+kdenlive = {}
+
+function kdenlive.scratch_turn( event )
+    if event[3] > 64 then
+        keypress( XK_Right )
+    end
+    if event[3] < 64 then
+        keypress( XK_Left )
+    end
+end
+
+kdenlive.map = {}
+kdenlive.map[0xB1] = {
+    [0x22] = { ['*'] = { kdenlive.scratch_turn } },
+    [0x13] = { [127] = { kpress, XK_A          },
+               [  1] = { kpress, XK_S          } },
+}
+kdenlive.map[0x91] = {
+    [0x0B] = { [127] = { kpress, XK_space } },
+    [0x0C] = { [127] = { kpress, { XK_Shift_L, XK_8 } } },
+    [0x14] = { [127] = { kpress, { XK_Alt_L, XK_8 } } },
 }
 
 --[[ Missing assigments from previous version ]]--
