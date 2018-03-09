@@ -10,7 +10,7 @@ Seq::open()
 {
     if( snd_seq_open( &seq, "default", SND_SEQ_OPEN_DUPLEX, SND_SEQ_NONBLOCK ) < 0 )
         return -1;
-    client_id = snd_seq_client_id( seq ); 
+    client_id = snd_seq_client_id( seq );
     snd_seq_set_client_name( seq, "midi2input_alsa" );
 
     if( !seq ){
@@ -151,7 +151,6 @@ Seq::event_receive()
     snd_seq_event_t *ev = nullptr;
     if( snd_seq_event_input( seq, &ev ) < 0)
         return result;
-    
 
     switch( ev->type ){
     case SND_SEQ_EVENT_NOTEON:
@@ -184,7 +183,7 @@ Seq::event_receive()
             ev->data.control.channel, ev->data.control.value );
         break;
     case SND_SEQ_EVENT_CHANPRESS:
-        LOG( ALSA ) << fmt::format( "Channel aftertouch: {}, {}\n", 
+        LOG( ALSA ) << fmt::format( "Channel aftertouch: {}, {}\n",
             ev->data.control.channel, ev->data.control.value );
         break;
     case SND_SEQ_EVENT_PITCHBEND:
@@ -308,7 +307,7 @@ Seq::event_receive()
             LOG( ALSA ) << fmt::format( "Port Subscription from: '{}':'{}'\n",
                 snd_seq_client_info_get_name( cinfo ),
                 snd_seq_port_info_get_name( pinfo )
-            ); 
+            );
             LOG( ALSA ) << fmt::format( "Port Subscribed: {:d}:{:d} -> {:d}:{:d}\n",
                 ev->data.connect.sender.client, ev->data.connect.sender.port,
                 ev->data.connect.dest.client, ev->data.connect.dest.port );
