@@ -116,12 +116,27 @@ Seq::event_send( const midi_event &event )
     snd_seq_ev_set_source( &ev, oport_id );
     snd_seq_ev_set_subs( &ev );
     snd_seq_ev_set_direct( &ev );
-    snd_seq_ev_set_noteon( &ev, event.status & 0x0F, event.data1, event.data2 );
+
+    switch( event.status & 0xF0 ){
+    case 0x80:
+        snd_seq_ev_set_noteoff( &ev, event.status & 0x0F, event.data1, event.data2 );
+        LOG( ALSA ) << fmt::format( "send_noteoff: {}\n", event.str() );
+        break;
+    case 0x90:
+        snd_seq_ev_set_noteon( &ev, event.status & 0x0F, event.data1, event.data2 );
+        LOG( ALSA ) << fmt::format( "send_noteon: {}\n", event.str() );
+        break;
+    case 0xB0:
+        snd_seq_ev_set_controller( &ev, event.status & 0x0F, event.data1, event.data2 );
+        LOG( ALSA ) << fmt::format( "send_control: {}\n", event.str() );
+        break;
+    default:
+        LOG( ALSA ) << fmt::format( "send type({}) not supported", event.status & 0xF0 );
+        return;
+    }
 
     snd_seq_event_output( seq, &ev);
     snd_seq_drain_output( seq );
-
-    LOG( ALSA ) << fmt::format( "event_send: {}\n", event.str() );
 }
 
 int
