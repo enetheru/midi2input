@@ -3,9 +3,9 @@
 #define M2I_LUA_H
 
 extern "C" {
-    #include <lua5.2/lua.h>
-    #include <lua5.2/lauxlib.h>
-    #include <lua5.2/lualib.h>
+    #include <lua.h>
+    #include <lauxlib.h>
+    #include <lualib.h>
 }
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
