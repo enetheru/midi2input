@@ -14,7 +14,7 @@ endif()
 
 # dependencies
 # ============
-find_package( Lua 5.2 EXACT REQUIRED )
+find_package( Lua 5.3 EXACT REQUIRED )
 find_package( ALSA REQUIRED )
 find_package( X11 )
 find_package( Qt5 QUIET COMPONENTS Core Widgets )
