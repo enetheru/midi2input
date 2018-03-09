@@ -103,7 +103,7 @@ lua_midirecv( lua_State *L, const midi_event &event )
     lua_pushnumber( L, event.data1 );
     lua_pushnumber( L, event.data2 );
     if( lua_pcall( L, 3, 0, 0 ) != 0 )
-        LOG( ERROR ) << "call to function 'event_in' failed" << lua_tostring( L, -1 ) << "\n";
+        LOG( ERROR ) << "call to function 'midi_recv' failed" << lua_tostring( L, -1 ) << "\n";
     return 0;
 }
 
