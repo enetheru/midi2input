@@ -9,9 +9,9 @@ namespace fs = std::experimental::filesystem;
 
 //library includes
 extern "C" {
-    #include <lua5.2/lua.h>
-    #include <lua5.2/lauxlib.h>
-    #include <lua5.2/lualib.h>
+    #include <lua.h>
+    #include <lauxlib.h>
+    #include <lualib.h>
 }
 #include "argh.h"
 
@@ -185,17 +185,6 @@ main( int argc, char **argv )
         exit(-1);
     }
 
-    /* ================================================================== */
-    //load script
-    if( m2i::lua_loadscript( m2i::L, m2i::script ) < 0 ){
-        LOG( m2i::ERROR ) << "Unable to find script file:" << m2i::script << "\n";
-    } else {
-        m2i::notifier.watchPath( {0, m2i::script, restartLua } );
-
-        lua_getglobal( m2i::L, "script_init" );
-        if( lua_pcall( m2i::L, 0, 0, 0 ) != 0 )lua_pop( m2i::L, 1);
-    }
-
     /* ============================== ALSA ============================== */
     if( m2i::use_alsa ){
     #ifdef WITH_ALSA
@@ -240,6 +229,17 @@ main( int argc, char **argv )
     QApplication::setQuitOnLastWindowClosed(false);
 
     #endif//WITH_QT
+
+    /* ========================== Load Script =========================== */
+    if( m2i::lua_loadscript( m2i::L, m2i::script ) < 0 ){
+        LOG( m2i::ERROR ) << "Unable to find script file:" << m2i::script << "\n";
+    } else {
+        m2i::notifier.watchPath( {0, m2i::script, restartLua } );
+
+        lua_getglobal( m2i::L, "script_init" );
+        if( lua_pcall( m2i::L, 0, 0, 0 ) != 0 )lua_pop( m2i::L, 1);
+    }
+
     /* =========================== Main Loop ============================ */
     LOG( m2i::INFO ) << "Main: Entering sleep, waiting for events\n";
     std::chrono::system_clock::time_point loop_last = std::chrono::system_clock::now();

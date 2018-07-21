@@ -7,7 +7,7 @@ m2i Uses
 * Linux
 * adishavit/argh - command line processor
 * libfmt/fmt - simple formatting
-* lua 5.2 - the script engine
+* lua 5.3 - the script engine
 * libx11 & libxtst - for x11 keybord and mouse input and window WM_CLASS detection
 * either alsa-lib or jack/jack2 - for midi sequensor input
 * qt5-base - for system tray icon
@@ -16,7 +16,7 @@ Build Instructions
 ==================
 * install dependencies:
     * build time: git cmake openimageio gtk-update-icon-cache
-    * required: lua-5.2, alsa-lib, libx11, libxtst
+    * required: lua-5.3, alsa-lib, libx11, libxtst
     * Optional: jack | jack2, qt5-core
 * git clone https://gitlab.com/enetheru/midi2input.git
 * cd midi2input
