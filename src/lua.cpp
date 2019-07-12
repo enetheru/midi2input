@@ -16,6 +16,7 @@
 #endif//WITH_XORG
 
 #include <string>
+#include <chrono>
 
 namespace m2i {
     #ifdef WITH_ALSA
@@ -35,6 +36,7 @@ static const struct luaL_Reg funcs [] = {
   {"exec",         lua_exec},
   {"quit",         lua_quit},
   {"loop_enabled", lua_loopenable},
+  {"milliseconds", lua_milliseconds },
 #ifdef WITH_XORG
   {"keypress",     lua_keypress},
   {"keydown",      lua_keydown},
@@ -170,6 +172,16 @@ lua_loopenable( lua_State *L )
     (void)L; //shutup unused variable;
     m2i::loop_enabled = true;
     return 0;
+}
+
+int
+lua_milliseconds( lua_State *L )
+{
+    static auto first = std::chrono::system_clock::now();
+    auto now = std::chrono::system_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - first).count();
+    lua_pushnumber( L, duration );
+    return 1;
 }
 
 #ifdef WITH_XORG

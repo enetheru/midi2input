@@ -38,6 +38,7 @@ private:
     int lua_exec( lua_State *L );
     int lua_quit( lua_State *L );
     int lua_loopenable( lua_State *L );
+    int lua_milliseconds( lua_State *L );
 
     #ifdef WITH_XORG
     // X11 function binding

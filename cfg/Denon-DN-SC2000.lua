@@ -575,6 +575,22 @@ function default.pitchbend( event )
     print( event_to_string( event ) .. " - unassigned" )
 end
 
+local pulse_master_volume_value = 0
+local pulse_master_volume_ms = milliseconds()
+function default.pulse_master_volume( event )
+    if( milliseconds() - pulse_master_volume_ms < 25 )then
+        return
+    end
+    pulse_master_volume_ms = milliseconds()
+
+    temp = math.floor( (event[3] / 2.550) )
+    if( pulse_master_volume_value == temp) then
+        return
+    end
+    pulse_master_volume_value = temp
+    exec("amixer -D pulse sset Master " .. temp .. "%" )
+end
+
 function default.clementine_np( event )
     if( event[3] > 65 ) then
         exec( "clementine -r" )
@@ -589,6 +605,7 @@ end
 
 
 default.map = {}
+
 --deckA
 default.map[0x90] = {
     [0x58] = { ['*'] = { unassigned } }, -- FX_UNIT
@@ -697,8 +714,8 @@ default.map[0xB0] = {
     [0x5c] = { [  0] = { unassigned },   --PARAM_3_KNOB_FX2 - clockwise
                [127] = { unassigned } }, --PARAM_3_KNOB_FX2 - counter
 
-    [0x54] = { [  0] = { unassigned },   --TRACK SELECT KNOB clockwise
-               [127] = { unassigned } }, --TRACK SELECT KNOB counter
+    [0x54] = { [  0] = { default.clementine_np },   --TRACK SELECT KNOB clockwise
+               [127] = { default.clementine_np }, }, --TRACK SELECT KNOB counter
     [0x5D] = { [  0] = { unassigned },   --FILTER KNOB - clockwise
                [127] = { unassigned } }, --FILTER KNOB - counter
     [0x51] = { ['*'] = { default.jogdial_turn } }, --JOGWHEEL FWD/REV
@@ -729,8 +746,9 @@ default.map[0xB1] = {
     [0x51] = { ['*'] = { default.jogdial_turn } }, --JOGWHEEL FWD/REV
 }
 
+--Pitch Bend
 default.map[0xE0] = {
-    [  0] = { ['*'] = { default.pitchbend } },
+    [0x00] = { ['*'] = { default.pulse_master_volume } },
 }
 default.map[0xE1] = {
     [  0] = { ['*'] = { default.pitchbend } },
@@ -820,6 +838,65 @@ kdenlive.map[0x91] = {
     [0x14] = { [127] = { kpress, { XK_Alt_L, XK_8 } } },
 }
 
+--[[ olive editor ]]--
+--
+olive = {}
+_G[ "olive-editor" ] = olive
+
+olive.map = {}
+
+olive.map[0x90] = {
+}
+
+olive.map[0x91] = {
+    [0x37] = { ['*'] = { kpress, XK_i }, },
+    [0x39] = { ['*'] = { kpress, XK_o }, },
+    [0x43] = { ['*'] = { kpress, XK_space }, },
+    [0x29] = { ['*'] = { kpress, XK_Down }, },
+    [0x30] = { ['*'] = { kpress, XK_Up }, },
+    [0x42] = { ['*'] = { kpress, XK_m }, },
+    [0x60] = { ['*'] = { kpress, XK_apostrophe }, },
+}
+
+olive.map[0xB1] = {
+    [0x54] = { [  0] = { kpress, XK_Right },
+               [127] = { kpress, XK_Left  }, },
+}
+
+
+Blender = {}
+Blender.func = {}
+
+function Blender.func.scrub( value )
+    if event[3] > 64 then
+        keypress( XK_Right )
+    end
+    if event[3] < 64 then
+        keypress( XK_Left )
+    end
+end
+
+Blender.map = {}
+
+-- Navigate - BLUE
+Blender.map[0x90] = {
+    [0x42] = { ['*'] = { kpress, XK_m } },
+    [0x43] = { ['*'] = { kpress, XK_space } },
+    [0x29] = { ['*'] = { kpress, XK_Page_Up }, },
+    [0x30] = { ['*'] = { kpress, XK_Page_Down }, },
+    [0x10] = { ['*'] = { kpress, { XK_Shift_L, XK_period } }, },
+    [0x11] = { ['*'] = { kpress, { XK_Shift_L, XK_comma } }, },
+}
+Blender.map[0xB0] = {
+    [0x51] = { ['*'] = { Blender.func.scrub} },
+    [0x54] = { [  0] = { kpress, XK_Page_Up },
+               [127] = { kpress, XK_Page_Down  }, },
+}
+-- edit - RED
+Blender.map[0x91] = {
+}
+Blender.map[0xB1] = {
+}
 --[[ Missing assigments from previous version ]]--
 -- * dbus message sending to mediaplayer advertisement, honestly it was shit
 --   house anyway because i would experiment with my mediaplayer too much
@@ -848,7 +925,7 @@ end
 
 --[[ receive and react ]]--
 function midi_recv( channel, control, value )
-    local event = {channel, control, value}
+    event = {channel, control, value}
     local app = _G[ WM_CLASS ]
     if not app then app = default end
 
