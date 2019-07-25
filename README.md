@@ -54,6 +54,10 @@ Because I had a midi controller, and I thought it was a shame that I could not c
 | --------- |
 | [![Intro Vid](https://img.youtube.com/vi/wr1AqlDXnYI/0.jpg)](http://www.youtube.com/watch?v=wr1AqlDXnYI) |
 
+| Adding a new Mapping |
+| -------------------- |
+| [![Adding a new mapping](https://i9.ytimg.com/vi/T_s2V2JzHwo/mq3.jpg?sqp=CJSb5ekF&rs=AOn4CLAi1M4P4ZJUNhatsiuYcRG60_Qakw)](https://www.youtube.com/embed/T_s2V2JzHwo) |
+
 examples
 ========
 * using my controller play/pause, jogwheel, volume, tempo etc to dbus-send to currently running media player
