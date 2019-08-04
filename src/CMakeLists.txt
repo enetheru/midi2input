@@ -6,7 +6,7 @@ add_executable( m2i
     inotify.h inotify.cpp )
 
 target_include_directories( m2i PRIVATE
-    ${LUA_INCLUDE_DIRS}
+    ${LUA_INCLUDE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
     ${PROJECT_SOURCE_DIR}/include )
 
