@@ -14,6 +14,10 @@ m2i Uses
 
 Build Instructions
 ==================
+
+Compile 
+-------
+
 * install dependencies:
     * build time: git cmake openimageio gtk-update-icon-cache
     * required: lua-5.3, alsa-lib, libx11, libxtst
@@ -24,8 +28,15 @@ Build Instructions
 * mkdir build
 * cd build
 * cmake ../midi2input/
-* make && make install
-* gtk-update-icon-cache -q -t -f usr/share/icons/hicolor
+* make
+
+Install 
+-------
+
+After the above compile instruction
+
+* `make install`
+* `gtk-update-icon-cache -q -t -f usr/share/icons/hicolor`
 
 Arch
 ----
@@ -33,6 +44,14 @@ Arch
 * curl https://gitlab.com/enetheru/midi2input/raw/master/pkg/PKGBUILD > m2i/PKGBUILD
 * cd m2i
 * makepkg -si
+
+Debian/Ubuntu
+-------------
+
+After the above compile instruction
+
+* `make package`
+* `dpkg -i m2i-*-Linux.deb`
 
 Features
 ========
