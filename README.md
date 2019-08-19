@@ -46,6 +46,41 @@ Features
 * detection and reloading of changed script file
 * reconnect to device after unplug/plug
 
+Running
+=======
+
+```
+m2i --help
+m2i --config cfg/configua --script cfg/basic.lua
+m2i --config cfg/configua --script cfg/basic.lua --verbose
+```
+
+If you are setting up a new device and using alsa, you have to connect the MIDI 
+device to alsa : 
+
+* get the device name with  
+
+```
+aconnect -l
+client 24: 'ProductName' [type=kernel,card=2]
+    0 'ProductName MIDI 1'
+client 128: 'midi2input_alsa' [type=user,pid=22962]
+    0 'in              '
+    1 'out             '
+
+```
+
+* connect it 
+
+```
+aconnect 'ProductName' 'midi2input_alsa'
+aconnect 'midi2input_alsa':1 'ProductName'
+
+```
+
+You should now see  `[ALSA]Port Subscription from: 'ProductName':'ProductName MIDI 1'` 
+in the logs. 
+
 Why?
 ====
 Because I had a midi controller, and I thought it was a shame that I could not control my pc using it. I did a little research online and it didn't seem that there was an existing solution that fit my needs, indeed I didn't find a solution at all that was FLOSS.
