@@ -356,242 +356,178 @@ XK_bar                         = 0x007c  --/* U+007C VERTICAL LINE */
 XK_braceright                  = 0x007d  --/* U+007D RIGHT CURLY BRACKET */
 XK_asciitilde                  = 0x007e  --/* U+007E TILDE */
 
---[[ Setup the state of the lights ]]--
---The lights are controlled by sending a control signal with the type of
---signal either ON(0x4A), OFF(0x4B), BLINK(0x4C), to a light value.
---eg. {0xBn, signal, light}
---or  {0xB0, 0x4A, 0x5C}  - switches the play light on.
---we'll set the default state for all lights to OFF aka 0x4B
--- for the FIXME's here the dimmers define additional state
--- information for the lights that replace existing state info.
--- so for these specific lights there is:
--- off, dim_flash, dim_on, flash, on = 5 states. how to manage that
--- is not currently clear but may present a solution over time.
+--[[ DENON DN-SC2000 ]]--
+-------------------------
 controller = {}
--- friendly view
-controller = {
-    light = {
-            DRY_WET_KNOB_FX1 = 0x5C,
-            DRY_WET_KNOB_FX2 = 0x60,
-            PARAM_1_KNOB_FX1 = 0x5D,
-            PARAM_1_KNOB_FX2 = 0x61,
-            PARAM_2_KNOB_FX1 = 0x5E,
-            PARAM_2_KNOB_FX2 = 0x62,
-            PARAM_3_KNOB_FX1 = 0x5F,
-            PARAM_3_KNOB_FX2 = 0x63,
-                     FX_ON_1 = 0x5A,
-                     FX_ON_2 = 0x5B,
-                    KEY_LOCK = 0x08,
-                        SYNC = 0x09,
-                        CUE1 = 0x11,
-                 CUE1_Dimmer = 0x12, --FIXME
-                        CUE2 = 0x13,
-                 CUE2_Dimmer = 0x14, --FIXME
-                        CUE3 = 0x15,
-                 CUE3_Dimmer = 0x16, --FIXME
-                        CUE4 = 0x17,
-                 CUE4_Dimmer = 0x18, --FIXME
-                        CUE5 = 0x19,
-                 CUE5_Dimmer = 0x1A, --FIXME
-                        CUE6 = 0x1B,
-                 CUE6_Dimmer = 0x1C, --FIXME
-                        CUE7 = 0x1D,
-                 CUE7_Dimmer = 0x1F, --FIXME
-                        CUE8 = 0x20,
-                 CUE8_Dimmer = 0x21, --FIXME
-                        PLAY = 0x27,
-                         CUE = 0x26,
-                     LOOP_IN = 0x24,
-              LOOP_IN_Dimmer = 0x3E, --FIXME
-                    LOOP_OUT = 0x40,
-             LOOP_OUT_Dimmer = 0x2A, --FIXME
-                   AUTO_LOOP = 0x2B,
-            AUTO_LOOP_Dimmer = 0x53, --FIXME
-             },
 
-    state = {
-        deckA = {
-            DRY_WET_KNOB_FX1 = { value = 0x4B }, -- light = 0x5C
-            DRY_WET_KNOB_FX2 = { value = 0x4B }, -- light = 0x60
-            PARAM_1_KNOB_FX1 = { value = 0x4B }, -- light = 0x5D
-            PARAM_1_KNOB_FX2 = { value = 0x4B }, -- light = 0x61
-            PARAM_2_KNOB_FX1 = { value = 0x4B }, -- light = 0x5E
-            PARAM_2_KNOB_FX2 = { value = 0x4B }, -- light = 0x62
-            PARAM_3_KNOB_FX1 = { value = 0x4B }, -- light = 0x5F
-            PARAM_3_KNOB_FX2 = { value = 0x4B }, -- light = 0x63
-                     FX_ON_1 = { value = 0x4B }, -- light = 0x5A
-                     FX_ON_2 = { value = 0x4B }, -- light = 0x5B
-                    KEY_LOCK = { value = 0x4B }, -- light = 0x08
-                        SYNC = { value = 0x4B }, -- light = 0x09
-                     LOOP_IN = { value = 0x4B }, -- light = 0x24
-                    LOOP_OUT = { value = 0x4B }, -- light = 0x40
-                   AUTO_LOOP = { value = 0x4B }, -- light = 0x2B
-                        CUE1 = { value = 0x4B }, -- light = 0x11
-                        CUE2 = { value = 0x4B }, -- light = 0x13
-                        CUE3 = { value = 0x4B }, -- light = 0x15
-                        CUE4 = { value = 0x4B }, -- light = 0x17
-                        CUE5 = { value = 0x4B }, -- light = 0x19
-                        CUE6 = { value = 0x4B }, -- light = 0x1B
-                        CUE7 = { value = 0x4B }, -- light = 0x1D
-                        CUE8 = { value = 0x4B }, -- light = 0x20
-                         CUE = { value = 0x4B }, -- light = 0x26
-                        PLAY = { value = 0x4B }, -- light = 0x27
-        },
-        deckB = {
-            DRY_WET_KNOB_FX1 = { value = 0x4B }, -- light = 0x5C
-            DRY_WET_KNOB_FX2 = { value = 0x4B }, -- light = 0x60
-            PARAM_1_KNOB_FX1 = { value = 0x4B }, -- light = 0x5D
-            PARAM_1_KNOB_FX2 = { value = 0x4B }, -- light = 0x61
-            PARAM_2_KNOB_FX1 = { value = 0x4B }, -- light = 0x5E
-            PARAM_2_KNOB_FX2 = { value = 0x4B }, -- light = 0x62
-            PARAM_3_KNOB_FX1 = { value = 0x4B }, -- light = 0x5F
-            PARAM_3_KNOB_FX2 = { value = 0x4B }, -- light = 0x63
-                     FX_ON_1 = { value = 0x4B }, -- light = 0x5A
-                     FX_ON_2 = { value = 0x4B }, -- light = 0x5B
-                    KEY_LOCK = { value = 0x4B }, -- light = 0x08
-                        SYNC = { value = 0x4B }, -- light = 0x09
-                     LOOP_IN = { value = 0x4B }, -- light = 0x24
-                    LOOP_OUT = { value = 0x4B }, -- light = 0x40
-                   AUTO_LOOP = { value = 0x4B }, -- light = 0x2B
-                        CUE1 = { value = 0x4B }, -- light = 0x11
-                        CUE2 = { value = 0x4B }, -- light = 0x13
-                        CUE3 = { value = 0x4B }, -- light = 0x15
-                        CUE4 = { value = 0x4B }, -- light = 0x17
-                        CUE5 = { value = 0x4B }, -- light = 0x19
-                        CUE6 = { value = 0x4B }, -- light = 0x1B
-                        CUE7 = { value = 0x4B }, -- light = 0x1D
-                        CUE8 = { value = 0x4B }, -- light = 0x20
-                         CUE = { value = 0x4B }, -- light = 0x26
-                        PLAY = { value = 0x4B }, -- light = 0x27
+--The controller can be configure to use different channels for decks A and B
+-- consult the official instructions on how to change the channels of the
+-- controller. and then change these variables to reflect 
+controller.DECKA = { channel = 0x00 }
+controller.DECKB = { channel = 0x01 }
 
-        },
-    }
-}
+--[[ Controller Codes ]]--
+-- All of the Note On codes for the controller
+-- n = MIDI CH = 0-7
+-- packet {
+--      SW ON: 0x9n SW OFF: 0x8n,
+--      <below code>,
+--      SW ON: 0x40 SW OFF: 0x00
+-- }
+XC_AUTO_LOOP                = 0x1D
+XC_BEAT_MINUS               = 0x69
+XC_BEAT_PLUS                = 0x6A
+XC_BEND_MINUS               = 0x0D
+XC_BEND_PLUS                = 0x0C
+XC_BROWSER                  = 0x64
+XC_CUE                      = 0x42
+XC_CUE1                     = 0x17
+XC_CUE2                     = 0x18
+XC_CUE3                     = 0x19
+XC_CUE4                     = 0x20
+XC_CUE5                     = 0x21
+XC_CUE6                     = 0x22
+XC_CUE7                     = 0x23
+XC_CUE8                     = 0x24
+XC_CUE_LOOP_DELETE_SHIFT    = 0x60
+XC_DECK_CHG                 = 0x03
+XC_DRY_WET_SW_FX1           = 0x15
+XC_DRY_WET_SW_FX2           = 0x55
+XC_DUPLICATE                = 0x65
+XC_FAST_SEARCH_MINUS        = 0x11
+XC_FAST_SEARCH_PLUS         = 0x10
+XC_FILTER_SW                = 0x68
+XC_FX_ON_1                  = 0x56
+XC_FX_ON_2                  = 0x57
+XC_FX_UNIT                  = 0x58
+XC_JOGWHEEL_TOUCH           = 0x51
+XC_KEY_LOCK                 = 0x06
+XC_LOOP_IN                  = 0x37
+XC_LOOP_OUT                 = 0x39
+XC_NEXT                     = 0x29
+XC_PARAM1_SW_FX1            = 0x12
+XC_PARAM1_SW_FX2            = 0x52
+XC_PARAM2_SW_FX1            = 0x13
+XC_PARAM2_SW_FX2            = 0x53
+XC_PARAM3_SW_FX1            = 0x14
+XC_PARAM3_SW_FX2            = 0x54
+XC_PLAY                     = 0x43
+XC_PREVIOUS                 = 0x30
+XC_SEL                      = 0x1A
+XC_SYNC                     = 0x6B
+XC_TRACK_SELECT_SW          = 0x28
 
---midi view
---since the light control sequences bear no relation to the incoming midi event
---this aliasing comes in handt to check the state of a light based on what
---event was received.
-controller.state.midi = {}
-controller.state.midi[0x90] = { --deckA
-    [0x15] = controller.state.deckA.DRY_WET_KNOB_FX1, --DRY_WET_SW_FX1
-    [0x55] = controller.state.deckA.DRY_WET_KNOB_FX2, --DRY_WET_SW_FX2
-    [0x12] = controller.state.deckA.PARAM_1_KNOB_FX1, --PARAM_1_SW_FX1
-    [0x52] = controller.state.deckA.PARAM_1_KNOB_FX2, --PARAM_1_SW_FX2
-    [0x13] = controller.state.deckA.PARAM_2_KNOB_FX1, --PARAM_2_SW_FX1
-    [0x53] = controller.state.deckA.PARAM_2_KNOB_FX2, --PARAM_2_SW_FX2
-    [0x14] = controller.state.deckA.PARAM_3_KNOB_FX1, --PARAM_3_SW_FX1
-    [0x54] = controller.state.deckA.PARAM_3_KNOB_FX2, --PARAM_3_SW_FX2
-    [0x56] = controller.state.deckA.FX_ON_1, --FX_ON_1
-    [0x57] = controller.state.deckA.FX_ON_2, --FX_ON_2
-    [0x06] = controller.state.deckA.KEY_LOCK, --KEY_LOCK
-    [0x6B] = controller.state.deckA.SYNC, --SYNC
-    [0x37] = controller.state.deckA.LOOP_IN, --LOOP_IN
-    [0x39] = controller.state.deckA.LOOP_OUT, --LOOP_OUT
-    [0x1D] = controller.state.deckA.AUTO_LOOP, --AUTO_LOOP
-    [0x17] = controller.state.deckA.CUE1, --CUE1
-    [0x18] = controller.state.deckA.CUE2, --CUE2
-    [0x19] = controller.state.deckA.CUE3, --CUE3
-    [0x20] = controller.state.deckA.CUE4, --CUE4
-    [0x21] = controller.state.deckA.CUE5, --CUE5
-    [0x22] = controller.state.deckA.CUE6, --CUE6
-    [0x23] = controller.state.deckA.CUE7, --CUE7
-    [0x24] = controller.state.deckA.CUE8, --CUE8
-    [0x42] = controller.state.deckA.CUE, --CUE
-    [0x43] = controller.state.deckA.PLAY, --PLAY
---
---
-}
-controller.state.midi[0x91] = {
-    [0x15] = controller.state.deckA.DRY_WET_KNOB_FX1, --DRY_WET_SW_FX1
-    [0x55] = controller.state.deckA.DRY_WET_KNOB_FX2, --DRY_WET_SW_FX2
-    [0x12] = controller.state.deckA.PARAM_1_KNOB_FX1, --PARAM_1_SW_FX1
-    [0x52] = controller.state.deckA.PARAM_1_KNOB_FX2, --PARAM_1_SW_FX2
-    [0x13] = controller.state.deckA.PARAM_2_KNOB_FX1, --PARAM_2_SW_FX1
-    [0x53] = controller.state.deckA.PARAM_2_KNOB_FX2, --PARAM_2_SW_FX2
-    [0x14] = controller.state.deckA.PARAM_3_KNOB_FX1, --PARAM_3_SW_FX1
-    [0x54] = controller.state.deckA.PARAM_3_KNOB_FX2, --PARAM_3_SW_FX2
-    [0x56] = controller.state.deckA.FX_ON_1, --FX_ON_1
-    [0x57] = controller.state.deckA.FX_ON_2, --FX_ON_2
-    [0x06] = controller.state.deckA.KEY_LOCK, --KEY_LOCK
-    [0x6B] = controller.state.deckA.SYNC, --SYNC
-    [0x37] = controller.state.deckA.LOOP_IN, --LOOP_IN
-    [0x39] = controller.state.deckA.LOOP_OUT, --LOOP_OUT
-    [0x1D] = controller.state.deckA.AUTO_LOOP, --AUTO_LOOP
-    [0x17] = controller.state.deckA.CUE1, --CUE1
-    [0x18] = controller.state.deckA.CUE2, --CUE2
-    [0x19] = controller.state.deckA.CUE3, --CUE3
-    [0x20] = controller.state.deckA.CUE4, --CUE4
-    [0x21] = controller.state.deckA.CUE5, --CUE5
-    [0x22] = controller.state.deckA.CUE6, --CUE6
-    [0x23] = controller.state.deckA.CUE7, --CUE7
-    [0x24] = controller.state.deckA.CUE8, --CUE8
-    [0x42] = controller.state.deckA.CUE, --CUE
-    [0x43] = controller.state.deckA.PLAY, --PLAY
-}
+-- Control Signal codes
+-- packet {
+--      0xBn,
+--      <below code>,
+--      Increment: 00
+--      Decrement: 0x7F
+-- }
+XC_DRY_WET_KNOB_FX1         = 0x55
+XC_DRY_WET_KNOB_FX2         = 0x59
+XC_PARAM1_KNOB_FX1          = 0x56
+XC_PARAM1_KNOB_FX2          = 0x5A
+XC_PARAM2_KNOB_FX1          = 0x57
+XC_PARAM2_KNOB_FX2          = 0x5B
+XC_PARAM3_KNOB_FX1          = 0x58
+XC_PARAM3_KNOB_FX2          = 0x5C
+XC_TRACK_SELECT_KNOB        = 0x54
+XC_FILTER_KNOB              = 0x5D
 
---[[ Key Maps ]]--
-default = {}
+-- packet {
+--      0xBn,
+--      <below code>,
+--      Reverse: 0x3F-0x01
+--      Forward: 0x41~0x7F
+--      Slow->Fast
+--      * relative data 2048Pulse/cycle
+-- }
+XC_JOGWHEEL_FWD_REV         = 0x51
 
--- toggle lights
--- signal either ON(0x4A), OFF(0x4B), BLINK(0x4C), to a light value.
-function default.toggle( event, light )
-    print( event_to_string( event ) .. " - Toggle" )
-    local light_state = controller.state.midi[event[1]][event[2]]
-    if( light_state.value == 0x4A )
-    then light_state.value = 0x4B
-    elseif( light_state.value == 0x4B )
-    then light_state.value = 0x4C
-    elseif( light_state.value == 0x4C )
-    then light_state.value = 0x4A
-    end
-    --print( 0xB1 & 0xF0 )
-    midi_send( {0xB0, light_state.value, light } )
-end
+--PITCH_SLIDER is a bit different, with packets like this
+--{0xEn, 0xllx(LSB), 0xmm (MSB) }
 
-function unassigned( event )
-    print( event_to_string( event ) .. " - Unassigned" )
-end
+--The lights are controlled by sending a control signal with the first byte
+--indicating the signal to send, and the second byte indicating the light
+-- signals:
+-- * 0x4A = On
+-- * 0x4B = Off
+-- * 0x4C = Blink
+-- ie. {0xBn, <signal>, <light>}, where n is the channel number
+-- eg. {0xB0, 0x4A, 0x5C}  - switches the play light on.
+-- Some buttons have two light values associated with them, one light is normal
+-- brightness, and the other is a dim version, both the normal and the dim
+-- light use the same control signals of on, off, blink.
+
+-- Confusingly the control signals to change the light value have no
+-- relationship with the note on and off values that are sent by the controller
+-- which makes sense only in the case of the normal and dim light buttons,
+-- because there are two lights for the same button.
+XL_DRY_WET_KNOB_FX1         = 0x5C
+XL_DRY_WET_KNOB_FX2         = 0x60
+XL_PARAM_1_KNOB_FX1         = 0x5D
+XL_PARAM_1_KNOB_FX2         = 0x61
+XL_PARAM_2_KNOB_FX1         = 0x5E
+XL_PARAM_2_KNOB_FX2         = 0x62
+XL_PARAM_3_KNOB_FX1         = 0x5F
+XL_PARAM_3_KNOB_FX2         = 0x63
+XL_FX_ON_1                  = 0x5A
+XL_FX_ON_2                  = 0x5B
+XL_KEY_LOCK                 = 0x08
+XL_SYNC                     = 0x09
+XL_CUE1                     = 0x11
+XL_CUE1_Dimmer              = 0x12
+XL_CUE2                     = 0x13
+XL_CUE2_Dimmer              = 0x14
+XL_CUE3                     = 0x15
+XL_CUE3_Dimmer              = 0x16
+XL_CUE4                     = 0x17
+XL_CUE4_Dimmer              = 0x18
+XL_CUE5                     = 0x19
+XL_CUE5_Dimmer              = 0x1A
+XL_CUE6                     = 0x1B
+XL_CUE6_Dimmer              = 0x1C
+XL_CUE7                     = 0x1D
+XL_CUE7_Dimmer              = 0x1F
+XL_CUE8                     = 0x20
+XL_CUE8_Dimmer              = 0x21
+XL_PLAY                     = 0x27
+XL_CUE                      = 0x26
+XL_LOOP_IN                  = 0x24
+XL_LOOP_IN_Dimmer           = 0x3E
+XL_LOOP_OUT                 = 0x40
+XL_LOOP_OUT_Dimmer          = 0x2A
+XL_AUTO_LOOP                = 0x2B
+XL_AUTO_LOOP_Dimmer         = 0x53
+
+
+--[[ Application Functions ]]--
+--[[=======================]]--
 
 -- use deck a as scroll wheel
-jogdial_counter = 0
-function default.jogdial_turn( event )
-    if( jogdial_counter < 10 ) then
-        jogdial_counter = jogdial_counter + 1
-        return
-    else
-        jogdial_counter = 0
-    end
+jogdial = {
+    counter = 0,
+    turn = function( event )
+        if( jogdial.counter < 10 ) then
+            jogdial.counter = jogdial.counter + 1
+            return
+        else
+            jogdial.counter = 0
+        end
 
-    if event[3] < 64 then
-        buttonpress( 4 )
+        if event[3] < 64 then
+            buttonpress( 4 )
+        end
+        if event[3] > 64 then
+            buttonpress( 5 )
+        end
     end
-    if event[3] > 64 then
-        buttonpress( 5 )
-    end
-end
+}
 
-function default.pitchbend( event )
-    print( event_to_string( event ) .. " - unassigned" )
-end
-
-local pulse_master_volume_value = 0
-local pulse_master_volume_ms = milliseconds()
-function default.pulse_master_volume( event )
-    if( milliseconds() - pulse_master_volume_ms < 25 )then
-        return
-    end
-    pulse_master_volume_ms = milliseconds()
-
-    temp = math.floor( (event[3] / 2.550) )
-    if( pulse_master_volume_value == temp) then
-        return
-    end
-    pulse_master_volume_value = temp
-    exec("amixer -D pulse sset Master " .. temp .. "%" )
-end
-
-function default.clementine_np( event )
+--[[ Clementine ]]--
+clementine = {}
+clementine.next_prev = function( event )
     if( event[3] > 65 ) then
         exec( "clementine -r" )
     else
@@ -599,275 +535,85 @@ function default.clementine_np( event )
     end
 end
 
-function default.clementine_playpause( event )
+clementine.play_pause = function( event )
     exec( "clementine -t" )
 end
 
+--[[ Pulse Audio ]]--
+pa = {
+    volume = 0,
+    volume_ms = milliseconds(),
+    set_volume = function( event )
+        if( milliseconds() - pa.volume_ms < 25 )then
+            return
+        end
+        pa.volume_ms = milliseconds()
+
+        temp = math.floor( (event[3] / 2.550) )
+        if( pa.volume == temp) then
+            return
+        end
+        pa.volume = temp
+        -- old way exec("amixer -D pulse sset Master " .. temp .. "%" )
+        exec( "pactl set-sink-volume @DEFAULT_SINK@ " .. temp .. "%" )
+    end
+}
+
+--[[ Default Keymap ]]--
+------------------------
+default = {}
 
 default.map = {}
 
---deckA
-default.map[0x90] = {
-    [0x58] = { ['*'] = { unassigned } }, -- FX_UNIT
-    [0x03] = { ['*'] = { unassigned } }, -- DECK_CHG
-    [0x15] = { ['*'] = { default.toggle, controller.light.DRY_WET_KNOB_FX1 } }, -- DRY_WET_SW_FX1
-    [0x55] = { ['*'] = { default.toggle, controller.light.DRY_WET_KNOB_FX2 } }, -- DRY_WET_SW_FX2
-    [0x64] = { ['*'] = { unassigned } }, -- BROWSER
-    [0x30] = { ['*'] = { unassigned } }, -- PREVIOUS
-    [0x12] = { ['*'] = { default.toggle, controller.light.PARAM_1_KNOB_FX1 } }, -- PARAM_1_SW_FX1
-    [0x52] = { ['*'] = { default.toggle, controller.light.PARAM_1_KNOB_FX2 } }, -- PARAM_1_SW_FX2
-    [0x28] = { ['*'] = { unassigned } }, -- TRACK_SELECT_KNOB_SW
-    [0x13] = { ['*'] = { default.toggle, controller.light.PARAM_2_KNOB_FX1 } }, -- PARAM_2_SW_FX1
-    [0x53] = { ['*'] = { default.toggle, controller.light.PARAM_2_KNOB_FX2 } }, -- PARAM_2_SW_FX2
-    [0x29] = { ['*'] = { unassigned } }, -- NEXT
-    [0x65] = { ['*'] = { unassigned } }, -- DUPLICATE
-    [0x14] = { ['*'] = { default.toggle, controller.light.PARAM_3_KNOB_FX1 } }, -- PARAM_3_SW_FX1
-    [0x54] = { ['*'] = { default.toggle, controller.light.PARAM_3_KNOB_FX2 } }, -- PARAM_3_SW_FX2
-    [0x0D] = { ['*'] = { unassigned } }, -- BEND_MINUS
-    [0x56] = { ['*'] = { default.toggle, controller.light.FX_ON_1 } }, -- FX_ON_1
-    [0x06] = { ['*'] = { default.toggle, controller.light.KEY_LOCK } }, -- KEY_LOCK
-    [0x57] = { ['*'] = { default.toggle, controller.light.FX_ON_2 } }, -- FX_ON_2
-    [0x6B] = { ['*'] = { default.toggle, controller.light.SYNC } }, -- SYNC
-    [0x0C] = { ['*'] = { unassigned } }, -- BEND_PLUS
-    [0x17] = { ['*'] = { default.toggle, controller.light.CUE1 } }, -- CUE1
-    [0x18] = { ['*'] = { default.toggle, controller.light.CUE2 } }, -- CUE2
-    [0x19] = { ['*'] = { default.toggle, controller.light.CUE3 } }, -- CUE3
-    [0x20] = { ['*'] = { default.toggle, controller.light.CUE4 } }, -- CUE4
-    [0x21] = { ['*'] = { default.toggle, controller.light.CUE5 } }, -- CUE5
-    [0x22] = { ['*'] = { default.toggle, controller.light.CUE6 } }, -- CUE6
-    [0x23] = { ['*'] = { default.toggle, controller.light.CUE7 } }, -- CUE7
-    [0x24] = { ['*'] = { default.toggle, controller.light.CUE8 } }, -- CUE8
-    [0x60] = { ['*'] = { unassigned } }, -- CUE_LOOP_DELETE_SHIFT
-    [0x11] = { ['*'] = { unassigned } }, -- FAST_SEARCH_MINUS
-    [0x43] = { ['*'] = { default.toggle, controller.light.PLAY } }, -- PLAY
-    [0x42] = { ['*'] = { default.toggle, controller.light.CUE } }, -- CUE
-    [0x10] = { ['*'] = { unassigned } }, -- FAST_SEARCH_PLUS
-    [0x37] = { ['*'] = { default.toggle, controller.light.LOOP_IN } }, -- LOOP_IN
-    [0x39] = { ['*'] = { default.toggle, controller.light.LOOP_OUT } }, -- LOOP_OUT
-    [0x69] = { ['*'] = { unassigned } }, -- BEAT_MINUS
-    [0x1D] = { ['*'] = { default.toggle, controller.light.AUTO_LOOP } }, -- AUTO_LOOP
-    [0x6A] = { ['*'] = { unassigned } }, -- BEAT_PLUS
-    [0x68] = { ['*'] = { unassigned } }, -- FILTER_SW
-    [0x1A] = { ['*'] = { unassigned } }, -- SEL
-}
-default.map[0x91] = {
-    [0x58] = { ['*'] = { unassigned } }, -- FX_UNIT
-    [0x03] = { ['*'] = { unassigned } }, -- DECK_CHG
-    [0x15] = { ['*'] = { default.toggle, controller.light.DRY_WET_KNOB_FX1 } }, -- DRY_WET_SW_FX1
-    [0x55] = { ['*'] = { default.toggle, controller.light.DRY_WET_KNOB_FX2 } }, -- DRY_WET_SW_FX2
-    [0x64] = { ['*'] = { unassigned } }, -- BROWSER
-    [0x30] = { ['*'] = { unassigned } }, -- PREVIOUS
-    [0x12] = { ['*'] = { default.toggle, controller.light.PARAM_1_KNOB_FX1 } }, -- PARAM_1_SW_FX1
-    [0x52] = { ['*'] = { default.toggle, controller.light.PARAM_1_KNOB_FX2 } }, -- PARAM_1_SW_FX2
-    [0x28] = { ['*'] = { unassigned } }, -- TRACK_SELECT_KNOB_SW
-    [0x13] = { ['*'] = { default.toggle, controller.light.PARAM_2_KNOB_FX1 } }, -- PARAM_2_SW_FX1
-    [0x53] = { ['*'] = { default.toggle, controller.light.PARAM_2_KNOB_FX2 } }, -- PARAM_2_SW_FX2
-    [0x29] = { ['*'] = { unassigned } }, -- NEXT
-    [0x65] = { ['*'] = { unassigned } }, -- DUPLICATE
-    [0x14] = { ['*'] = { default.toggle, controller.light.PARAM_3_KNOB_FX1 } }, -- PARAM_3_SW_FX1
-    [0x54] = { ['*'] = { default.toggle, controller.light.PARAM_3_KNOB_FX2 } }, -- PARAM_3_SW_FX2
-    [0x0D] = { ['*'] = { unassigned } }, -- BEND_MINUS
-    [0x56] = { ['*'] = { default.toggle, controller.light.FX_ON_1 } }, -- FX_ON_1
-    [0x06] = { ['*'] = { default.toggle, controller.light.KEY_LOCK } }, -- KEY_LOCK
-    [0x57] = { ['*'] = { default.toggle, controller.light.FX_ON_2 } }, -- FX_ON_2
-    [0x6B] = { ['*'] = { default.toggle, controller.light.SYNC } }, -- SYNC
-    [0x0C] = { ['*'] = { unassigned } }, -- BEND_PLUS
-    [0x17] = { ['*'] = { default.toggle, controller.light.CUE1 } }, -- CUE1
-    [0x18] = { ['*'] = { default.toggle, controller.light.CUE2 } }, -- CUE2
-    [0x19] = { ['*'] = { default.toggle, controller.light.CUE3 } }, -- CUE3
-    [0x20] = { ['*'] = { default.toggle, controller.light.CUE4 } }, -- CUE4
-    [0x21] = { ['*'] = { default.toggle, controller.light.CUE5 } }, -- CUE5
-    [0x22] = { ['*'] = { default.toggle, controller.light.CUE6 } }, -- CUE6
-    [0x23] = { ['*'] = { default.toggle, controller.light.CUE7 } }, -- CUE7
-    [0x24] = { ['*'] = { default.toggle, controller.light.CUE8 } }, -- CUE8
-    [0x60] = { ['*'] = { unassigned } }, -- CUE_LOOP_DELETE_SHIFT
-    [0x11] = { ['*'] = { unassigned } }, -- FAST_SEARCH_MINUS
-    [0x43] = { ['*'] = { default.toggle, controller.light.PLAY } }, -- PLAY
-    [0x42] = { ['*'] = { default.toggle, controller.light.CUE } }, -- CUE
-    [0x10] = { ['*'] = { unassigned } }, -- FAST_SEARCH_PLUS
-    [0x37] = { ['*'] = { default.toggle, controller.light.LOOP_IN } }, -- LOOP_IN
-    [0x39] = { ['*'] = { default.toggle, controller.light.LOOP_OUT } }, -- LOOP_OUT
-    [0x69] = { ['*'] = { unassigned } }, -- BEAT_MINUS
-    [0x1D] = { ['*'] = { default.toggle, controller.light.AUTO_LOOP } }, -- AUTO_LOOP
-    [0x6A] = { ['*'] = { unassigned } }, -- BEAT_PLUS
-    [0x68] = { ['*'] = { unassigned } }, -- FILTER_SW
-    [0x1A] = { ['*'] = { unassigned } }, -- SEL
+--DECK A:BLUE Note-On functions
+default.map[0x90 + controller.DECKA.channel ]= {
+    [ XC_PLAY                  ] = { ['*'] = clementine.play_pause },
 }
 
-
-default.map[0xB0] = {
-    [0x55] = { [  0] = { unassigned },   --DRY_WET_KNOB_FX1 - clockwise
-               [127] = { unassigned } }, --DRY_WET_KNOB_FX1 - counter
-    [0x56] = { [  0] = { unassigned },   --PARAM_1_KNOB_FX1 - clockwise
-               [127] = { unassigned } }, --PARAM_1_KNOB_FX1 - counter
-    [0x57] = { [  0] = { unassigned },   --PARAM_2_KNOB_FX1 - clockwise
-               [127] = { unassigned } }, --PARAM_2_KNOB_FX1 - counter
-    [0x58] = { [  0] = { unassigned },   --PARAM_3_KNOB_FX1 - clockwise
-               [127] = { unassigned } }, --PARAM_3_KNOB_FX1 - counter
-
-    [0x59] = { [  0] = { unassigned },   --DRY_WET_KNOB_FX2 - clockwise
-               [127] = { unassigned } }, --DRY_WET_KNOB_FX2 - counter
-    [0x5a] = { [  0] = { unassigned },   --PARAM_1_KNOB_FX2 - clockwise
-               [127] = { unassigned } }, --PARAM_1_KNOB_FX2 - counter
-    [0x5b] = { [  0] = { unassigned },   --PARAM_2_KNOB_FX2 - clockwise
-               [127] = { unassigned } }, --PARAM_2_KNOB_FX2 - counter
-    [0x5c] = { [  0] = { unassigned },   --PARAM_3_KNOB_FX2 - clockwise
-               [127] = { unassigned } }, --PARAM_3_KNOB_FX2 - counter
-
-    [0x54] = { [  0] = { default.clementine_np },   --TRACK SELECT KNOB clockwise
-               [127] = { default.clementine_np }, }, --TRACK SELECT KNOB counter
-    [0x5D] = { [  0] = { unassigned },   --FILTER KNOB - clockwise
-               [127] = { unassigned } }, --FILTER KNOB - counter
-    [0x51] = { ['*'] = { default.jogdial_turn } }, --JOGWHEEL FWD/REV
-}
-default.map[0xB1] = {
-    [0x55] = { [  0] = { unassigned },   --DRY_WET_KNOB_FX1 - clockwise
-               [127] = { unassigned } }, --DRY_WET_KNOB_FX1 - counter
-    [0x56] = { [  0] = { unassigned },   --PARAM_1_KNOB_FX1 - clockwise
-               [127] = { unassigned } }, --PARAM_1_KNOB_FX1 - counter
-    [0x57] = { [  0] = { unassigned },   --PARAM_2_KNOB_FX1 - clockwise
-               [127] = { unassigned } }, --PARAM_2_KNOB_FX1 - counter
-    [0x58] = { [  0] = { unassigned },   --PARAM_3_KNOB_FX1 - clockwise
-               [127] = { unassigned } }, --PARAM_3_KNOB_FX1 - counter
-
-    [0x59] = { [  0] = { unassigned },   --DRY_WET_KNOB_FX2 - clockwise
-               [127] = { unassigned } }, --DRY_WET_KNOB_FX2 - counter
-    [0x5a] = { [  0] = { unassigned },   --PARAM_1_KNOB_FX2 - clockwise
-               [127] = { unassigned } }, --PARAM_1_KNOB_FX2 - counter
-    [0x5b] = { [  0] = { unassigned },   --PARAM_2_KNOB_FX2 - clockwise
-               [127] = { unassigned } }, --PARAM_2_KNOB_FX2 - counter
-    [0x5c] = { [  0] = { unassigned },   --PARAM_3_KNOB_FX2 - clockwise
-               [127] = { unassigned } }, --PARAM_3_KNOB_FX2 - counter
-
-    [0x54] = { [  0] = { unassigned },   --TRACK SELECT KNOB clockwise
-               [127] = { unassigned } }, --TRACK SELECT KNOB counter
-    [0x5D] = { [  0] = { unassigned },   --FILTER KNOB - clockwise
-               [127] = { unassigned } }, --FILTER KNOB - counter
-    [0x51] = { ['*'] = { default.jogdial_turn } }, --JOGWHEEL FWD/REV
+--DECK A:BLUE control signals
+default.map[0xB0 + controller.DECKA.channel ] = {
+    [ XC_TRACK_SELECT_KNOB ] = { ['*'] = clementine.next_prev },
+    [ XC_JOGWHEEL_FWD_REV  ] = { ['*'] = jogdial.turn },
 }
 
---Pitch Bend
-default.map[0xE0] = {
-    [0x00] = { ['*'] = { default.pulse_master_volume } },
+--DECK A:BLUE Pitch Bend
+default.map[0xE0 + controller.DECKA.channel] = {
+    [0x00] = { ['*'] = pa.set_volume },
 }
-default.map[0xE1] = {
-    [  0] = { ['*'] = { default.pitchbend } },
-}
--- Pitch bend
- --   [] = { [] = { } }, --PITCH SLIDER 0xEn 0xllx(LSB) 0xmm (MSB)
 
 --[[ application specific maps ]]--
 --[[===========================]]--
 
---[[[ Lightworks ]]--
-lightworks = {}
---the WM_CLASS for lightworrks isnt actually 'lightworks', its 'nvcardvt'
---so we'll make it an alias
-ntcardvt = lightworks
-
-function lightworks.autoloop_turn( event )
-    if event[3] > 64 then
-        keypress( XK_a )
-    end
-    if event[3] < 64 then
-        keypress( XK_s )
-    end
-end
-
-function lightworks.scratch_turn( event )
-    if event[3] > 64 then
-        keypress( XK_Right )
-    end
-    if event[3] < 64 then
-        keypress( XK_Left )
-    end
-end
-
-lightworks.map = {}
-lightworks.map[0x91] = {
-    [0x0B] = { [127] = { kpress, XK_space } },
-    [0x0C] = { [127] = { kpress, XK_i     } },
-    [0x2E] = { [127] = { kpress, XK_x     } },
-}
-lightworks.map[0xB1] = {
-    [0x13] = { ['*'] = { lightworks.autoloop_turn     } },
-    [0x22] = { ['*'] = { lightworks.scratch_turn      } },
-}
-
 --[[ ffplay ]]--
 ffplay = {}
-
-function ffplay.scratch_turn( event )
-    if event[3] > 64 then
-        keypress( XK_Right )
-    end
-    if event[3] < 64 then
-        keypress( XK_Left )
-    end
-end
-
 ffplay.map = {}
-ffplay.map[0x91] = {
-    [0x0B] = { [127] = { kpress, XK_space } },
-}
-ffplay.map[0xB1] = {
-    [0x22] = { ['*'] = { ffplay.scratch_turn } },
-}
 
---[[ kdenlive ]]--
-kdenlive = {}
-
-function kdenlive.scratch_turn( event )
-    if event[3] > 64 then
-        keypress( XK_Right )
-    end
-    if event[3] < 64 then
-        keypress( XK_Left )
-    end
-end
-
-kdenlive.map = {}
-kdenlive.map[0xB1] = {
-    [0x22] = { ['*'] = { kdenlive.scratch_turn } },
-    [0x13] = { [127] = { kpress, XK_A          },
-               [  1] = { kpress, XK_S          } },
+-- play pause when play button is pressed
+ffplay.map[ 0x90 + controller.DECKB.channel ]= {
+    [ XC_PLAY ]= { [127]= function( event )
+        keypress( XK_space )
+    end },
 }
-kdenlive.map[0x91] = {
-    [0x0B] = { [127] = { kpress, XK_space } },
-    [0x0C] = { [127] = { kpress, { XK_Shift_L, XK_8 } } },
-    [0x14] = { [127] = { kpress, { XK_Alt_L, XK_8 } } },
+-- scrub through footage with jog wheel
+ffplay.map[0xB0 + controller.DECKB.channel ]= {
+    [ XC_JOGWHEEL_FWD_REV ] = { ['*'] =
+        function( event )
+            if event[3] > 64 then
+                keypress( XK_Right )
+            end
+            if event[3] < 64 then
+                keypress( XK_Left )
+            end
+        end },
 }
 
---[[ olive editor ]]--
---
-olive = {}
-_G[ "olive-editor" ] = olive
-
-olive.map = {}
-
-olive.map[0x90] = {
-}
-
-olive.map[0x91] = {
-    [0x37] = { ['*'] = { kpress, XK_i }, },
-    [0x39] = { ['*'] = { kpress, XK_o }, },
-    [0x43] = { ['*'] = { kpress, XK_space }, },
-    [0x29] = { ['*'] = { kpress, XK_Down }, },
-    [0x30] = { ['*'] = { kpress, XK_Up }, },
-    [0x42] = { ['*'] = { kpress, XK_m }, },
-    [0x60] = { ['*'] = { kpress, XK_apostrophe }, },
-}
-
-olive.map[0xB1] = {
-    [0x54] = { [  0] = { kpress, XK_Right },
-               [127] = { kpress, XK_Left  }, },
-}
-
+--[[ Blender ]]--
+--[[ ======= ]]--
 
 Blender = {}
 Blender.func = {}
 
-function Blender.func.scrub( value )
+function Blender.func.scrub( event )
     if event[3] > 64 then
         keypress( XK_Right )
     end
@@ -878,40 +624,26 @@ end
 
 Blender.map = {}
 
--- Navigate - BLUE
-Blender.map[0x90] = {
-    [0x42] = { ['*'] = { kpress, XK_m } },
-    [0x43] = { ['*'] = { kpress, XK_space } },
-    [0x29] = { ['*'] = { kpress, XK_Page_Up }, },
-    [0x30] = { ['*'] = { kpress, XK_Page_Down }, },
-    [0x10] = { ['*'] = { kpress, { XK_Shift_L, XK_period } }, },
-    [0x11] = { ['*'] = { kpress, { XK_Shift_L, XK_comma } }, },
+Blender.map[0x90 + controller.DECKB.channel ] = {
+    [ XC_CUE      ] = { ['*'] = function( event ) keypress( XK_m ) end },
+    [ XC_PLAY     ] = { ['*'] = function( event ) keypress( XK_space ) end },
+    [ XC_NEXT     ] = { ['*'] = function( event ) keypress( XK_Page_Up ) end },
+    [ XC_PREVIOUS ] = { ['*'] = function( event ) keypress( XK_Page_Down ) end },
+    [ XC_FAST_SEARCH_PLUS ] = { ['*'] =
+        function( event ) kpress( event, { XK_Shift_L, XK_period } ) end },
+    [ XC_FAST_SEARCH_MINUS ] = { ['*'] =
+        function( event ) kpress( event, { XK_Shift_L, XK_comma }) end },
 }
-Blender.map[0xB0] = {
-    [0x51] = { ['*'] = { Blender.func.scrub} },
-    [0x54] = { [  0] = { kpress, XK_Page_Up },
-               [127] = { kpress, XK_Page_Down  }, },
+Blender.map[0xB0 +  controller.DECKB.channel ] = {
+    [ XC_JOGWHEEL_FWD_REV ] = { ['*'] = Blender.func.scrub },
+    [ XC_TRACK_SELECT_KNOB ] = {
+        [  0] = function( event ) keypress( XK_Page_Up ) end,
+        [127] = function( event ) keypress( XK_Page_Down ) end
+    },
 }
--- edit - RED
-Blender.map[0x91] = {
-}
-Blender.map[0xB1] = {
-}
---[[ Missing assigments from previous version ]]--
--- * dbus message sending to mediaplayer advertisement, honestly it was shit
---   house anyway because i would experiment with my mediaplayer too much
--- * disabling controls when mixx is playing, either way or..
--- * vlc controls
--- * mplayer controls
--- * generic alsa volume controls
---[[ Brainstorming things for future]]--
--- * each application having a default state so that when switching between i
---   can light up the buttons which have commands associated with them. or check
---   using dbus to query the state and make the deck show whats up. so that
---   would mean polling functions, or dbus subscriptions or some such.
 
---[[ control functions ]]--
---[[===================]]--
+--[[ Built in midi2input control functions ]]--
+--[[=======================================]]--
 function script_init()
     print( "beans nothing to do" )
     loopenable()
@@ -935,19 +667,13 @@ function midi_recv( channel, control, value )
     then
         local control = current[channel][control]
         -- we have the control, now look for the value or wildcard
-        if control[value] then
-            action = control[value]
-        elseif control['*'] then
-            action = control['*']
+        if control[ value ] then
+            control[ value ]( event )
+        elseif control[ '*' ] then
+            control[ '*' ]( event )
         else
+            --unable to find action for event
             return
-        end
-
-        --we have the action, so run it with its optional paremeter
-        if action[2] then
-            action[1]( event, action[2] )
-        else
-            action[1]( event )
         end
     end
 end
