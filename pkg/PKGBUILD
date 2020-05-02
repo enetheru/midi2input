@@ -1,6 +1,6 @@
 # Maintainer: Samuel Nicholas <nicholas.samuel@gmail.com>
 pkgname='m2i-git'
-pkgver=0.1
+pkgver=r226.7219c68
 pkgrel=1
 pkgdesc="turn midi events into mouse and keyboard events"
 arch=( 'x86_64' 'i686' )
@@ -32,8 +32,7 @@ prepare() {
 }
 
 build() {
-    cd "$srcdir/midi2input"
-    cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr .
+    cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr "$srcdir/midi2input"
     make
 }
 
@@ -44,6 +43,5 @@ check() {
 }
 
 package() {
-    cd "$srcdir/midi2input"
     make DESTDIR="$pkgdir/" install
 }
