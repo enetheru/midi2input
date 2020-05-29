@@ -1,6 +1,6 @@
 ![m2i](https://gitlab.com/enetheru/midi2input/raw/master/res/icons/m2i-black.png "m2i")
 =======
-m2i(midi to input) is a small service like applicatin that runs scripted actions in response to to midi events. Actions can be mouse, keyboard events, commands and more midi events. m2i can receive midi events from either the ALSA and or Jack midi sequenser.
+m2i(midi to input) is a small service like application that runs scripted actions in response to to midi events. Actions can be mouse, keyboard events, commands and more midi events. m2i can receive midi events from either the ALSA and or Jack midi sequencer.
 
 m2i Uses
 --------
@@ -9,7 +9,7 @@ m2i Uses
 * libfmt/fmt - simple formatting
 * lua 5.3 - the script engine
 * libx11 & libxtst - for x11 keybord and mouse input and window WM_CLASS detection
-* either alsa-lib or jack/jack2 - for midi sequensor input
+* either alsa-lib or jack/jack2 - for midi sequencer input
 * qt5-base - for system tray icon
 
 Build Instructions
