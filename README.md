@@ -12,46 +12,9 @@ m2i Uses
 * either alsa-lib or jack/jack2 - for midi sequensor input
 * qt5-base - for system tray icon
 
-Build Instructions
-==================
-
-Compile 
--------
-
-* install dependencies:
-    * build time: git cmake openimageio gtk-update-icon-cache
-    * required: lua-5.3, alsa-lib, libx11, libxtst
-    * Optional: jack | jack2, qt5-core
-* git clone https://gitlab.com/enetheru/midi2input.git
-* cd midi2input
-* git submodule update --init --recursive
-* mkdir build
-* cd build
-* cmake ../midi2input/
-* make
-
-Install 
--------
-
-After the above compile instruction
-
-* `make install`
-* `gtk-update-icon-cache -q -t -f usr/share/icons/hicolor`
-
-Arch
-----
-* mkdir m2i
-* curl https://gitlab.com/enetheru/midi2input/raw/master/pkg/PKGBUILD > m2i/PKGBUILD
-* cd m2i
-* makepkg -si
-
-Debian/Ubuntu
--------------
-
-After the above compile instruction
-
-* `make package`
-* `dpkg -i m2i-*-Linux.deb`
+Installation Instructions
+=========================
+Check INSTALL[.OS].md for build and install instructions
 
 Features
 ========
