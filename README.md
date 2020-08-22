@@ -286,6 +286,13 @@ AUTHOR
 ------
 Samuel Nicholas &lt;nicholas.samuel@gmail.com&gt;
 
+CONTRIBUTORS
+------------
+Urs Liska
+Arthur Lutz
+Marcin Świgoń
+Jarrod Whittaker
+
 SEE ALSO
 --------
 lua(1), jackd(1), &lt;X11/keysymdef.h&gt;
