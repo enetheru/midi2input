@@ -4,6 +4,7 @@
 //header to initialise jack interface and keep it clean
 #include <jack/jack.h>
 #include <jack/midiport.h>
+#include <jack/ringbuffer.h>
 #include "midi.h"
 
 class JackSeq{
@@ -12,6 +13,7 @@ public:
     void init();
     void fina();
 
+    int do_process(jack_nframes_t num_frames);
     void event_send( const midi_event &event );
     int event_pending();
     midi_event event_receive();
@@ -26,9 +28,7 @@ private:
     jack_port_t *input_port = nullptr;
     jack_port_t *output_port = nullptr;
 
-    static void error_callback( const char * );
-    static void info_callback( const char *  );
-
+    jack_ringbuffer_t *event_buf;
 
 };
 
