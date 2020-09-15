@@ -1,28 +1,27 @@
-#include "jack.h"
-#include "util.h"
+#include <spdlog/spdlog.h>
 
-using namespace m2i;
+#include "jack.h"
 
 #define EVENT_BUF_SIZE 64
 
 void
 JackSeq::init()
 {
-    LOG( JACK ) << "Initialising\n";
+    spdlog::info( "JACK: Initialising" );
 
     event_buf = jack_ringbuffer_create(EVENT_BUF_SIZE * sizeof(midi_event));
 
     jack_set_error_function( [](const char *msg){
-        LOG( JACK ) << "Error: " << msg << "\n";
+        spdlog::error( "JACK: {}", msg );
             } );
 
     jack_set_info_function( [](const char *msg){
-        LOG( JACK ) << "Info: " << msg << "\n";
+        spdlog::info( "JACK: {}", msg );
             } );
 
     client = jack_client_open( "midi2input_jack", JackNoStartServer, nullptr );
     if(! client ){
-        LOG( JACK ) << "unable to open client on server\n";
+        spdlog::info( "JACK: unable to open client on server" );
         return;
     }
 
@@ -31,13 +30,13 @@ JackSeq::init()
         return jackSeq->do_process(nframes);
         }, this);
 
-    LOG( JACK ) << "registering ports\n";
+    spdlog::info( "JACK: registering ports" );
     input_port = jack_port_register( client, "in", JACK_DEFAULT_MIDI_TYPE, JackPortIsInput, 0 );
     output_port = jack_port_register( client, "out", JACK_DEFAULT_MIDI_TYPE, JackPortIsOutput, 0 );
 
-    LOG( JACK ) << "Activating client\n";
+    spdlog::info( "JACK: Activating client" );
     if( jack_activate( client ) ){
-        LOG( JACK ) << "cannot activate client\n";
+        spdlog::error( "JACK: cannot activate client" );
         return;
     }
     valid_ = true;
@@ -61,7 +60,7 @@ JackSeq::event_send( const midi_event &event )
     //controller fail.
     void *port_buf = jack_port_get_buffer( output_port, 0 );
     if(! port_buf ){
-        LOG( JACK ) << "Cannot send events with no connected ports\n";
+        spdlog::error( "JACK: Cannot send events with no connected ports" );
         return;
     }
     jack_midi_clear_buffer( port_buf );
@@ -73,7 +72,7 @@ JackSeq::event_send( const midi_event &event )
     mdata[2] = event.data2;
     jack_midi_event_write( port_buf, 0, mdata, 3 );
 
-    LOG( JACK ) << "midi-send: " << event.str() << "\n";
+    spdlog::info( "JACK: midi-send: {}", event.str() );
 }
 
 // this is a callback passed to jack to read events into our buffer
@@ -84,7 +83,7 @@ JackSeq::do_process(jack_nframes_t process_nframes)
     uint32_t jack_event_count = jack_midi_get_event_count( port_buf );
 
     if (jack_event_count > 0) {
-        LOG( JACK ) << "Event Count: " << jack_event_count << "\n";
+        spdlog::info( "JACK: Event Count: {}", jack_event_count );
     }
 
     uint32_t i;
@@ -96,7 +95,7 @@ JackSeq::do_process(jack_nframes_t process_nframes)
         if (ret != 0) { continue; }
 
         if (jack_ringbuffer_write_space(event_buf) < sizeof(midi_event)) {
-            LOG( JACK ) << "Unable to read event from jack, ringbuffer was full. Skipping event.";
+            spdlog::error( "JACK: Unable to read event from jack, ringbuffer was full. Skipping event." );
             continue;
         }
 
@@ -122,16 +121,16 @@ JackSeq::event_receive()
     midi_event result{};
     auto bytes_read = jack_ringbuffer_read(event_buf, (char*) &result, sizeof(result));
     if (bytes_read == 0) {
-        LOG( JACK ) << "Ringbuffer read didn't read.";
+        spdlog::error( "JACK: Ringbuffer read didn't read." );
         result = {};
         return result;
     } else if (bytes_read < sizeof(result)) {
-        LOG( JACK ) << "Ringbuffer read read an incomplete event, uh oh";
+        spdlog::warn( "JACK: Ringbuffer read an incomplete event, uh oh" );
         result = {};
         return result;
     }
 
-    LOG( JACK ) << "midi-recv: " << result.str() << "\n";
+    spdlog::info( "JACK: midi-recv: {}", result.str() );
     return result;
 }
 

@@ -14,6 +14,8 @@ endif()
 
 # dependencies
 # ============
+find_package( spdlog REQUIRED )
+find_package( fmt REQUIRED )
 find_package( Lua 5.3 EXACT REQUIRED )
 find_package( ALSA REQUIRED )
 find_package( X11 )
@@ -47,7 +49,6 @@ endif()
 
 # sub directories
 # ===============
-add_subdirectory( lib/fmt EXCLUDE_FROM_ALL )
 add_subdirectory( src )
 
 if( ${BUILD_DOCS} )
@@ -67,6 +68,7 @@ include( doc/docs.cmake )
 set( CPACK_STRIP_FILES true )
 set( CPACK_GENERATOR "DEB" )
 set( CPACK_DEBIAN_PACKAGE_VERSION "0.1" )
+#FIXME These dependencies need to be updated to include fmt and spdlog
 set( CPACK_DEBIAN_PACKAGE_DEPENDS "libc6, libx11-6, libxtst6, libjack-jackd2-0, liblua5.2-0" )
 set( CPACK_DEBIAN_PACKAGE_MAINTAINER "${DOC_AUTHORS}" )
 string( REPLACE "\n" "\n " CPACK_DEBIAN_PACKAGE_DESCRIPTION ${DOC_DESCRIPTION_SHORT} "\n" ${DOC_DESCRIPTION} )

@@ -1,3 +1,5 @@
+#include <spdlog/spdlog.h>
+
 #include "lua.h"
 #include "midi.h"
 #include "util.h"
@@ -79,7 +81,7 @@ lua_print( lua_State* L ){
     for( int i = 1; i <= args; ++i ){
         output << lua_tostring(L, i);
     }
-    LOG( LUA ) <<  output.str() << "\n";
+    spdlog::info( "LUA: {}", output.str() );
     return 0;
 }
 
@@ -87,11 +89,14 @@ int
 lua_loadscript( lua_State *L, const fs::path &path )
 {
     if( path.empty() ) return -1;
-    if( !L ){ LOG( ERROR ) << "lua isnt initialised\n"; return -1; } 
+    if( !L ){
+        spdlog::error( "LUA: isnt initialised" );
+        return -1;
+    }
 
-    LOG( INFO ) << "Loading script: " << path << "\n";
+    spdlog::info( "LUA: Loading script: {}", path.c_str() );
     if( luaL_loadfile( L, path.c_str() ) || lua_pcall( L, 0, 0, 0 ) ){
-        LOG( ERROR ) << "failure loading script file: " << lua_tostring( L, -1 ) << "\n";
+        spdlog::error( "LUA: failure loading script file: {}", lua_tostring( L, -1 ) );
         return -1;
     }
     return 0;
@@ -105,7 +110,7 @@ lua_midirecv( lua_State *L, const midi_event &event )
     lua_pushnumber( L, event.data1 );
     lua_pushnumber( L, event.data2 );
     if( lua_pcall( L, 3, 0, 0 ) != 0 )
-        LOG( ERROR ) << "call to function 'midi_recv' failed" << lua_tostring( L, -1 ) << "\n";
+        spdlog::error( "LUA: call to function 'midi_recv' failed {}", lua_tostring( L, -1 ) );
     return 0;
 }
 
@@ -144,7 +149,7 @@ lua_exec( lua_State *L )
 {
     std::string command;
     command = luaL_checkstring( L, -1 );
-    LOG( INFO ) << "exec: " << command << "\n";
+    spdlog::info( "LUA: exec: {}", command );
 
     FILE *in;
     char buff[512];
@@ -152,7 +157,7 @@ lua_exec( lua_State *L )
         return 1;
     }
     while( fgets(buff, sizeof(buff), in) != nullptr ){
-        LOG( INFO ) << buff << "\n";
+        spdlog::info( "LUA: {}", buff );
     }
     pclose( in );
     return 0;
@@ -196,7 +201,7 @@ lua_keypress( lua_State *L )
     XTestFakeKeyEvent( xdp, keycode, 0, CurrentTime );
     XCloseDisplay( xdp );
 
-    LOG(INFO) << "keypress: " << XKeysymToString( keysym ) << "\n";
+    spdlog::info( "LUA: keypress: {}", XKeysymToString( keysym ) );
     return 0;
 }
 
@@ -208,7 +213,7 @@ lua_keydown( lua_State *L )
     XTestFakeKeyEvent( xdp, XKeysymToKeycode( xdp, keysym ), 1, CurrentTime );
     XCloseDisplay( xdp );
 
-    LOG(INFO) << "keydown: " << XKeysymToString( keysym ) << "\n";
+    spdlog::info( "LUA: keydown: {}", XKeysymToString( keysym ) );
     return 0;
 }
 
@@ -220,7 +225,7 @@ lua_keyup( lua_State *L )
     XTestFakeKeyEvent( xdp, XKeysymToKeycode( xdp, keysym ), 0, CurrentTime );
     XCloseDisplay( xdp );
 
-    LOG(INFO) << "keyup: " << XKeysymToString( keysym ) << "\n";
+    spdlog::info( "LUA: keyup: ", XKeysymToString( keysym ) );
     return 0;
 }
 
@@ -233,7 +238,7 @@ lua_buttonpress( lua_State *L )
     XTestFakeButtonEvent( xdp, button, 0, CurrentTime );
     XCloseDisplay( xdp );
 
-    LOG(INFO) << "buttonpress: " << button << "\n";
+    spdlog::info( "LUA: buttonpress: {}", button );
     return 0;
 }
 
@@ -245,7 +250,7 @@ lua_buttondown( lua_State *L )
     XTestFakeButtonEvent( xdp, button, 1, CurrentTime );
     XCloseDisplay( xdp );
 
-    LOG(INFO) << "buttondown: " << button << "\n";
+    spdlog::info( "LUA: buttondown: {}", button );
     return 0;
 }
 
@@ -257,7 +262,7 @@ lua_buttonup( lua_State *L )
     XTestFakeButtonEvent( xdp, button, 0, CurrentTime );
     XCloseDisplay( xdp );
 
-    LOG(INFO) << "buttonup: " << button << "\n";
+    spdlog::info( "LUA: buttonup: {}", button );
     return 0;
 }
 
@@ -270,7 +275,7 @@ lua_mousemove( lua_State *L )
     XTestFakeRelativeMotionEvent( xdp, x, y, CurrentTime );
     XCloseDisplay( xdp );
 
-    LOG(INFO) << fmt::format( "mousemove: {},{}\n", x, y );
+    spdlog::info( "LUA: mousemove: {},{}", x, y );
     return 0;
 }
 
@@ -283,7 +288,7 @@ lua_mousepos( lua_State *L )
     XTestFakeMotionEvent( xdp, -1, x, y, CurrentTime );
     XCloseDisplay( xdp );
 
-    LOG(INFO) << fmt::format( "mousewarp: {},{}\n", x, y );
+    spdlog::info( "LUA: mousewarp: {},{}\n", x, y );
     return 0;
 }
 
@@ -323,7 +328,7 @@ int
 lua_jackconnect( lua_State *L )
 {
     //TODO connect to jack port
-    LOG( WARN ) << "This function is not implemented yet\n";
+    spdlog::warn( "LUA: This function is not implemented yet" );
     return 0;
 }
 #endif//WITH_JACK

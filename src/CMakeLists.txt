@@ -11,7 +11,8 @@ target_include_directories( m2i PRIVATE
     ${PROJECT_SOURCE_DIR}/include )
 
 target_link_libraries( m2i PRIVATE
-    fmt
+    fmt::fmt
+    spdlog::spdlog
     stdc++fs
     ${LUA_LIBRARIES} )
 

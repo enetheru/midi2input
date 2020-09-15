@@ -7,7 +7,8 @@
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
 
-#include "util.h"
+#include <spdlog/spdlog.h>
+
 #include "inotify.h"
 
 namespace m2i {
@@ -16,7 +17,7 @@ Notifier::Notifier(){
     /* Create the file descriptor for accessing the inotify API */
     fd = inotify_init1( IN_NONBLOCK );
     if( fd == -1 ){
-        LOG( m2i::ERROR ) << "inotify_init1\n";
+        spdlog::error( "inotify_init1" );
         return;
     }
     /* Prepare for polling */
@@ -26,7 +27,7 @@ Notifier::Notifier(){
 Notifier::~Notifier(){
     /* Close inotify file descriptor */
     if( close( fd ) != 0){
-        LOG( m2i::ERROR ) << "close\n";
+        spdlog::error( "iNotify: close" );
         return;
     }
 }
@@ -34,7 +35,7 @@ Notifier::~Notifier(){
 int
 Notifier::watchPath( watcher input ){
     if( input.path.empty() ){
-        LOG( m2i::ERROR ) << "empty path\n";
+        spdlog::error( "empty path" );
         return -1;
     }
     auto path = input.path;
@@ -48,7 +49,7 @@ Notifier::watchPath( watcher input ){
         IN_CLOSE_WRITE | IN_MODIFY
     );
     if( input.wd == -1 ){
-        LOG( m2i::ERROR ) << "inotify_add_watch - Cannot watch " << path << "\n";
+        spdlog::error( "inotify_add_watch - Cannot watch {}", path.c_str() );
         return -1;
     }
 
@@ -56,12 +57,12 @@ Notifier::watchPath( watcher input ){
     for( const auto& watch : watchers ){
         if( watch.wd == input.wd ){
             if( watch.path == input.path ){
-                LOG( m2i::WARN ) << "already watching: " << path << "\n";
+                spdlog::warn( "already watching: {}", path.c_str() );
             }
         }
     }
     //we arent watching the file so add a new entry to the Listing
-    LOG( m2i::INFO ) << "adding inotify path: " << path.parent_path() << "\n";
+    spdlog::info( "adding inotify path: {}", path.parent_path().c_str() );
     watchers.push_back( input );
     return 0;
 }
@@ -69,7 +70,7 @@ Notifier::watchPath( watcher input ){
 void
 Notifier::check(){
     if( watchers.empty() ){
-        LOG( m2i::WARN ) << "nothing to check\n";
+        spdlog::warn("nothing to check" );
         return;//nothing to check;
     }
 
@@ -77,7 +78,7 @@ Notifier::check(){
     poll_num = poll( &pfd, 1, 0 );
     if( poll_num == -1 ){
         if( errno == EINTR )return;
-        LOG( m2i::ERROR ) << "poll";
+        spdlog::error("poll" );
         return;
     }
     if( poll_num > 0 ){
@@ -111,7 +112,7 @@ Notifier::handleEvents(){
            it returns -1 with errno set to EAGAIN. In that case,
            we exit the loop. */
         if( len == -1 && errno != EAGAIN ){
-            LOG( m2i::ERROR ) << "read\n";
+            spdlog::error( "read" );
             return;
         }
 
@@ -126,7 +127,7 @@ Notifier::handleEvents(){
             //test we are looking at a file we are watching
             for( const auto& watcher : watchers ){
                 if( watcher.path.filename() == event->name ){
-                    LOG( m2i::INFO ) << event->name << " has been modified\n";
+                    spdlog::info( "{} has been modified", event->name );
                     // so run the associated function.
                     watcher.function();
                     return;
