@@ -1,13 +1,13 @@
 # Maintainer: Samuel Nicholas <nicholas.samuel@gmail.com>
 pkgname='m2i-git'
-pkgver=r226.7219c68
+pkgver=r237.e5ee083
 pkgrel=1
 pkgdesc="turn midi events into mouse and keyboard events"
 arch=( 'x86_64' 'i686' )
 url="https://gitlab.com/enetheru/midi2input"
 license=('GPL3')
 groups=()
-depends=( 'lua52' 'libxtst' 'qt5-base' 'jack' 'hicolor-icon-theme' )
+depends=( 'fmt' 'spdlog' 'lua52' 'libxtst' 'qt5-base' 'jack' 'hicolor-icon-theme' )
 makedepends=( 'git' 'cmake' 'openimageio' 'gtk-update-icon-cache'
     'desktop-file-utils' )
 provides=('m2i')
