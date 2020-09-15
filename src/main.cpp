@@ -1,8 +1,7 @@
 //system includes
 #include <chrono>
 #include <thread>
-#include <signal.h>
-#include <functional>
+#include <csignal>
 
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
@@ -16,7 +15,6 @@ extern "C" {
 #include "argh.h"
 
 //local includes
-#include "main.h"
 #include "util.h"
 #include "midi.h"
 #include "inotify.h"
@@ -34,7 +32,6 @@ extern "C" {
 #ifdef WITH_QT
     #include <QApplication>
     #include <QSystemTrayIcon>
-    #include <QMessageBox>
     #include "trayicon.h"
 #endif//WITH_QT
 
@@ -61,7 +58,6 @@ namespace m2i {
     int loglevel = 100;
     bool use_alsa = true;
     bool use_jack = false;
-    bool use_xorg = true;
     bool reconnect = true;
     bool loop_enabled = true;
     std::chrono::milliseconds main_freq( 10 );
@@ -123,7 +119,6 @@ loadConfig( lua_State *L, const fs::path &path ){
         lua_pop( L, 1 );
     }
     lua_pop( L, 1 ); //lua_getglobal "config"
-    return;
 }
 
 static void

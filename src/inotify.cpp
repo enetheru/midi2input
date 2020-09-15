@@ -1,15 +1,12 @@
-#include <errno.h>
+#include <cerrno>
 #include <poll.h>
-#include <stdlib.h>
+#include <cstdlib>
 #include <sys/inotify.h>
 #include <unistd.h>
 
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
 
-#include <string>
-#include <vector>
-#include <map>
 #include "util.h"
 #include "inotify.h"
 
@@ -32,7 +29,6 @@ Notifier::~Notifier(){
         LOG( m2i::ERROR ) << "close\n";
         return;
     }
-    return;
 }
 
 int
@@ -57,7 +53,7 @@ Notifier::watchPath( watcher input ){
     }
 
     //search the list of existing watchers for an exact match
-    for( auto watch : watchers ){
+    for( const auto& watch : watchers ){
         if( watch.wd == input.wd ){
             if( watch.path == input.path ){
                 LOG( m2i::WARN ) << "already watching: " << path << "\n";
@@ -67,27 +63,6 @@ Notifier::watchPath( watcher input ){
     //we arent watching the file so add a new entry to the Listing
     LOG( m2i::INFO ) << "adding inotify path: " << path.parent_path() << "\n";
     watchers.push_back( input );
-    return 0;
-}
-
-int
-Notifier::ignorePath( const fs::path &path ){
-    if( path.empty() ){
-        LOG( m2i::ERROR ) << "empty path\n";
-        return -1;
-    }
-
-    for( auto iter = watchers.begin(); iter != watchers.end(); iter++ ){
-        if( iter->path == path ){
-            if( inotify_rm_watch( fd, iter->wd ) != 0 ){
-                LOG( m2i::ERROR ) << "inotify_rm_watch\n";
-                return -1;
-            }
-            watchers.erase( iter );
-            return 0;
-        }
-    }
-    LOG( m2i::WARN ) << "inotify is not watching: " << path << "\n";
     return 0;
 }
 
@@ -114,8 +89,6 @@ Notifier::check(){
          * from stdin, could be used to have keyboard input to midi events.
          */
     }
-
-    return;
 }
 
 void
@@ -151,7 +124,7 @@ Notifier::handleEvents(){
             event = (const struct inotify_event *) ptr;
 
             //test we are looking at a file we are watching
-            for( auto watcher : watchers ){
+            for( const auto& watcher : watchers ){
                 if( watcher.path.filename() == event->name ){
                     LOG( m2i::INFO ) << event->name << " has been modified\n";
                     // so run the associated function.

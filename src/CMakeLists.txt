@@ -1,5 +1,5 @@
 add_executable( m2i
-    main.h    main.cpp
+        main.cpp
     util.h    util.cpp
     midi.h    midi.cpp
     lua.h     lua.cpp

@@ -54,7 +54,7 @@ static const struct luaL_Reg funcs [] = {
 #ifdef WITH_JACK
   {"jackconnect",  lua_jackconnect},
 #endif//WITH_JACK
-  {NULL, NULL} /* end of array */
+  {nullptr, nullptr} /* end of array */
 };
 
 lua_State *
@@ -113,7 +113,7 @@ lua_midirecv( lua_State *L, const midi_event &event )
 int
 lua_midisend( lua_State *L )
 {
-    midi_event event;
+    midi_event event{};
     lua_pushnumber( L, 1 );
     lua_gettable( L, -2 );
     event.status =  static_cast<unsigned char>( luaL_checknumber( L, -1 ) );
@@ -279,7 +279,7 @@ lua_mousepos( lua_State *L )
 {
     Display *xdp = XOpenDisplay( getenv( "DISPLAY" ) );
     auto x = static_cast<int32_t>( luaL_checknumber( L, 1 ) );
-    auto y = static_cast<int32_t>( luaL_checknumber( L, 2 ) );;
+    auto y = static_cast<int32_t>( luaL_checknumber( L, 2 ) );
     XTestFakeMotionEvent( xdp, -1, x, y, CurrentTime );
     XCloseDisplay( xdp );
 

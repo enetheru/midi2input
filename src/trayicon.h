@@ -25,10 +25,9 @@ private:
     void createActions();
     void createTrayIcon();
 
-    QAction *quitAction;
-
-    QSystemTrayIcon *trayIcon;
-    QMenu *trayIconMenu;
+    QAction *quitAction{nullptr};
+    QSystemTrayIcon *trayIcon{nullptr};
+    QMenu *trayIconMenu{nullptr};
 };
 
 #endif//M2I_TRAYICON_H

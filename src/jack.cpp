@@ -51,7 +51,6 @@ JackSeq::fina()
         jack_client_close( client );
         jack_ringbuffer_free(event_buf);
     }
-    return;
 }
 
 
@@ -75,7 +74,6 @@ JackSeq::event_send( const midi_event &event )
     jack_midi_event_write( port_buf, 0, mdata, 3 );
 
     LOG( JACK ) << "midi-send: " << event.str() << "\n";
-    return;
 }
 
 // this is a callback passed to jack to read events into our buffer
@@ -91,7 +89,7 @@ JackSeq::do_process(jack_nframes_t process_nframes)
 
     uint32_t i;
     jack_midi_event_t jack_event;
-    midi_event  m2i_event;
+    midi_event  m2i_event{};
     for (i = 0; i < jack_event_count; i++) {
         int ret = jack_midi_event_get(&jack_event, port_buf, i);
 
@@ -112,17 +110,16 @@ JackSeq::do_process(jack_nframes_t process_nframes)
     return 0;
 }
 
-int
+unsigned long
 JackSeq::event_pending()
 {
-    const int events_waiting_in_buffer = jack_ringbuffer_read_space(event_buf) / sizeof(midi_event);
-    return events_waiting_in_buffer;
+    return jack_ringbuffer_read_space(event_buf) / sizeof(midi_event);
 }
 
 midi_event
 JackSeq::event_receive()
 {
-    midi_event result;
+    midi_event result{};
     auto bytes_read = jack_ringbuffer_read(event_buf, (char*) &result, sizeof(result));
     if (bytes_read == 0) {
         LOG( JACK ) << "Ringbuffer read didn't read.";

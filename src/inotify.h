@@ -19,14 +19,13 @@ public:
     Notifier();
     ~Notifier();
     int watchPath( watcher );
-    int ignorePath( const fs::path & );
     void check();
-    explicit operator bool() { return fd == -1 ? false : true; }
+    explicit operator bool() const { return fd != -1; }
 private:
     void handleEvents();
-    int fd = -1; // filedescriptor for accessing the inotify API
+    int fd = -1; // file descriptor for accessing the inotify API
     std::vector< watcher > watchers;
-    pollfd pfd; //file descriptor to pass to poll
+    pollfd pfd{}; //file descriptor to pass to poll
 };
 
 } //end namespace m2i

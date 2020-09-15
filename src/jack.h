@@ -15,7 +15,7 @@ public:
 
     int do_process(jack_nframes_t num_frames);
     void event_send( const midi_event &event );
-    int event_pending();
+    unsigned long event_pending();
     midi_event event_receive();
 
     const bool &valid = valid_;
@@ -28,7 +28,7 @@ private:
     jack_port_t *input_port = nullptr;
     jack_port_t *output_port = nullptr;
 
-    jack_ringbuffer_t *event_buf;
+    jack_ringbuffer_t *event_buf = nullptr;
 
 };
 

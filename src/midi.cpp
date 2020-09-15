@@ -1,6 +1,5 @@
 #include "util.h"
 #include "midi.h"
-#include <ostream>
 
 std::string
 midi_event::str() const
