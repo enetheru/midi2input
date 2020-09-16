@@ -286,11 +286,10 @@ main( int argc, char **argv )
             }
             #endif//WITH_JACK
 
-            //FIXME simplify the below statements
-            int luastacksize;
-            if( (luastacksize = lua_gettop( m2i::L )) )
-                spdlog::info( "Lua Stack Size: {}", luastacksize);
-
+            {
+                int luastacksize = lua_gettop(m2i::L);
+                if( luastacksize != 0 ) spdlog::info("Lua Stack Size: {}", luastacksize);
+            }
         }
 
         // run the loop lua function at loop_freq
