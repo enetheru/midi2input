@@ -14,4 +14,4 @@ scripted actions in response to to midi events. Actions can be mouse,
 keyboard events, commands and more midi events. ${DOC_NAME} can receive midi
 events from either the ALSA and or Jack midi sequenser." )
 
-set( DOC_AUTHORS "Samuel Nicholas <nicholas.samuel@gmail.com>" )
+set( DOC_AUTHOR "Samuel Nicholas <nicholas.samuel@gmail.com> and contributors" )
