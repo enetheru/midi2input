@@ -68,8 +68,9 @@ include( doc/docs.cmake )
 set( CPACK_STRIP_FILES true )
 set( CPACK_GENERATOR "DEB" )
 set( CPACK_DEBIAN_PACKAGE_VERSION "0.1" )
-#FIXME These dependencies need to be updated to include fmt and spdlog
-set( CPACK_DEBIAN_PACKAGE_DEPENDS "libc6, libx11-6, libxtst6, libjack-jackd2-0, liblua5.2-0" )
+# Build dependencies, libsdlog-dev, libfmt-dev, appears to work for debian
+# testing
+set( CPACK_DEBIAN_PACKAGE_DEPENDS "libc6, libspdlog1, libx11-6, libxtst6, libjack-jackd2-0, liblua5.3-0" )
 set( CPACK_DEBIAN_PACKAGE_MAINTAINER "${DOC_AUTHORS}" )
 string( REPLACE "\n" "\n " CPACK_DEBIAN_PACKAGE_DESCRIPTION ${DOC_DESCRIPTION_SHORT} "\n" ${DOC_DESCRIPTION} )
 set( CPACK_DEBIAN_PACKAGE_SECTION "utils" )
