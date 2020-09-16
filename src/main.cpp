@@ -110,8 +110,8 @@ loadConfig( lua_State *L, const fs::path &path ){
         std::string var( lua_tostring( L, -2 ) );
         if(      var == "script"       )m2i::script = lua_tostring( L, -1 ) ;
         else if( var == "loglevel"     ){
-            lua_tointeger( L, -1 );
-            //FIXME spdlog::set_level(spdlog::level:: ? )
+            //Check spdlog/common.h:125 for numbers and labels
+            spdlog::set_level( static_cast<spdlog::level::level_enum>(lua_tointeger( L, -1 )) );
         }
         else if( var == "use_alsa"     )m2i::use_alsa = lua_toboolean( L, -1 );
         else if( var == "use_jack"     )m2i::use_jack = lua_toboolean( L, -1 );
