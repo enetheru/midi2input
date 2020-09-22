@@ -60,12 +60,8 @@ static const struct luaL_Reg funcs [] = {
 };
 
 lua_State *
-lua_init_new()
-{
-    lua_State *L = luaL_newstate();
-    luaL_openlibs( L );
+register_lua_funcs(lua_State *L ){
 
-    //register out functions with lua
     lua_getglobal(L, "_G");
     luaL_setfuncs(L, funcs, 0);
     lua_pop(L, 1);
@@ -74,36 +70,7 @@ lua_init_new()
 }
 
 int
-lua_print( lua_State* L ){
-    std::stringstream output;
-
-    int args = lua_gettop( L );
-    for( int i = 1; i <= args; ++i ){
-        output << lua_tostring(L, i);
-    }
-    spdlog::info( "LUA: {}", output.str() );
-    return 0;
-}
-
-int
-lua_loadscript( lua_State *L, const fs::path &path )
-{
-    if( path.empty() ) return -1;
-    if( !L ){
-        spdlog::error( "LUA: isnt initialised" );
-        return -1;
-    }
-
-    spdlog::info( "LUA: Loading script: {}", path.c_str() );
-    if( luaL_loadfile( L, path.c_str() ) || lua_pcall( L, 0, 0, 0 ) ){
-        spdlog::error( "LUA: failure loading script file: {}", lua_tostring( L, -1 ) );
-        return -1;
-    }
-    return 0;
-}
-
-int
-lua_midirecv( lua_State *L, const midi_event &event )
+midi_to_lua(lua_State *L, const midi_event &event )
 {
     lua_getglobal( L, "midi_recv" );
     lua_pushnumber( L, event.status );
@@ -114,7 +81,19 @@ lua_midirecv( lua_State *L, const midi_event &event )
     return 0;
 }
 
-    /* ========================= Lua Bindings =========================== */
+/* ========================= Lua Functions =========================== */
+int
+lua_print( lua_State* L ){
+    std::stringstream output;
+
+    int args = lua_gettop( L );
+    for( int i = 1; i <= args; ++i ){
+        output << lua_tostring(L, i);
+    }
+    spdlog::info( "SCRIPT: {}", output.str() );
+    return 0;
+}
+
 int
 lua_midisend( lua_State *L )
 {

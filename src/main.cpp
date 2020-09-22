@@ -92,15 +92,16 @@ intHandler( int dummy ){
 static void
 loadConfig( lua_State *L, const fs::path &path ){
      // Load configuraton lua script
-    if( m2i::lua_loadscript( L, path ) < 0 ){
-        spdlog::error( "unable to load config file: {}", path.c_str() );
+    spdlog::info( "LUA: Loading configuration: {}", path.c_str() );
+    if( luaL_loadfile( L, path.c_str() ) || lua_pcall( L, 0, 0, 0 ) ){
+        spdlog::error( "LUA: failure loading configuration file: {}", lua_tostring( L, -1 ) );
         return;
     }
 
     //pull configuration from config
     lua_getglobal( L, "config" );
     if( !lua_istable(L, -1 ) ){
-        spdlog::error( "No 'config' table found in lua file" );
+        spdlog::error( "LUA: No 'config' table found in {}", path.c_str() );
         lua_pop( L, 1 );
         return;
     }
@@ -126,7 +127,7 @@ loadConfig( lua_State *L, const fs::path &path ){
 }
 
 static void
-restartLua()
+inotify_script_change()
 {
     spdlog::info( "restarting lua" );
     //blow away the lua state
@@ -134,9 +135,15 @@ restartLua()
     m2i::L = nullptr;
 
     //start from scratch
-    m2i::L = m2i::lua_init_new();
-    if( m2i::lua_loadscript( m2i::L, m2i::script ) < 0 ){
-        spdlog::error( "Unable to find script file: {}", m2i::script.c_str() );
+    m2i::L = luaL_newstate();
+    luaL_openlibs( m2i::L );
+
+    //register out functions with lua
+    m2i::register_lua_funcs(m2i::L);
+
+    spdlog::info( "LUA: Loading script: {}", m2i::script.c_str() );
+    if( luaL_loadfile( m2i::L, m2i::script.c_str() ) || lua_pcall( m2i::L, 0, 0, 0 ) ){
+        spdlog::error( "LUA: failure loading script file: {}", lua_tostring( m2i::L, -1 ) );
         return;
     }
 
@@ -150,7 +157,7 @@ main( int argc, char **argv )
     //handle ctrl+c to exit the main loop.
     signal(SIGINT, intHandler);
 
-    /* ================================================================== */
+    /* ============================ Argh Parser ========================= */
     //add key/value pairs
     argh::parser cmdl( { "-c", "--config", "-s", "--script" } );
     cmdl.parse( argc, argv, argh::parser::PREFER_PARAM_FOR_UNREG_OPTION );
@@ -166,8 +173,13 @@ main( int argc, char **argv )
     else
         m2i::config = m2i::getPath( "config.lua" );
 
-    /* ================================================================== */
-    m2i::L = m2i::lua_init_new();
+    /* =================== Lua Initialisation ================= */
+    m2i::L = luaL_newstate();
+    luaL_openlibs( m2i::L );
+    m2i::register_lua_funcs(m2i::L);
+
+    /* === Load Configuration === */
+    // We only do this once on program load, reloading the script does not reload configuration items.
     loadConfig( m2i::L, m2i::config );
 
     //command line overrides
@@ -229,17 +241,19 @@ main( int argc, char **argv )
     #endif//WITH_QT
 
     /* ========================== Load Script =========================== */
-    if( m2i::lua_loadscript( m2i::L, m2i::script ) < 0 ){
-        spdlog::error( "Unable to find script file: {}", m2i::script.c_str() );
+    spdlog::info( "LUA: Loading script: {}", m2i::script.c_str() );
+    if( luaL_loadfile( m2i::L, m2i::script.c_str() ) || lua_pcall( m2i::L, 0, 0, 0 ) ){
+        spdlog::critical( "LUA: failure loading script file: {}", lua_tostring( m2i::L, -1 ) );
+        return -1;
     } else {
-        m2i::notifier.watchPath( {0, m2i::script, restartLua } );
-
-        lua_getglobal( m2i::L, "script_init" );
-        if( lua_pcall( m2i::L, 0, 0, 0 ) != 0 )lua_pop( m2i::L, 1);
+        m2i::notifier.watchPath({0, m2i::script, inotify_script_change});
     }
 
+    lua_getglobal( m2i::L, "script_init" );
+    if( lua_pcall( m2i::L, 0, 0, 0 ) != 0 )lua_pop( m2i::L, 1);
+
     /* =========================== Main Loop ============================ */
-    spdlog::info( "Main: Entering sleep, waiting for events" );
+    spdlog::info( "Entering sleep, waiting for events" );
     std::chrono::system_clock::time_point loop_last = std::chrono::system_clock::now();
     std::chrono::system_clock::time_point watch_last = std::chrono::system_clock::now();
     while(! m2i::quit )
@@ -254,7 +268,7 @@ main( int argc, char **argv )
         #ifdef WITH_ALSA
         if( m2i::seq ){
             while( m2i::seq.event_pending() > 0 ){
-                m2i::lua_midirecv( m2i::L, m2i::seq.event_receive() );
+                m2i::midi_to_lua(m2i::L, m2i::seq.event_receive());
             }
         }
         #endif//WITH_ALSA
@@ -262,7 +276,7 @@ main( int argc, char **argv )
         #ifdef WITH_JACK
         if( m2i::jack.valid ){
             while( m2i::jack.event_pending() > 0 ){
-                m2i::lua_midirecv( m2i::L, m2i::jack.event_receive() );
+                m2i::midi_to_lua(m2i::L, m2i::jack.event_receive());
             }
         }
         #endif//WITH_JACK

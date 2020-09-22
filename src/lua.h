@@ -14,25 +14,12 @@ namespace fs = std::experimental::filesystem;
 #include "midi.h"
 
 namespace m2i {
-/* NOTE maybe use a class like below for easier lua management
-class Lua {
-public:
-    Lua(){ init(); }
-    ~Lua(){ fina(); }
-    void init(){ L = luaL_newstate(); }
-    void fina(){ lua_close( L ); }
-    lua_state *operator()(){ return L; } 
-private:
-    lua_State *L;
-};
- */
+    /* functions register in the lua environment are named with lua_ */
 
-    lua_State *lua_init_new();
+    lua_State *register_lua_funcs(lua_State *L);
+    int midi_to_lua(lua_State *L, const midi_event &event );
 
-    int lua_loadscript( lua_State *L, const fs::path &script );
-    int lua_midirecv( lua_State *L, const midi_event &event );
-
-    // main function biding
+    // m2i functions
     int lua_print( lua_State *L );
     int lua_midisend( lua_State *L );
     int lua_exec( lua_State *L );
@@ -41,7 +28,7 @@ private:
     int lua_milliseconds( lua_State *L );
 
     #ifdef WITH_XORG
-    // X11 function binding
+    // X11 functions
     int lua_keypress( lua_State *L );
     int lua_keydown( lua_State *L );
     int lua_keyup( lua_State *L );
@@ -54,12 +41,12 @@ private:
     #endif//WITH_XORG
 
     #ifdef WITH_ALSA
-    // ALSA function binding
+    // ALSA functions
     int lua_alsaconnect( lua_State *L );
     #endif//WITH_ALSA
 
     #ifdef WITH_JACK
-    // Jack function binding
+    // Jack functions
     int lua_jackconnect( lua_State *L );
     #endif//WITH_JACK
 
