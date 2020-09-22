@@ -17,7 +17,7 @@ Notifier::Notifier(){
     /* Create the file descriptor for accessing the inotify API */
     fd = inotify_init1( IN_NONBLOCK );
     if( fd == -1 ){
-        spdlog::error( "inotify_init1" );
+        spdlog::error( "INOTIFY: init1" );
         return;
     }
     /* Prepare for polling */
@@ -27,7 +27,7 @@ Notifier::Notifier(){
 Notifier::~Notifier(){
     /* Close inotify file descriptor */
     if( close( fd ) != 0){
-        spdlog::error( "iNotify: close" );
+        spdlog::error( "INOTIFY: close" );
         return;
     }
 }
@@ -35,7 +35,7 @@ Notifier::~Notifier(){
 int
 Notifier::watchPath( watcher input ){
     if( input.path.empty() ){
-        spdlog::error( "empty path" );
+        spdlog::error( "INOTIFY: empty path" );
         return -1;
     }
     auto path = input.path;
@@ -49,7 +49,7 @@ Notifier::watchPath( watcher input ){
         IN_CLOSE_WRITE | IN_MODIFY
     );
     if( input.wd == -1 ){
-        spdlog::error( "inotify_add_watch - Cannot watch {}", path.c_str() );
+        spdlog::error( "INOTIFY: Cannot watch {}", path.c_str() );
         return -1;
     }
 
@@ -57,12 +57,12 @@ Notifier::watchPath( watcher input ){
     for( const auto& watch : watchers ){
         if( watch.wd == input.wd ){
             if( watch.path == input.path ){
-                spdlog::warn( "already watching: {}", path.c_str() );
+                spdlog::warn( "INOTIFY: already watching: {}", path.c_str() );
             }
         }
     }
     //we arent watching the file so add a new entry to the Listing
-    spdlog::info( "adding inotify path: {}", path.parent_path().c_str() );
+    spdlog::info( "INOTIFY: adding path: {}", path.parent_path().c_str() );
     watchers.push_back( input );
     return 0;
 }
@@ -70,7 +70,7 @@ Notifier::watchPath( watcher input ){
 void
 Notifier::check(){
     if( watchers.empty() ){
-        spdlog::warn("nothing to check" );
+        spdlog::warn("INOTIFY: nothing to check" );
         return;//nothing to check;
     }
 
@@ -78,7 +78,7 @@ Notifier::check(){
     poll_num = poll( &pfd, 1, 0 );
     if( poll_num == -1 ){
         if( errno == EINTR )return;
-        spdlog::error("poll" );
+        spdlog::error("INOTIFY: poll" );
         return;
     }
     if( poll_num > 0 ){
@@ -112,7 +112,7 @@ Notifier::handleEvents(){
            it returns -1 with errno set to EAGAIN. In that case,
            we exit the loop. */
         if( len == -1 && errno != EAGAIN ){
-            spdlog::error( "read" );
+            spdlog::error( "INOTIFY: read" );
             return;
         }
 
@@ -127,7 +127,7 @@ Notifier::handleEvents(){
             //test we are looking at a file we are watching
             for( const auto& watcher : watchers ){
                 if( watcher.path.filename() == event->name ){
-                    spdlog::info( "{} has been modified", event->name );
+                    spdlog::info( "INOTIFY: {} has been modified", event->name );
                     // so run the associated function.
                     watcher.function();
                     return;
