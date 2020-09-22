@@ -6,18 +6,9 @@
 #include "midi.h"
 #include "util.h"
 
-namespace snd {
-
-/* If i take the opinion that declaring an object doesnt initialise it, and that
- * explicit initialisation is required, which is the case for all the standard
- * types, then the constructor doesnt do anything interesting. but the
- * destructor will cleanup. This means that the Seq object can be allocated, but
- * left in an uninitialised state, at which point taking action on it would be
- * undefined, the same as normal types.
- */
-class Seq {
+class AlsaSeq {
 public:
-    Seq() = default;
+    AlsaSeq() = default;
     int open();
     void close();
 
@@ -29,14 +20,12 @@ public:
 
     explicit operator bool() const { return seq; }
 
-    ~Seq();
+    ~AlsaSeq();
 private:
     int iport_id = -1;
     int oport_id = -1;
     int client_id = -1;
     snd_seq_t *seq = nullptr;
 };
-
-}// end namespace snd
 
 #endif // MIDI2INPUT_JACK_H

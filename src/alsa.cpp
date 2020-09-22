@@ -5,10 +5,8 @@
 
 using namespace m2i;
 
-namespace snd {
-
 int
-Seq::open()
+AlsaSeq::open()
 {
     if( snd_seq_open( &seq, "default", SND_SEQ_OPEN_DUPLEX, SND_SEQ_NONBLOCK ) < 0 )
         return -1;
@@ -45,7 +43,7 @@ Seq::open()
 }
 
 void
-Seq::close()
+AlsaSeq::close()
 {
     if( seq ){
         snd_seq_delete_simple_port( seq, iport_id );
@@ -59,7 +57,7 @@ Seq::close()
 }
 
 int
-Seq::connect( const std::string &client_name, const std::string &port_name )
+AlsaSeq::connect(const std::string &client_name, const std::string &port_name )
 {
     int connections = 0;
     //client info
@@ -111,7 +109,7 @@ Seq::connect( const std::string &client_name, const std::string &port_name )
 }
 
 void
-Seq::event_send( const midi_event &event )
+AlsaSeq::event_send(const midi_event &event )
 {
     snd_seq_event_t ev;
     snd_seq_ev_clear( &ev );
@@ -142,12 +140,12 @@ Seq::event_send( const midi_event &event )
 }
 
 int
-Seq::event_pending(){
+AlsaSeq::event_pending(){
     return snd_seq_event_input_pending( seq, 1 );
 }
 
 midi_event
-Seq::event_receive()
+AlsaSeq::event_receive()
 {
     midi_event result = { 0, 0, 0 };
     snd_seq_event_t *ev = nullptr;
@@ -333,8 +331,6 @@ Seq::event_receive()
     return result;
 }
 
-Seq::~Seq() {
+AlsaSeq::~AlsaSeq() {
     close();
 }
-
-}//end namespace snd

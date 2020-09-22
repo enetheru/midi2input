@@ -73,7 +73,7 @@ namespace m2i {
     bool quit = false;
 
     #ifdef WITH_ALSA
-    snd::Seq seq;
+    AlsaSeq seq;
     #endif//WITH_ALSA
 
     #ifdef WITH_JACK

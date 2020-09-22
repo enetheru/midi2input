@@ -22,7 +22,7 @@
 
 namespace m2i {
     #ifdef WITH_ALSA
-    extern snd::Seq seq;
+    extern AlsaSeq seq;
     #endif//WITH_ALSA
 
     #ifdef WITH_JACK
@@ -306,6 +306,7 @@ lua_alsaconnect( lua_State *L )
 int
 lua_jackconnect( lua_State *L )
 {
+    (void)L;
     //TODO connect to jack port
     spdlog::warn( "LUA: This function is not implemented yet" );
     return 0;
