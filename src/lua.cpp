@@ -136,6 +136,12 @@ lua_exec( lua_State *L )
         return 1;
     }
     while( fgets(buff, sizeof(buff), in) != nullptr ){
+        // strip trailling newline
+        size_t bufflen = strnlen(buff, 512);
+        if( bufflen > 0 && buff[bufflen - 1] == '\n' ){
+            buff[bufflen - 1] = '\0';
+        }
+
         spdlog::info( "LUA: {}", buff );
     }
     pclose( in );
