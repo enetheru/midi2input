@@ -52,7 +52,7 @@ function kpress( event, keys )
         keypress( keys )
         return
     end
-    --FIXME needs one shot combo shortcut implementation 
+    --FIXME needs one shot combo shortcut implementation
     if( type( keys ) == "table" ) then
         print( "multi key event" )
         kdown( event, keys )
@@ -791,7 +791,7 @@ default.map[0x94] = {
     [0x46] = {--         deckA ctrlB
         [127] = { kdown, { XK_Control_L, XK_B } },
         [  0] = { kup,   { XK_B, XK_Control_L } },
-    }, 
+    },
     [0x47] = { [127] = { default.toggle } }, --         deckC ctrlA
     [0x48] = { [127] = { default.toggle } }, --         deckC fx1
     [0x49] = { [127] = { default.toggle } }, --         deckC fx2

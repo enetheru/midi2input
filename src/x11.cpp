@@ -97,5 +97,3 @@ XDetectWindow( Display* xdp )
 }
 
 }// end namespace m2i
-
-

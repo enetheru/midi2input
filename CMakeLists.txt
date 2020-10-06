@@ -44,7 +44,7 @@ message( "--   WITH_X11=" ${WITH_X11} )
 message( "--   WITH_QT=" ${Qt5_FOUND} )
 
 if( NOT ( ${ALSA_FOUND} OR "${JACK_FOUND}" ) )
-    message( SEND_ERROR "Either ALSA or Jack needs to be available.") 
+    message( SEND_ERROR "Either ALSA or Jack needs to be available.")
 endif()
 
 # sub directories
@@ -75,4 +75,3 @@ set( CPACK_DEBIAN_PACKAGE_MAINTAINER "${DOC_AUTHORS}" )
 string( REPLACE "\n" "\n " CPACK_DEBIAN_PACKAGE_DESCRIPTION ${DOC_DESCRIPTION_SHORT} "\n" ${DOC_DESCRIPTION} )
 set( CPACK_DEBIAN_PACKAGE_SECTION "utils" )
 include( CPack )
-

@@ -354,7 +354,7 @@ for deck, ch in pairs(decks) do
             turn  = { control,  0x13,  -1 }, -- values 0-30 or 98-127
             sturn = { control,  0x4F,  -1 }, -- values 0-30 or 98-127
 
-            next  = { control,  0x13,   1 }, 
+            next  = { control,  0x13,   1 },
             snext = { control,  0x4F,   1 },
 
             prev  = { control,  0x13, 127 },
@@ -923,5 +923,4 @@ function midi_recv( status, data1, data2 )
         else table = default.map
         end
     end
-
 end

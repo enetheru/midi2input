@@ -362,7 +362,7 @@ controller = {}
 
 --The controller can be configure to use different channels for decks A and B
 -- consult the official instructions on how to change the channels of the
--- controller. and then change these variables to reflect 
+-- controller. and then change these variables to reflect
 controller.DECKA = { channel = 0x00 }
 controller.DECKB = { channel = 0x01 }
 
