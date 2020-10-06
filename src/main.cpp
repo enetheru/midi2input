@@ -320,11 +320,12 @@ main( int argc, char **argv )
         //limit mainloop to m2i::main_freq
         auto main_end = std::chrono::system_clock::now();
         std::chrono::duration< double > main_time = main_end - main_start;
-        if( main_time > m2i::main_freq )
-            spdlog::warn( "processing time of {0.2}ms is longer than timer resolution",
+        if( main_time > m2i::main_freq ){
+            spdlog::warn( FMT_STRING( "processing time of {:.6f}ms is longer than timer resolution" ),
                      main_time.count() * 1000 );
-        else
+        } else {
             std::this_thread::sleep_for( m2i::main_freq - main_time );
+        }
     }
 
     lua_close( m2i::L );
