@@ -879,17 +879,22 @@ function table_rows( t )
     end
 end
 
-function message_compare( a, b )
-    if a[1] ~= -1 then
-        if a[1] ~= b[1] then return true end
+--[[ Pattern matcher for messages ]]--
+--
+-- Both pattern and message share the same structure: {status, data1, data2}.
+-- For any element of the pattern is equal -1, corresponding element of the
+-- message is ignored / considered equal.
+function message_matches( pattern, message )
+    if pattern[1] ~= -1 then
+        if pattern[1] ~= message[1] then return false end
     end
-    if a[2] ~= -1 then
-        if a[2] ~= b[2] then return true end
+    if pattern[2] ~= -1 then
+        if pattern[2] ~= message[2] then return false end
     end
-    if a[3] ~= -1 then
-        if a[3] ~= b[3] then return true end
+    if pattern[3] ~= -1 then
+        if pattern[3] ~= message[3] then return false end
     end
-    return false
+    return true
 end
 
 --[[ Input Event Handler ]]--
@@ -908,7 +913,7 @@ function midi_recv( status, data1, data2 )
         -- search items
         for row in table_rows( table ) do
             -- test for event
-            if( not message_compare( row[ 1 ], message ) ) then
+            if( message_matches( row[ 1 ], message ) ) then
                 -- check for argument in second pair
                 if( row[ 2 ][ 2 ] ) then
                     row[ 2 ][ 1 ]( row[ 2 ][ 2 ] )
