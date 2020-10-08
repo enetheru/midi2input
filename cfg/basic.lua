@@ -54,7 +54,7 @@ function message_compare( a, b )
 end
 
 --[[ initialisation function ]]--
--- run immeditely after the application launches and connects to the device
+-- run immediately after the application launches and connects to the device
 function script_init()
     print( "nothing to initialise" )
 end
