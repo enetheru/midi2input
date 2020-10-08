@@ -914,12 +914,13 @@ function midi_recv( status, data1, data2 )
         for row in table_rows( table ) do
             -- test for event
             if( message_matches( row[ 1 ], message ) ) then
+                local fn = row[ 2 ][ 1 ]
+                local arg = row[ 2 ][ 2 ]
                 -- check for argument in second pair
-                if( row[ 2 ][ 2 ] ) then
-                    row[ 2 ][ 1 ]( row[ 2 ][ 2 ] )
-                else
-                    row[ 2 ][ 1 ]( message )
+                if( arg == nil ) then
+                    arg = message
                 end
+                fn( arg )
                 return
             end
         end
