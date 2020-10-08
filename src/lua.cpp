@@ -77,7 +77,7 @@ midi_to_lua(lua_State *L, const midi_event &event )
     lua_pushnumber( L, event.data1 );
     lua_pushnumber( L, event.data2 );
     if( lua_pcall( L, 3, 0, 0 ) != 0 )
-        spdlog::error( "LUA: call to function 'midi_recv' failed {}", lua_tostring( L, -1 ) );
+        spdlog::error( FMT_STRING( "LUA: call to function 'midi_recv' failed {}" ), lua_tostring( L, -1 ) );
     return 0;
 }
 
@@ -90,7 +90,7 @@ lua_print( lua_State* L ){
     for( int i = 1; i <= args; ++i ){
         output << lua_tostring(L, i);
     }
-    spdlog::info( "SCRIPT: {}", output.str() );
+    spdlog::info( FMT_STRING( "SCRIPT: {}" ), output.str() );
     return 0;
 }
 
@@ -128,7 +128,7 @@ lua_exec( lua_State *L )
 {
     std::string command;
     command = luaL_checkstring( L, -1 );
-    spdlog::info( "LUA: exec: {}", command );
+    spdlog::info( FMT_STRING( "LUA: exec: {}" ), command );
 
     FILE *in;
     char buff[512];
@@ -142,7 +142,7 @@ lua_exec( lua_State *L )
             buff[bufflen - 1] = '\0';
         }
 
-        spdlog::info( "LUA: {}", buff );
+        spdlog::info( FMT_STRING( "LUA: {}" ), buff );
     }
     pclose( in );
     return 0;
@@ -186,7 +186,7 @@ lua_keypress( lua_State *L )
     XTestFakeKeyEvent( xdp, keycode, 0, CurrentTime );
     XCloseDisplay( xdp );
 
-    spdlog::info( "LUA: keypress: {}", XKeysymToString( keysym ) );
+    spdlog::info( FMT_STRING( "LUA: keypress: {}" ), XKeysymToString( keysym ) );
     return 0;
 }
 
@@ -198,7 +198,7 @@ lua_keydown( lua_State *L )
     XTestFakeKeyEvent( xdp, XKeysymToKeycode( xdp, keysym ), 1, CurrentTime );
     XCloseDisplay( xdp );
 
-    spdlog::info( "LUA: keydown: {}", XKeysymToString( keysym ) );
+    spdlog::info( FMT_STRING( "LUA: keydown: {}" ), XKeysymToString( keysym ) );
     return 0;
 }
 
@@ -210,20 +210,20 @@ lua_keyup( lua_State *L )
     XTestFakeKeyEvent( xdp, XKeysymToKeycode( xdp, keysym ), 0, CurrentTime );
     XCloseDisplay( xdp );
 
-    spdlog::info( "LUA: keyup: ", XKeysymToString( keysym ) );
+    spdlog::info( FMT_STRING( "LUA: keyup: {}" ), XKeysymToString( keysym ) );
     return 0;
 }
 
 int
 lua_buttonpress( lua_State *L )
 {
-    Display *xdp = XOpenDisplay( getenv( "DISPLAY" ) ); 
+    Display *xdp = XOpenDisplay( getenv( "DISPLAY" ) );
     auto button = static_cast<uint32_t>( luaL_checknumber( L, 1 ) );
     XTestFakeButtonEvent( xdp, button, 1, CurrentTime );
     XTestFakeButtonEvent( xdp, button, 0, CurrentTime );
     XCloseDisplay( xdp );
 
-    spdlog::info( "LUA: buttonpress: {}", button );
+    spdlog::info( FMT_STRING( "LUA: buttonpress: {}" ), button );
     return 0;
 }
 
@@ -235,7 +235,7 @@ lua_buttondown( lua_State *L )
     XTestFakeButtonEvent( xdp, button, 1, CurrentTime );
     XCloseDisplay( xdp );
 
-    spdlog::info( "LUA: buttondown: {}", button );
+    spdlog::info( FMT_STRING( "LUA: buttondown: {}" ), button );
     return 0;
 }
 
@@ -247,7 +247,7 @@ lua_buttonup( lua_State *L )
     XTestFakeButtonEvent( xdp, button, 0, CurrentTime );
     XCloseDisplay( xdp );
 
-    spdlog::info( "LUA: buttonup: {}", button );
+    spdlog::info( FMT_STRING( "LUA: buttonup: {}" ), button );
     return 0;
 }
 
@@ -260,7 +260,7 @@ lua_mousemove( lua_State *L )
     XTestFakeRelativeMotionEvent( xdp, x, y, CurrentTime );
     XCloseDisplay( xdp );
 
-    spdlog::info( "LUA: mousemove: {},{}", x, y );
+    spdlog::info( FMT_STRING( "LUA: mousemove: {},{}" ), x, y );
     return 0;
 }
 
@@ -273,7 +273,7 @@ lua_mousepos( lua_State *L )
     XTestFakeMotionEvent( xdp, -1, x, y, CurrentTime );
     XCloseDisplay( xdp );
 
-    spdlog::info( "LUA: mousewarp: {},{}\n", x, y );
+    spdlog::info( FMT_STRING( "LUA: mousewarp: {},{}" ), x, y );
     return 0;
 }
 
@@ -314,7 +314,7 @@ lua_jackconnect( lua_State *L )
 {
     (void)L;
     //TODO connect to jack port
-    spdlog::warn( "LUA: This function is not implemented yet" );
+    spdlog::warn( FMT_STRING( "LUA: This function is not implemented yet" ) );
     return 0;
 }
 #endif//WITH_JACK
