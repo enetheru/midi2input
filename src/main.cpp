@@ -106,6 +106,10 @@ loadConfig( lua_State *L, const fs::path &path ){
         return;
     }
 
+    // Collect unused properties into vector, to warn about them later.
+    // This is done in batch to ensure that we honor loglevel which possibly mutes warnings.
+    std::vector<std::string> unrecognized_vars{};
+
     lua_pushnil( L );
     while( lua_next( L, -2 ) != 0 ){
         std::string var( lua_tostring( L, -2 ) );
@@ -121,9 +125,14 @@ loadConfig( lua_State *L, const fs::path &path ){
         else if( var == "main_freq"    )m2i::main_freq = std::chrono::milliseconds( lua_tointeger( L, -1 ) );
         else if( var == "loop_freq"    )m2i::loop_freq = std::chrono::milliseconds( lua_tointeger( L, -1 ) );
         else if( var == "watch_freq"   )m2i::watch_freq = std::chrono::milliseconds( lua_tointeger( L, -1 ) );
+        else unrecognized_vars.push_back( std::move( var ) );
         lua_pop( L, 1 );
     }
     lua_pop( L, 1 ); //lua_getglobal "config"
+
+    for( const std::string &var : unrecognized_vars ){
+        spdlog::warn( FMT_STRING( "CONFIG: Unrecognized configuration key: {}" ), var );
+    }
 }
 
 static void
