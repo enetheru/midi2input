@@ -43,7 +43,10 @@ autoconnect = false
 --
 -- Both pattern and message share the same structure: {status, data1, data2}.
 -- For any element of the pattern is equal -1, corresponding element of the
--- message is ignored / considered equal.
+-- message is ignored / considered equal. Third element is often used for
+-- continuous measurements such as acceleration, thus in addition to being -1,
+-- it can also be nil, i.e. omitted entirely, making it for a table of two
+-- elements, like this: {0xb0, 0x15} instead of this: {0xb0, 0x15, -1}.
 function message_matches( pattern, message )
     if pattern[1] ~= -1 then
         if pattern[1] ~= message[1] then return false end
@@ -51,7 +54,7 @@ function message_matches( pattern, message )
     if pattern[2] ~= -1 then
         if pattern[2] ~= message[2] then return false end
     end
-    if pattern[3] ~= -1 then
+    if pattern[3] ~= nil and pattern[3] ~= -1 then
         if pattern[3] ~= message[3] then return false end
     end
     return true
