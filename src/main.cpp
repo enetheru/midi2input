@@ -330,5 +330,3 @@ main( int argc, char **argv )
     lua_close( m2i::L );
     exit( 0 );
 }
-
-

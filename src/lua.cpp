@@ -286,8 +286,8 @@ lua_detectwindow( lua_State *L )
 
     if( windowname.empty() )
         return 0;
-    lua_pushstring( L ,  windowname.c_str() ); 
-    lua_setglobal( L, "WM_CLASS" ); 
+    lua_pushstring( L ,  windowname.c_str() );
+    lua_setglobal( L, "WM_CLASS" );
     return 0;
 }
 #endif//WITHXORG
