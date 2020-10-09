@@ -14,7 +14,7 @@ AlsaSeq::open()
     snd_seq_set_client_name( seq, "midi2input_alsa" );
 
     if( !seq ){
-        spdlog::error("ALSA: Sequencer not initialised" );
+        spdlog::error( FMT_STRING( "ALSA: Sequencer not initialised" ) );
         return -1;
     }
 
@@ -25,7 +25,7 @@ AlsaSeq::open()
         SND_SEQ_PORT_TYPE_MIDI_GENERIC | SND_SEQ_PORT_TYPE_APPLICATION
     );
     if( iport_id < 0 ){
-        spdlog::error( "ALSA: Problem creating input midi port" );
+        spdlog::error( FMT_STRING( "ALSA: Problem creating input midi port" ) );
         return -1;
     }
 
@@ -36,7 +36,7 @@ AlsaSeq::open()
         SND_SEQ_PORT_TYPE_MIDI_GENERIC | SND_SEQ_PORT_TYPE_APPLICATION
     );
     if( oport_id < 0 ){
-        spdlog::error( "ALSA: Problem creating output midi port" );
+        spdlog::error( FMT_STRING( "ALSA: Problem creating output midi port" ) );
         return -1;
     }
     return client_id;
@@ -75,10 +75,10 @@ AlsaSeq::connect(const std::string &client_name, const std::string &port_name )
             continue;
         }
         if( client_name == "*" ){
-            spdlog::info( "ALSA: client wildcard match: {}", snd_seq_client_info_get_name( cinfo ) );
+            spdlog::info( FMT_STRING( "ALSA: client wildcard match: {}" ), snd_seq_client_info_get_name( cinfo ) );
         }
         else if( client_name == snd_seq_client_info_get_name( cinfo ) ){
-            spdlog::info( "ALSA: client name match: {}",  snd_seq_client_info_get_name( cinfo ) );
+            spdlog::info( FMT_STRING( "ALSA: client name match: {}" ),  snd_seq_client_info_get_name( cinfo ) );
         }
         else continue;
 
@@ -87,19 +87,19 @@ AlsaSeq::connect(const std::string &client_name, const std::string &port_name )
         snd_seq_port_info_set_port( pinfo, -1 );
         while( snd_seq_query_next_port( seq, pinfo ) >= 0 ){
             if( port_name == "*" )
-                spdlog::info( "ALSA: port wildcard match: {}", snd_seq_port_info_get_name( pinfo ) );
+                spdlog::info( FMT_STRING( "ALSA: port wildcard match: {}" ), snd_seq_port_info_get_name( pinfo ) );
             else if( port_name == snd_seq_port_info_get_name( pinfo ) )
-                spdlog::info( "ALSA: port name match: {}", snd_seq_port_info_get_name( pinfo ) );
+                spdlog::info( FMT_STRING( "ALSA: port name match: {}" ), snd_seq_port_info_get_name( pinfo ) );
             else continue;
 
             auto capabilities = snd_seq_port_info_get_capability(pinfo);
             if( capabilities & (SND_SEQ_PORT_CAP_READ | SND_SEQ_PORT_CAP_SUBS_READ) ){
-                spdlog::info( "ALSA: port connect from: {}", snd_seq_port_info_get_name( pinfo ) );
+                spdlog::info( FMT_STRING( "ALSA: port connect from: {}" ), snd_seq_port_info_get_name( pinfo ) );
                 snd_seq_connect_from( seq, iport_id, client, snd_seq_port_info_get_port( pinfo ) );
                 connections++;
             }
             if( capabilities & (SND_SEQ_PORT_CAP_WRITE | SND_SEQ_PORT_CAP_SUBS_WRITE) ){
-                spdlog::info( "ALSA: port connect to: {}", snd_seq_port_info_get_name( pinfo ) );
+                spdlog::info( FMT_STRING( "ALSA: port connect to: {}" ), snd_seq_port_info_get_name( pinfo ) );
                 snd_seq_connect_to( seq, oport_id, client, snd_seq_port_info_get_port( pinfo ) );
                 connections++;
             }
@@ -120,18 +120,18 @@ AlsaSeq::event_send(const midi_event &event )
     switch( event.status & 0xF0 ){
     case 0x80:
         snd_seq_ev_set_noteoff( &ev, event.status & 0x0F, event.data1, event.data2 );
-        spdlog::info( "ALSA: send_noteoff: {}\n", event.str() );
+        spdlog::info( FMT_STRING( "ALSA: send_noteoff: {}" ), event.str() );
         break;
     case 0x90:
         snd_seq_ev_set_noteon( &ev, event.status & 0x0F, event.data1, event.data2 );
-        spdlog::info("ALSA: send_noteon: {}\n", event.str() );
+        spdlog::info( FMT_STRING( "ALSA: send_noteon: {}" ), event.str() );
         break;
     case 0xB0:
         snd_seq_ev_set_controller( &ev, event.status & 0x0F, event.data1, event.data2 );
-        spdlog::info("ALSA: send_control: {}\n", event.str() );
+        spdlog::info( FMT_STRING( "ALSA: send_control: {}" ), event.str() );
         break;
     default:
-        spdlog::info("ALSA: send type({}) not supported", event.status & 0xF0 );
+        spdlog::info( FMT_STRING( "ALSA: send type({}) not supported" ), event.status & 0xF0 );
         return;
     }
 
@@ -154,40 +154,40 @@ AlsaSeq::event_receive()
 
     switch( ev->type ){
     case SND_SEQ_EVENT_NOTEON:
-        spdlog::info("ALSA: Note On: {:#04x}, {:#04x}, {:3d}",
+        spdlog::info( FMT_STRING( "ALSA: Note On: {:#04x}, {:#04x}, {:3d}" ),
             ev->data.note.channel, ev->data.note.note, ev->data.note.velocity );
         result.status = ev->data.note.channel + 0x90;
         result.data1 = ev->data.note.note;
         result.data2 = ev->data.note.velocity;
         break;
     case SND_SEQ_EVENT_NOTEOFF:
-        spdlog::info("ALSA: Note Off: {:#04x}, {:#04x}, {:3d}",
+        spdlog::info( FMT_STRING( "ALSA: Note Off: {:#04x}, {:#04x}, {:3d}" ),
             ev->data.note.channel, ev->data.note.note, ev->data.note.velocity );
         result.status = ev->data.note.channel + 0x80;
         result.data1 = ev->data.note.note;
         result.data2 = ev->data.note.velocity;
         break;
     case SND_SEQ_EVENT_KEYPRESS:
-        spdlog::info("ALSA: Polyphonic aftertouch: {}, {}, {}",
+        spdlog::info( FMT_STRING( "ALSA: Polyphonic aftertouch: {}, {}, {}" ),
             ev->data.note.channel, ev->data.note.note, ev->data.note.velocity );
         break;
     case SND_SEQ_EVENT_CONTROLLER:
-        spdlog::info("ALSA: Control Change: {:#04x}, {:#04x}, {:3d}",
+        spdlog::info( FMT_STRING( "ALSA: Control Change: {:#04x}, {:#04x}, {:3d}" ),
             ev->data.control.channel, ev->data.control.param, ev->data.control.value );
         result.status = ev->data.control.channel + 0xB0;
         result.data1 = ev->data.control.param;
         result.data2 = ev->data.control.value;
         break;
     case SND_SEQ_EVENT_PGMCHANGE:
-        spdlog::info("ALSA: Program change: {}, {}",
+        spdlog::info( FMT_STRING( "ALSA: Program change: {}, {}" ),
             ev->data.control.channel, ev->data.control.value );
         break;
     case SND_SEQ_EVENT_CHANPRESS:
-        spdlog::info("ALSA: Channel aftertouch: {}, {}",
+        spdlog::info( FMT_STRING( "ALSA: Channel aftertouch: {}, {}" ),
             ev->data.control.channel, ev->data.control.value );
         break;
     case SND_SEQ_EVENT_PITCHBEND:
-        spdlog::info("ALSA: Pitch bend: {}, {}",
+        spdlog::info( FMT_STRING( "ALSA: Pitch bend: {}, {}" ),
             ev->data.control.channel, ev->data.control.value );
         result.status = ev->data.control.channel + 0xE0;
         //FIXME this really sucks i'm throwing away so much detail it breaks my heart.
@@ -195,97 +195,97 @@ AlsaSeq::event_receive()
         result.data2 = (ev->data.control.value  + 8192) / 64;
         break;
     case SND_SEQ_EVENT_CONTROL14:
-        spdlog::info("ALSA: Control change: {}, {}, {}",
+        spdlog::info( FMT_STRING( "ALSA: Control change: {}, {}, {}" ),
             ev->data.control.channel, ev->data.control.param, ev->data.control.value );
         break;
     case SND_SEQ_EVENT_NONREGPARAM:
-        spdlog::info("ALSA: Non-reg. parameter: {}, {}, {}",
+        spdlog::info( FMT_STRING( "ALSA: Non-reg. parameter: {}, {}, {}" ),
             ev->data.control.channel, ev->data.control.param, ev->data.control.value );
         break;
     case SND_SEQ_EVENT_REGPARAM:
-        spdlog::info("ALSA: Reg. parameter {}, {}, {}",
+        spdlog::info( FMT_STRING( "ALSA: Reg. parameter {}, {}, {}" ),
             ev->data.control.channel, ev->data.control.param, ev->data.control.value );
         break;
     case SND_SEQ_EVENT_SONGPOS:
-        spdlog::info("ALSA: Song position pointer: {}", ev->data.control.value );
+        spdlog::info( FMT_STRING( "ALSA: Song position pointer: {}" ), ev->data.control.value );
         break;
     case SND_SEQ_EVENT_SONGSEL:
-        spdlog::info("ALSA: Song select: {}", ev->data.control.value );
+        spdlog::info( FMT_STRING( "ALSA: Song select: {}" ), ev->data.control.value );
         break;
     case SND_SEQ_EVENT_QFRAME:
-        spdlog::info("ALSA: MTC quarter frame: {}", ev->data.control.value );
+        spdlog::info( FMT_STRING( "ALSA: MTC quarter frame: {}" ), ev->data.control.value );
         break;
     case SND_SEQ_EVENT_TIMESIGN:
-        spdlog::info("ALSA: SMF time signature: {}", ev->data.control.value );
+        spdlog::info( FMT_STRING( "ALSA: SMF time signature: {}" ), ev->data.control.value );
         break;
     case SND_SEQ_EVENT_KEYSIGN:
-        spdlog::info("ALSA: SMF key signature: {}", ev->data.control.value );
+        spdlog::info( FMT_STRING( "ALSA: SMF key signature: {}" ), ev->data.control.value );
         break;
     case SND_SEQ_EVENT_START:
         if( ev->source.client == SND_SEQ_CLIENT_SYSTEM &&
             ev->source.port == SND_SEQ_PORT_SYSTEM_TIMER )
-            spdlog::info("ALSA: Queue start: {}", ev->data.queue.queue );
+            spdlog::info( FMT_STRING( "ALSA: Queue start: {}" ), ev->data.queue.queue );
         else
-            spdlog::info( "ALSA: Start" );
+            spdlog::info( FMT_STRING( "ALSA: Start" ) );
         break;
     case SND_SEQ_EVENT_CONTINUE:
         if( ev->source.client == SND_SEQ_CLIENT_SYSTEM &&
             ev->source.port == SND_SEQ_PORT_SYSTEM_TIMER )
-            spdlog::info("ALSA: Queue continue: {}", ev->data.queue.queue );
+            spdlog::info( FMT_STRING( "ALSA: Queue continue: {}" ), ev->data.queue.queue );
         else
-            spdlog::info("ALSA: Continue" );
+            spdlog::info( FMT_STRING( "ALSA: Continue" ) );
         break;
     case SND_SEQ_EVENT_STOP:
         if( ev->source.client == SND_SEQ_CLIENT_SYSTEM &&
             ev->source.port == SND_SEQ_PORT_SYSTEM_TIMER )
-            spdlog::info("ALSA: Queue stop: {}", ev->data.queue.queue );
+            spdlog::info( FMT_STRING( "ALSA: Queue stop: {}" ), ev->data.queue.queue );
         else
-            spdlog::info("ALSA: Stop" );
+            spdlog::info( FMT_STRING( "ALSA: Stop" ) );
         break;
     case SND_SEQ_EVENT_SETPOS_TICK:
-        spdlog::info("ALSA: Set tick queue pos: {}", ev->data.queue.queue );
+        spdlog::info( FMT_STRING( "ALSA: Set tick queue pos: {}" ), ev->data.queue.queue );
         break;
     case SND_SEQ_EVENT_SETPOS_TIME:
-        spdlog::info("ALSA: Set rt queue pos: {}", ev->data.queue.queue );
+        spdlog::info( FMT_STRING( "ALSA: Set rt queue pos: {}" ), ev->data.queue.queue );
         break;
     case SND_SEQ_EVENT_TEMPO:
-        spdlog::info("ALSA: Set queue tempo: {}", ev->data.queue.queue );
+        spdlog::info( FMT_STRING( "ALSA: Set queue tempo: {}" ), ev->data.queue.queue );
         break;
     case SND_SEQ_EVENT_CLOCK:
-        spdlog::info("ALSA: Clock" );
+        spdlog::info( FMT_STRING( "ALSA: Clock" ) );
         break;
     case SND_SEQ_EVENT_TICK:
-        spdlog::info("ALSA: Tick" );
+        spdlog::info( FMT_STRING( "ALSA: Tick" ) );
         break;
     case SND_SEQ_EVENT_QUEUE_SKEW:
-        spdlog::info("ALSA: Queue timer skew: {}", ev->data.queue.queue );
+        spdlog::info( FMT_STRING( "ALSA: Queue timer skew: {}" ), ev->data.queue.queue );
         break;
     case SND_SEQ_EVENT_TUNE_REQUEST:
-        spdlog::info("ALSA: Tune request" );
+        spdlog::info( FMT_STRING( "ALSA: Tune request" ) );
         break;
     case SND_SEQ_EVENT_RESET:
-        spdlog::info("ALSA: Reset" );
+        spdlog::info( FMT_STRING( "ALSA: Reset" ) );
         break;
     case SND_SEQ_EVENT_SENSING:
-        spdlog::info( "ALSA: Active Sensing" );
+        spdlog::info( FMT_STRING( "ALSA: Active Sensing" ) );
         break;
     case SND_SEQ_EVENT_CLIENT_START:
-        spdlog::info( "ALSA: Client start: {}", ev->data.addr.client );
+        spdlog::info( FMT_STRING( "ALSA: Client start: {}" ), ev->data.addr.client );
         break;
     case SND_SEQ_EVENT_CLIENT_EXIT:
-        spdlog::info( "ALSA: Client exit: {}", ev->data.addr.client );
+        spdlog::info( FMT_STRING( "ALSA: Client exit: {}" ), ev->data.addr.client );
         break;
     case SND_SEQ_EVENT_CLIENT_CHANGE:
-        spdlog::info( "ALSA: Client changed: {}", ev->data.addr.client );
+        spdlog::info( FMT_STRING( "ALSA: Client changed: {}" ), ev->data.addr.client );
         break;
     case SND_SEQ_EVENT_PORT_START:
-        spdlog::info("ALSA: Port start: {},{}", ev->data.addr.client, ev->data.addr.port );
+        spdlog::info( FMT_STRING( "ALSA: Port start: {},{}" ), ev->data.addr.client, ev->data.addr.port );
         break;
     case SND_SEQ_EVENT_PORT_EXIT:
-        spdlog::info( "ALSA: Port exit: {},{}", ev->data.addr.client, ev->data.addr.port );
+        spdlog::info( FMT_STRING( "ALSA: Port exit: {},{}" ), ev->data.addr.client, ev->data.addr.port );
         break;
     case SND_SEQ_EVENT_PORT_CHANGE:
-        spdlog::info( "ALSA: Port changed: {},{}", ev->data.addr.client, ev->data.addr.port );
+        spdlog::info( FMT_STRING( "ALSA: Port changed: {},{}" ), ev->data.addr.client, ev->data.addr.port );
         break;
     case SND_SEQ_EVENT_PORT_SUBSCRIBED:
         {
@@ -302,31 +302,31 @@ AlsaSeq::event_receive()
                 ev->data.connect.sender.port,
                 pinfo );
 
-            spdlog::info( "ALSA: Port Subscription from: '{}':'{}'",
+            spdlog::info( FMT_STRING( "ALSA: Port Subscription from: '{}':'{}'" ),
                 snd_seq_client_info_get_name( cinfo ),
                 snd_seq_port_info_get_name( pinfo )
             );
-            spdlog::info( "ALSA: Port Subscribed: {:d}:{:d} -> {:d}:{:d}",
+            spdlog::info( FMT_STRING( "ALSA: Port Subscribed: {:d}:{:d} -> {:d}:{:d}" ),
                 ev->data.connect.sender.client, ev->data.connect.sender.port,
                 ev->data.connect.dest.client, ev->data.connect.dest.port );
         }
         break;
     case SND_SEQ_EVENT_PORT_UNSUBSCRIBED:
-        spdlog::info("ALSA: Port unsubscribed: {:d}:{:d} -> {:d}:{:d}",
+        spdlog::info( FMT_STRING( "ALSA: Port unsubscribed: {:d}:{:d} -> {:d}:{:d}" ),
             ev->data.connect.sender.client, ev->data.connect.sender.port,
             ev->data.connect.dest.client, ev->data.connect.dest.port );
         break;
     case SND_SEQ_EVENT_SYSEX:
         {
             unsigned int i;
-            spdlog::info( "ALSA:System exclusive: ");
+            spdlog::info( FMT_STRING( "ALSA: System exclusive: " ));
             for (i = 0; i < ev->data.ext.len; ++i)
                 fmt::format( "{}", static_cast<unsigned char *>(ev->data.ext.ptr)[i] );
             fmt::format("\n");
         }
         break;
     default:
-        spdlog::info("ALSA: Event type: {}", ev->type );
+        spdlog::info( FMT_STRING( "ALSA: Event type: {}" ), ev->type );
     }
     return result;
 }

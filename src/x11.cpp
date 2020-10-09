@@ -10,7 +10,7 @@ namespace m2i {
 int XErrorCatcher( Display *disp, XErrorEvent *xe )
 {
     (void)disp; (void)xe;
-    spdlog::error( "X11: Generic XError Catcher that does nothing" );
+    spdlog::error( FMT_STRING( "X11: Generic XError Catcher that does nothing" ) );
     return 0;
 }
 
@@ -33,7 +33,7 @@ XGetParent( Display *xdp, Window w )
         else return None;
     }
     else {
-        spdlog::error( "X11: Failed XQueryTree" );
+        spdlog::error( FMT_STRING( "X11: Failed XQueryTree" ) );
     }
     return None;
 }
@@ -44,7 +44,7 @@ XDetectWindow( Display* xdp )
     static Window w_current;
 
     if(! xdp ){
-        spdlog::error( "X11: invalid handle to X display" );
+        spdlog::error( FMT_STRING( "X11: invalid handle to X display" ) );
         return "None";
     }
 
@@ -58,7 +58,7 @@ XDetectWindow( Display* xdp )
     while( true ){
         Atom property = XInternAtom( xdp, "WM_CLASS", False );
         if( property == None ){
-            spdlog::error( "X11: Failed XInternAtom for WM_CLASS" );
+            spdlog::error( FMT_STRING( "X11: Failed XInternAtom for WM_CLASS" ) );
             break;
         }
 
@@ -80,14 +80,14 @@ XDetectWindow( Display* xdp )
              && actual_format_return == 8 ){
                 std::string retval( reinterpret_cast< const char*>( prop_return ) );
                 XFree( prop_return );
-                spdlog::info( "X11: WM_CLASS: {}", retval );
+                spdlog::info( FMT_STRING( "X11: WM_CLASS: {}" ), retval );
                 return retval;
             }
             if( actual_format_return == None )
-                spdlog::warn( "X11: property: WM_CLASS not present" );
+                spdlog::warn( FMT_STRING( "X11: property: WM_CLASS not present" ) );
         }
         else{
-            spdlog::error( "X11: XGetWindowProperty did not return Success" );
+            spdlog::error( FMT_STRING( "X11: XGetWindowProperty did not return Success" ) );
             return "None";
         }
 

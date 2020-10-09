@@ -92,16 +92,16 @@ intHandler( int dummy ){
 static void
 loadConfig( lua_State *L, const fs::path &path ){
      // Load configuraton lua script
-    spdlog::info( "LUA: Loading configuration: {}", path.c_str() );
+    spdlog::info( FMT_STRING( "LUA: Loading configuration: {}" ), path.c_str() );
     if( luaL_loadfile( L, path.c_str() ) || lua_pcall( L, 0, 0, 0 ) ){
-        spdlog::error( "LUA: failure loading configuration file: {}", lua_tostring( L, -1 ) );
+        spdlog::error( FMT_STRING( "LUA: failure loading configuration file: {}" ), lua_tostring( L, -1 ) );
         return;
     }
 
     //pull configuration from config
     lua_getglobal( L, "config" );
     if( !lua_istable(L, -1 ) ){
-        spdlog::error( "LUA: No 'config' table found in {}", path.c_str() );
+        spdlog::error( FMT_STRING( "LUA: No 'config' table found in {}" ), path.c_str() );
         lua_pop( L, 1 );
         return;
     }
@@ -129,7 +129,7 @@ loadConfig( lua_State *L, const fs::path &path ){
 static void
 inotify_script_change()
 {
-    spdlog::info( "restarting lua" );
+    spdlog::info( FMT_STRING( "restarting lua" ) );
     //blow away the lua state
     if( m2i::L )lua_close( m2i::L );
     m2i::L = nullptr;
@@ -141,9 +141,9 @@ inotify_script_change()
     //register out functions with lua
     m2i::register_lua_funcs(m2i::L);
 
-    spdlog::info( "LUA: Loading script: {}", m2i::script.c_str() );
+    spdlog::info( FMT_STRING( "LUA: Loading script: {}" ), m2i::script.c_str() );
     if( luaL_loadfile( m2i::L, m2i::script.c_str() ) || lua_pcall( m2i::L, 0, 0, 0 ) ){
-        spdlog::error( "LUA: failure loading script file: {}", lua_tostring( m2i::L, -1 ) );
+        spdlog::error( FMT_STRING( "LUA: failure loading script file: {}" ), lua_tostring( m2i::L, -1 ) );
         return;
     }
 
@@ -192,7 +192,7 @@ main( int argc, char **argv )
 
     //check that we at least use one midi backend, otherwise there is kinda no point
     if( !m2i::use_alsa && !m2i::use_jack ){
-        spdlog::error( "neither jack nor alsa has been specified" );
+        spdlog::error( FMT_STRING( "neither jack nor alsa has been specified" ) );
         exit(-1);
     }
 
@@ -201,7 +201,7 @@ main( int argc, char **argv )
     #ifdef WITH_ALSA
         m2i::seq.open();
     #else
-        spdlog::error( "Not compiled with ALSA midi backend" );
+        spdlog::error( FMT_STRING( "Not compiled with ALSA midi backend" ) );
         exit(-1);
     #endif
     }
@@ -211,7 +211,7 @@ main( int argc, char **argv )
     #ifdef WITH_JACK
         m2i::jack.init();
     #else
-        spdlog::error( "Not compiled with Jack midi backend" );
+        spdlog::error( FMT_STRING( "Not compiled with Jack midi backend" ) );
         exit(-1);
     #endif
     }
@@ -220,7 +220,7 @@ main( int argc, char **argv )
     #ifdef WITH_XORG
     Display *xdp;
     if(! (xdp = XOpenDisplay( getenv( "DISPLAY" ) )) ){
-        spdlog::error( "Unable to open X display" );
+        spdlog::error( FMT_STRING( "Unable to open X display" ) );
         exit( -1 );
     }
     XCloseDisplay( xdp );
@@ -231,7 +231,7 @@ main( int argc, char **argv )
     #ifdef WITH_QT
     QApplication app(argc, argv);
     if (!QSystemTrayIcon::isSystemTrayAvailable()) {
-        spdlog::error( "system tray unavailable" );
+        spdlog::error( FMT_STRING( "system tray unavailable" ) );
         exit( -1);
     }
 
@@ -241,9 +241,9 @@ main( int argc, char **argv )
     #endif//WITH_QT
 
     /* ========================== Load Script =========================== */
-    spdlog::info( "LUA: Loading script: {}", m2i::script.c_str() );
+    spdlog::info( FMT_STRING( "LUA: Loading script: {}" ), m2i::script.c_str() );
     if( luaL_loadfile( m2i::L, m2i::script.c_str() ) || lua_pcall( m2i::L, 0, 0, 0 ) ){
-        spdlog::critical( "LUA: failure loading script file: {}", lua_tostring( m2i::L, -1 ) );
+        spdlog::critical( FMT_STRING( "LUA: failure loading script file: {}" ), lua_tostring( m2i::L, -1 ) );
         return -1;
     } else {
         m2i::notifier.watchPath({0, m2i::script, inotify_script_change});
@@ -253,7 +253,7 @@ main( int argc, char **argv )
     if( lua_pcall( m2i::L, 0, 0, 0 ) != 0 )lua_pop( m2i::L, 1);
 
     /* =========================== Main Loop ============================ */
-    spdlog::info( "Entering sleep, waiting for events" );
+    spdlog::info( FMT_STRING( "Entering sleep, waiting for events" ) );
     std::chrono::system_clock::time_point loop_last = std::chrono::system_clock::now();
     std::chrono::system_clock::time_point watch_last = std::chrono::system_clock::now();
     while(! m2i::quit )
@@ -293,7 +293,7 @@ main( int argc, char **argv )
             #ifdef WITH_JACK
             if( m2i::use_jack && m2i::reconnect && !m2i::jack.valid ){
                 // FIXME I'm not really happy with the re-initialisation of jack
-                spdlog::error( "Jack not valid attempting to re-initialise" );
+                spdlog::error( FMT_STRING( "Jack not valid attempting to re-initialise" ) );
                 //attempt to re-instantiate jack connection
                 m2i::jack.fina();
                 m2i::jack.init();
@@ -302,7 +302,7 @@ main( int argc, char **argv )
 
             {
                 int luastacksize = lua_gettop(m2i::L);
-                if( luastacksize != 0 ) spdlog::info("Lua Stack Size: {}", luastacksize);
+                if( luastacksize != 0 ) spdlog::info( FMT_STRING( "Lua Stack Size: {}" ), luastacksize);
             }
         }
 
@@ -320,11 +320,12 @@ main( int argc, char **argv )
         //limit mainloop to m2i::main_freq
         auto main_end = std::chrono::system_clock::now();
         std::chrono::duration< double > main_time = main_end - main_start;
-        if( main_time > m2i::main_freq )
-            spdlog::warn( "processing time of {0.2}ms is longer than timer resolution",
+        if( main_time > m2i::main_freq ){
+            spdlog::warn( FMT_STRING( "processing time of {:.6f}ms is longer than timer resolution" ),
                      main_time.count() * 1000 );
-        else
+        } else {
             std::this_thread::sleep_for( m2i::main_freq - main_time );
+        }
     }
 
     lua_close( m2i::L );
