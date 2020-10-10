@@ -39,22 +39,29 @@ controller = {
 -- autoconnect: can be true, false, or a named jack port. default = true
 autoconnect = false
 
---[[ My custom Functions ]]--
-function message_compare( a, b )
-    if a[1] ~= -1 then
-        if a[1] ~= b[1] then return true end
+--[[ Pattern matcher for messages ]]--
+--
+-- Both pattern and message share the same structure: {status, data1, data2}.
+-- For any element of the pattern is equal -1, corresponding element of the
+-- message is ignored / considered equal. Third element is often used for
+-- continuous measurements such as acceleration, thus in addition to being -1,
+-- it can also be nil, i.e. omitted entirely, making it for a table of two
+-- elements, like this: {0xb0, 0x15} instead of this: {0xb0, 0x15, -1}.
+function message_matches( pattern, message )
+    if pattern[1] ~= -1 then
+        if pattern[1] ~= message[1] then return false end
     end
-    if a[2] ~= -1 then
-        if a[2] ~= b[2] then return true end
+    if pattern[2] ~= -1 then
+        if pattern[2] ~= message[2] then return false end
     end
-    if a[3] ~= -1 then
-        if a[3] ~= b[3] then return true end
+    if pattern[3] ~= nil and pattern[3] ~= -1 then
+        if pattern[3] ~= message[3] then return false end
     end
-    return false
+    return true
 end
 
 --[[ initialisation function ]]--
--- run immeditely after the application launches and connects to the device
+-- run immediately after the application launches and connects to the device
 function script_init()
     print( "nothing to initialise" )
 end
@@ -67,7 +74,7 @@ end
 function midi_recv( status, data1, data2 )
     local message = { status, data1, data2 }
 
-    if( not message_compare( message, controller.deck['A'].play ) ) then
+    if( message_matches( controller.deck['A'].play, message ) ) then
         keypress( XK_space )
     end
 end

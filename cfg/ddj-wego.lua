@@ -299,14 +299,14 @@ ddj = {
             sturn  = { 0xB6, 0x64,  -1 }, -- values 0-30 or 98-127
         },
         hpmix = {
-            msb = { 0xB6, 0x01, -1 },
-            lsb = { 0xB6, 0x21, -1 },
+            msb = { 0xB6, 0x01 },
+            lsb = { 0xB6, 0x21 },
         },
         crossfader = {
-            msb  = { 0xB6, 0x1F, -1 },
-            lsb  = { 0xB6, 0x3F, -1 },
-            smsb = { 0xB6, 0x00, -1 },
-            slsb = { 0xB6, 0x20, -1 },
+            msb  = { 0xB6, 0x1F },
+            lsb  = { 0xB6, 0x3F },
+            smsb = { 0xB6, 0x00 },
+            slsb = { 0xB6, 0x20 },
         },
         deckC = {
             down  = { 0x92, 0x72, 127 },
@@ -335,10 +335,10 @@ for deck, ch in pairs(decks) do
     ddj[deck] = {}
     ddj[deck] = {
         tempo = {
-            msb  = { control, 0x00, -1 },
-            lsb  = { control, 0x20, -1 },
-            smsb = { control, 0x05, -1 },
-            slsb = { control, 0x25, -1 },
+            msb  = { control, 0x00 },
+            lsb  = { control, 0x20 },
+            smsb = { control, 0x05 },
+            slsb = { control, 0x25 },
         },
         sync = {
             down   = { note_on,  0x58, 127 },
@@ -375,16 +375,16 @@ for deck, ch in pairs(decks) do
 
         --equaliser
         eqhi = {
-            msb = { 0xB6, 0x07, -1 },
-            lsb = { 0xB6, 0x27, -1 },
+            msb = { 0xB6, 0x07 },
+            lsb = { 0xB6, 0x27 },
         },
         eqmid = {
-            msb = { 0xB6, 0x0B, -1 },
-            lsb = { 0xB6, 0x2B, -1 },
+            msb = { 0xB6, 0x0B },
+            lsb = { 0xB6, 0x2B },
         },
         eqlow = {
-            msb = { 0xB6, 0x0F, -1 },
-            lsb = { 0xB6, 0x2F, -1 },
+            msb = { 0xB6, 0x0F },
+            lsb = { 0xB6, 0x2F },
         },
 
         headphone = {
@@ -397,10 +397,10 @@ for deck, ch in pairs(decks) do
             lstate = false,
         },
         fader = {
-            msb  = { 0xB6, 0x13, -1 },
-            lsb  = { 0xB6, 0x33, -1 },
-            smsb = { 0xB6, 0x14, -1 },
-            slsb = { 0xB6, 0x34, -1 },
+            msb  = { 0xB6, 0x13 },
+            lsb  = { 0xB6, 0x33 },
+            smsb = { 0xB6, 0x14 },
+            slsb = { 0xB6, 0x34 },
         },
 
 
@@ -879,17 +879,25 @@ function table_rows( t )
     end
 end
 
-function message_compare( a, b )
-    if a[1] ~= -1 then
-        if a[1] ~= b[1] then return true end
+--[[ Pattern matcher for messages ]]--
+--
+-- Both pattern and message share the same structure: {status, data1, data2}.
+-- For any element of the pattern is equal -1, corresponding element of the
+-- message is ignored / considered equal. Third element is often used for
+-- continuous measurements such as acceleration, thus in addition to being -1,
+-- it can also be nil, i.e. omitted entirely, making it for a table of two
+-- elements, like this: {0xb0, 0x15} instead of this: {0xb0, 0x15, -1}.
+function message_matches( pattern, message )
+    if pattern[1] ~= -1 then
+        if pattern[1] ~= message[1] then return false end
     end
-    if a[2] ~= -1 then
-        if a[2] ~= b[2] then return true end
+    if pattern[2] ~= -1 then
+        if pattern[2] ~= message[2] then return false end
     end
-    if a[3] ~= -1 then
-        if a[3] ~= b[3] then return true end
+    if pattern[3] ~= nil and pattern[3] ~= -1 then
+        if pattern[3] ~= message[3] then return false end
     end
-    return false
+    return true
 end
 
 --[[ Input Event Handler ]]--
@@ -908,13 +916,14 @@ function midi_recv( status, data1, data2 )
         -- search items
         for row in table_rows( table ) do
             -- test for event
-            if( not message_compare( row[ 1 ], message ) ) then
+            if( message_matches( row[ 1 ], message ) ) then
+                local fn = row[ 2 ][ 1 ]
+                local arg = row[ 2 ][ 2 ]
                 -- check for argument in second pair
-                if( row[ 2 ][ 2 ] ) then
-                    row[ 2 ][ 1 ]( row[ 2 ][ 2 ] )
-                else
-                    row[ 2 ][ 1 ]( message )
+                if( arg == nil ) then
+                    arg = message
                 end
+                fn( arg )
                 return
             end
         end
