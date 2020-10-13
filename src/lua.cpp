@@ -76,8 +76,10 @@ midi_to_lua(lua_State *L, const midi_event &event )
     lua_pushnumber( L, event.status );
     lua_pushnumber( L, event.data1 );
     lua_pushnumber( L, event.data2 );
-    if( lua_pcall( L, 3, 0, 0 ) != 0 )
-        spdlog::error( FMT_STRING( "LUA: call to function 'midi_recv' failed {}" ), lua_tostring( L, -1 ) );
+    if( lua_pcall( L, 3, 0, 0 ) != LUA_OK ) {
+        spdlog::error(FMT_STRING("LUA: call to function 'midi_recv' failed {}"), lua_tostring(L, -1));
+        lua_pop( L, 1 );
+    }
     return 0;
 }
 

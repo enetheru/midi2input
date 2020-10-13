@@ -95,6 +95,7 @@ loadConfig( lua_State *L, const fs::path &path ){
     spdlog::info( FMT_STRING( "LUA: Loading configuration: {}" ), path.c_str() );
     if( luaL_loadfile( L, path.c_str() ) || lua_pcall( L, 0, 0, 0 ) ){
         spdlog::error( FMT_STRING( "LUA: failure loading configuration file: {}" ), lua_tostring( L, -1 ) );
+        lua_pop( L, 1 );
         return;
     }
 
@@ -153,11 +154,15 @@ inotify_script_change()
     spdlog::info( FMT_STRING( "LUA: Loading script: {}" ), m2i::script.c_str() );
     if( luaL_loadfile( m2i::L, m2i::script.c_str() ) || lua_pcall( m2i::L, 0, 0, 0 ) ){
         spdlog::error( FMT_STRING( "LUA: failure loading script file: {}" ), lua_tostring( m2i::L, -1 ) );
+        lua_pop( m2i::L, 1);
         return;
     }
 
     lua_getglobal( m2i::L, "script_init" );
-    if( lua_pcall( m2i::L, 0, 0, 0 ) != 0 )lua_pop( m2i::L, 1);
+    if( lua_pcall( m2i::L, 0, 0, 0 ) != LUA_OK ){
+        spdlog::warn( FMT_STRING("LUA: Missing function: {}"), lua_tostring( m2i::L, -1) );
+        lua_pop( m2i::L, 1);
+    }
 }
 
 int
@@ -253,13 +258,17 @@ main( int argc, char **argv )
     spdlog::info( FMT_STRING( "LUA: Loading script: {}" ), m2i::script.c_str() );
     if( luaL_loadfile( m2i::L, m2i::script.c_str() ) || lua_pcall( m2i::L, 0, 0, 0 ) ){
         spdlog::critical( FMT_STRING( "LUA: failure loading script file: {}" ), lua_tostring( m2i::L, -1 ) );
+        lua_pop( m2i::L, 1 );
         return -1;
     } else {
         m2i::notifier.watchPath({0, m2i::script, inotify_script_change});
     }
 
     lua_getglobal( m2i::L, "script_init" );
-    if( lua_pcall( m2i::L, 0, 0, 0 ) != 0 )lua_pop( m2i::L, 1);
+    if( lua_pcall( m2i::L, 0, 0, 0 ) != LUA_OK ){
+        spdlog::warn( FMT_STRING("LUA: Missing function: {}"), lua_tostring( m2i::L, -1) );
+        lua_pop( m2i::L, 1);
+    }
 
     /* =========================== Main Loop ============================ */
     spdlog::info( FMT_STRING( "Entering sleep, waiting for events" ) );
@@ -320,9 +329,11 @@ main( int argc, char **argv )
         if( m2i::loop_enabled && loop_wait > m2i::loop_freq ){
             loop_last = std::chrono::system_clock::now();
             lua_getglobal( m2i::L, "loop" );
-            if( lua_pcall( m2i::L, 0, 0, 0 ) != 0 ){
-                spdlog::error( "loop function call failed, disabling" ); 
+            if( lua_pcall( m2i::L, 0, 0, 0 ) != LUA_OK ){
+                spdlog::warn( FMT_STRING("LUA: Missing function: {}"), lua_tostring( m2i::L, -1) );
+                spdlog::error( FMT_STRING("LUA: Disabling loop function") );
                 m2i::loop_enabled = false;
+                lua_pop( m2i::L, 1 );
             }
         }
 
