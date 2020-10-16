@@ -183,5 +183,6 @@ application.
  Arthur Lutz
  Marcin Świgoń
  Jarrod Whittaker
+ Ivan Tkachenko
 .SH SEE ALSO
-lua(1), jackd(1), <X11/keysymdef.h>
+lua(1), jackd(1)

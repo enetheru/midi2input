@@ -12,7 +12,7 @@ m2i dependencies
 * [libfmt](https://github.com/fmtlib/fmt) - simple formatting
 * [spdlog](https://github.com/gabime/spdlog) - fast logging
 * lua 5.3 - the script engine
-* libx11 & libxtst - for x11 keybord and mouse input and window WM_CLASS detection
+* libx11 - for X11 window WM_CLASS detection
 * either alsa-lib or jack/jack2 - for midi sequencer input
 * qt5-base - for system tray icon
 
@@ -278,9 +278,10 @@ AUTHORS
         Arthur Lutz
         Marcin Świgoń
         Jarrod Whittaker
+        Ivan Tkachenko
 
 SEE ALSO
-       lua(1), jackd(1), <X11/keysymdef.h>
+       lua(1), jackd(1)
 
                                   2020-09-16                           M2I(1)
 ```

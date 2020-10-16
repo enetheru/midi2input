@@ -27,16 +27,17 @@ namespace m2i {
     int lua_loopenable( lua_State *L );
     int lua_milliseconds( lua_State *L );
 
-    #ifdef WITH_XORG
-    // X11 functions
+    //uinput events
     int lua_keypress( lua_State *L );
     int lua_keydown( lua_State *L );
     int lua_keyup( lua_State *L );
-    int lua_buttonpress( lua_State *L );
-    int lua_buttondown( lua_State *L );
-    int lua_buttonup( lua_State *L );
     int lua_mousemove( lua_State *L );
-    int lua_mousepos( lua_State *L );
+    int lua_mousewarp(lua_State *L );
+    int lua_mousescroll( lua_State *L );
+    int lua_mousehscroll( lua_State *L );
+    
+    // X11 functions
+    #ifdef WITH_XORG
     int lua_detectwindow( lua_State *L );
     #endif//WITH_XORG
 

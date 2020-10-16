@@ -19,7 +19,7 @@ extern "C" {
 #include "util.h"
 #include "midi.h"
 #include "inotify.h"
-
+#include "uinput.h"
 #include "lua.h"
 
 #ifdef WITH_JACK
@@ -78,7 +78,10 @@ namespace m2i {
 
     #ifdef WITH_JACK
     JackSeq jack;
-    #endif//WITH_XORG
+    #endif//WITH_JACK
+
+    //uinput driver
+    m2i::Uinput uinput;
 
 }//end namespace m2i
 
