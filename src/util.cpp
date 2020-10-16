@@ -1,10 +1,10 @@
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
+#include <filesystem>
 
 #include "util.h"
 
-namespace m2i {
+namespace fs = std::filesystem;
 
+namespace m2i {
 fs::path
 getPath( fs::path path )
 {

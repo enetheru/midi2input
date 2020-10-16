@@ -72,7 +72,7 @@ namespace m2i {
 
         if (rc < 0){
             //no point in continuing if we cannot create a virtual device.
-            spdlog::critical( "Failed to create virtual input device: ({})", strerror(-rc));
+            spdlog::critical( FMT_STRING("Failed to create virtual input device: ({})"), strerror(-rc));
             close(fd);
             exit(1);
         }

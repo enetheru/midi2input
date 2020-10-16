@@ -3,14 +3,13 @@
 #define M2I_INOTIFY_H
 #include <poll.h>
 
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
+#include <filesystem>
 
 namespace m2i {
 
 struct watcher {
     int wd;
-    fs::path path;
+    std::filesystem::path path;
     void (*function)();
 };
 

@@ -1,14 +1,13 @@
-
 #ifndef M2I_LUA_H
 #define M2I_LUA_H
+
+#include <filesystem>
 
 extern "C" {
     #include <lua.h>
     #include <lauxlib.h>
     #include <lualib.h>
 }
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
 
 #include "util.h"
 #include "midi.h"

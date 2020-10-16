@@ -4,16 +4,10 @@
 
 #ifndef M2I_UTIL_H
 #define M2I_UTIL_H
-#include <iostream>
-#include <iomanip>
-#include <memory>
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
+#include <filesystem>
 
 namespace m2i {
-
-fs::path getPath( fs::path path );
-
+    std::filesystem::path getPath( std::filesystem::path path );
 }//namespace m2i
 
 #endif //M2I_UTIL_H
