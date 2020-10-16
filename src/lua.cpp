@@ -3,6 +3,7 @@
 #include "lua.h"
 #include "midi.h"
 #include "util.h"
+#include "uinput.h"
 
 
 #ifdef WITH_ALSA
@@ -21,6 +22,8 @@
 #include <chrono>
 
 namespace m2i {
+    extern Uinput uinput;
+
     #ifdef WITH_ALSA
     extern AlsaSeq seq;
     #endif//WITH_ALSA
@@ -39,22 +42,22 @@ static const struct luaL_Reg funcs [] = {
   {"quit",         lua_quit},
   {"loop_enabled", lua_loopenable},
   {"milliseconds", lua_milliseconds },
+  {"keypress",     lua_keypress },
+  {"keydown",      lua_keydown },
+  {"keyup",        lua_keyup },
+  {"mousemove",    lua_mousemove },
+  {"mousewarp",    lua_mousewarp },
+  {"mousescroll",  lua_mousescroll },
+  {"mousehscroll",  lua_mousehscroll },
+
 #ifdef WITH_XORG
-  {"keypress",     lua_keypress},
-  {"keydown",      lua_keydown},
-  {"keyup",        lua_keyup},
-  {"buttonpress",  lua_buttonpress},
-  {"buttondown",   lua_buttondown},
-  {"buttonup",     lua_buttonup},
-  {"mousemove",    lua_mousemove},
-  {"mousepos",     lua_mousepos},
-  {"detectwindow", lua_detectwindow},
+  {"detectwindow", lua_detectwindow },
 #endif//WITH_XORG
 #ifdef WITH_ALSA
-  {"alsaconnect",  lua_alsaconnect},
+  {"alsaconnect",  lua_alsaconnect },
 #endif//WITH_ALSA
 #ifdef WITH_JACK
-  {"jackconnect",  lua_jackconnect},
+  {"jackconnect",  lua_jackconnect },
 #endif//WITH_JACK
   {nullptr, nullptr} /* end of array */
 };
@@ -176,109 +179,75 @@ lua_milliseconds( lua_State *L )
     return 1;
 }
 
-#ifdef WITH_XORG
-    /* ===================== X11 Lua Bindings =========================== */
+/* ==================== sending events to uinput ====================*/
 int
 lua_keypress( lua_State *L )
 {
-    Display *xdp = XOpenDisplay( getenv( "DISPLAY" ) );
-    auto keysym = static_cast<KeySym>( luaL_checknumber( L, 1 ) );
-    KeyCode keycode = XKeysymToKeycode( xdp, keysym );
-    XTestFakeKeyEvent( xdp, keycode, 1, CurrentTime );
-    XTestFakeKeyEvent( xdp, keycode, 0, CurrentTime );
-    XCloseDisplay( xdp );
-
-    spdlog::info( FMT_STRING( "LUA: keypress: {}" ), XKeysymToString( keysym ) );
+    auto input_event_code = static_cast<int>( luaL_checknumber( L, 1 ) );
+    uinput.keypress( input_event_code );
+    spdlog::info( FMT_STRING( "LUA: keypress: {}" ), input_event_code );
     return 0;
 }
 
 int
 lua_keydown( lua_State *L )
 {
-    Display *xdp = XOpenDisplay( getenv( "DISPLAY" ) );
-    auto keysym = static_cast<KeySym>( luaL_checknumber( L, 1 ) );
-    XTestFakeKeyEvent( xdp, XKeysymToKeycode( xdp, keysym ), 1, CurrentTime );
-    XCloseDisplay( xdp );
-
-    spdlog::info( FMT_STRING( "LUA: keydown: {}" ), XKeysymToString( keysym ) );
+    auto input_event_code = static_cast<int>( luaL_checknumber( L, 1 ) );
+    uinput.keydown( input_event_code );
+    spdlog::info( FMT_STRING( "LUA: keydown: {}" ), input_event_code );
     return 0;
 }
 
 int
 lua_keyup( lua_State *L )
 {
-    Display *xdp = XOpenDisplay( getenv( "DISPLAY" ) );
-    auto keysym = static_cast<KeySym>( luaL_checknumber( L, 1 ) );
-    XTestFakeKeyEvent( xdp, XKeysymToKeycode( xdp, keysym ), 0, CurrentTime );
-    XCloseDisplay( xdp );
-
-    spdlog::info( FMT_STRING( "LUA: keyup: {}" ), XKeysymToString( keysym ) );
-    return 0;
-}
-
-int
-lua_buttonpress( lua_State *L )
-{
-    Display *xdp = XOpenDisplay( getenv( "DISPLAY" ) );
-    auto button = static_cast<uint32_t>( luaL_checknumber( L, 1 ) );
-    XTestFakeButtonEvent( xdp, button, 1, CurrentTime );
-    XTestFakeButtonEvent( xdp, button, 0, CurrentTime );
-    XCloseDisplay( xdp );
-
-    spdlog::info( FMT_STRING( "LUA: buttonpress: {}" ), button );
-    return 0;
-}
-
-int
-lua_buttondown( lua_State *L )
-{
-    Display *xdp = XOpenDisplay( getenv( "DISPLAY" ) );
-    auto button = static_cast<uint32_t>( luaL_checknumber( L, 1 ) );
-    XTestFakeButtonEvent( xdp, button, 1, CurrentTime );
-    XCloseDisplay( xdp );
-
-    spdlog::info( FMT_STRING( "LUA: buttondown: {}" ), button );
-    return 0;
-}
-
-int
-lua_buttonup( lua_State *L )
-{
-    Display *xdp = XOpenDisplay( getenv( "DISPLAY" ) );
-    auto button = static_cast<uint32_t>( luaL_checknumber( L, 1 ) );
-    XTestFakeButtonEvent( xdp, button, 0, CurrentTime );
-    XCloseDisplay( xdp );
-
-    spdlog::info( FMT_STRING( "LUA: buttonup: {}" ), button );
+    auto input_event_code = static_cast<int>( luaL_checknumber( L, 1 ) );
+    uinput.keyup( input_event_code );
+    spdlog::info( FMT_STRING( "LUA: keyup: {}" ), input_event_code );
     return 0;
 }
 
 int
 lua_mousemove( lua_State *L )
 {
-    Display *xdp = XOpenDisplay( getenv( "DISPLAY" ) );
     auto x = static_cast<int32_t>( luaL_checknumber( L, 1 ) );
     auto y = static_cast<int32_t>( luaL_checknumber( L, 2 ) );
-    XTestFakeRelativeMotionEvent( xdp, x, y, CurrentTime );
-    XCloseDisplay( xdp );
+    uinput.mousemove( x, y );
 
     spdlog::info( FMT_STRING( "LUA: mousemove: {},{}" ), x, y );
     return 0;
 }
 
 int
-lua_mousepos( lua_State *L )
+lua_mousewarp(lua_State *L )
 {
-    Display *xdp = XOpenDisplay( getenv( "DISPLAY" ) );
     auto x = static_cast<int32_t>( luaL_checknumber( L, 1 ) );
     auto y = static_cast<int32_t>( luaL_checknumber( L, 2 ) );
-    XTestFakeMotionEvent( xdp, -1, x, y, CurrentTime );
-    XCloseDisplay( xdp );
+    uinput.mousewarp( x,y );
 
     spdlog::info( FMT_STRING( "LUA: mousewarp: {},{}" ), x, y );
     return 0;
 }
 
+int
+lua_mousescroll( lua_State *L )
+{
+    auto distance = static_cast<int32_t>( luaL_checknumber( L, 1 ) );
+    uinput.mousescroll( distance );
+    spdlog::info( FMT_STRING( "LUA: mousescroll: {}" ), distance );
+    return 0;
+}
+
+int
+lua_mousehscroll( lua_State *L )
+{
+    auto distance = static_cast<int32_t>( luaL_checknumber( L, 1 ) );
+    uinput.mousehscroll( distance );
+    spdlog::info( FMT_STRING( "LUA: mousehscroll: {}" ), distance );
+    return 0;
+}
+
+#ifdef WITH_XORG  /* ===================== X11 functions =========================== */
 int
 lua_detectwindow( lua_State *L )
 {

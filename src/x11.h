@@ -3,7 +3,6 @@
 
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
-#include <X11/extensions/XTest.h>
 
 namespace m2i {
     int XErrorCatcher( Display *disp, XErrorEvent *xe );

@@ -1,20 +1,23 @@
 add_executable( m2i
         main.cpp
-    util.h    util.cpp
-    midi.h    midi.cpp
-    lua.h     lua.cpp
-    inotify.h inotify.cpp )
+        util.h    util.cpp
+        midi.h    midi.cpp
+        lua.h     lua.cpp
+        inotify.h inotify.cpp
+        uinput.h uinput.cpp)
 
 target_include_directories( m2i PRIVATE
-    ${LUA_INCLUDE_DIR}
-    ${CMAKE_CURRENT_BINARY_DIR}
-    ${PROJECT_SOURCE_DIR}/include )
+        ${LUA_INCLUDE_DIR}
+        ${CMAKE_CURRENT_BINARY_DIR}
+        ${PROJECT_SOURCE_DIR}/include
+        ${EVDEV_INCLUDE_DIR})
 
 target_link_libraries( m2i PRIVATE
-    fmt::fmt
-    spdlog::spdlog
-    stdc++fs
-    ${LUA_LIBRARIES} )
+        fmt::fmt
+        spdlog::spdlog
+        stdc++fs
+        ${LUA_LIBRARIES}
+        ${EVDEV_LIBRARY})
 
 if( ${ALSA_FOUND} )
     target_sources( m2i PRIVATE alsa.h alsa.cpp )
@@ -32,8 +35,8 @@ endif()
 
 if( ${WITH_X11} )
     target_sources( m2i PRIVATE x11.h x11.cpp )
-    target_include_directories( m2i PRIVATE ${X11_INCLUDE_DIRS} ${XTST_INCLUDE_DIRS} )
-    target_link_libraries( m2i PRIVATE ${XTST_LIBRARIES} ${X11_LIBRARIES} )
+    target_include_directories( m2i PRIVATE ${X11_INCLUDE_DIRS} )
+    target_link_libraries( m2i PRIVATE ${X11_LIBRARIES} )
     add_definitions( -DWITH_XORG )
 endif()
 

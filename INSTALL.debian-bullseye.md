@@ -7,7 +7,7 @@ with that, could use some help debugging.
 
 ```bash
 apt-get install git cmake g+ lua5.3-dev libasound2-dev libspdlog1 libfmt-dev
-  - OPTIONALLY libxtst-dev libjack-dev
+  - OPTIONALLY libjack-dev
 git clone https://gitlab.com/enetheru/midi2input.git
 cd midi2input
 mkdir build
@@ -26,7 +26,7 @@ haven't setup the CMakeLists to properly consider how that operates.
 For my testing purposes I changed 
 
 ```cmake
-set( CPACK_DEBIAN_PACKAGE_DEPENDS "libc6, libspdlog1, libx11-6, libxtst6, jackd1, liblua5.3-0" )
+set( CPACK_DEBIAN_PACKAGE_DEPENDS "libc6, libspdlog1, libx11-6, jackd1, liblua5.3-0" )
 ```
 
 I could then build the package and install it as below

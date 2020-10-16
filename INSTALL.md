@@ -3,7 +3,7 @@ Generic Install Instructions
 Install dependencies:
 
 * build time: git cmake spdlog, fmt, openimageio gtk-update-icon-cache
-* required: spdlog, lua 5.3, alsa-lib, libx11, libxtst
+* required: spdlog, lua 5.3, alsa-lib, libx11
 * Optional: jack | jack2, qt5-core, qt-widgets
 
 ```bash

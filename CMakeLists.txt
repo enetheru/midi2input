@@ -14,6 +14,8 @@ endif()
 
 # dependencies
 # ============
+find_path(EVDEV_INCLUDE_DIR libevdev/libevdev.h PATH_SUFFIXES libevdev-1.0 REQUIRED )
+find_library(EVDEV_LIBRARY NAMES evdev libevdev REQUIRED )
 find_package( spdlog REQUIRED )
 find_package( fmt REQUIRED )
 find_package( Lua 5.3 EXACT REQUIRED )
@@ -21,10 +23,9 @@ find_package( ALSA REQUIRED )
 find_package( X11 )
 find_package( Qt5 QUIET COMPONENTS Core Widgets )
 find_package( PkgConfig REQUIRED )
-pkg_check_modules( XTST xtst )
 pkg_check_modules( JACK jack )
 
-if( ${X11_FOUND} AND "${XTST_FOUND}" )
+if( ${X11_FOUND} )
     set( WITH_X11 YES )
 endif()
 
@@ -70,7 +71,7 @@ set( CPACK_GENERATOR "DEB" )
 set( CPACK_DEBIAN_PACKAGE_VERSION "0.1" )
 # Build dependencies, libsdlog-dev, libfmt-dev, appears to work for debian
 # testing
-set( CPACK_DEBIAN_PACKAGE_DEPENDS "libc6, libspdlog1, libx11-6, libxtst6, libjack-jackd2-0, liblua5.3-0" )
+set( CPACK_DEBIAN_PACKAGE_DEPENDS "libc6, libspdlog1, libx11-6, libjack-jackd2-0, liblua5.3-0" )
 set( CPACK_DEBIAN_PACKAGE_MAINTAINER "${DOC_AUTHORS}" )
 string( REPLACE "\n" "\n " CPACK_DEBIAN_PACKAGE_DESCRIPTION ${DOC_DESCRIPTION_SHORT} "\n" ${DOC_DESCRIPTION} )
 set( CPACK_DEBIAN_PACKAGE_SECTION "utils" )
